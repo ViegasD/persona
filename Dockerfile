@@ -41,7 +41,7 @@ COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 COPY apps/backend/package.json ./apps/backend/package.json
 COPY pnpm-workspace.yaml package.json ./
 
-RUN npx prisma generate --schema=./apps/backend/prisma/schema.prisma
+RUN ./node_modules/.bin/prisma generate --schema=./apps/backend/prisma/schema.prisma
 
 EXPOSE 3000
 
