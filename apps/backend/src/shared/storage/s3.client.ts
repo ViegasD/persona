@@ -53,6 +53,16 @@ export async function getPresignedUrl(
   return url;
 }
 
+export async function getS3Object(key: string) {
+  const response = await s3.send(
+    new GetObjectCommand({
+      Bucket: env.S3_BUCKET,
+      Key: key,
+    }),
+  );
+  return response;
+}
+
 export async function deleteFile(key: string): Promise<void> {
   await s3.send(
     new DeleteObjectCommand({
