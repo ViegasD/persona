@@ -69,9 +69,9 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: `${proxyBase}/${encodeURIComponent(img.s3Key)}`,
+          url: `${proxyBase}/${img.s3Key}`,
           thumbnailUrl: img.thumbnailS3Key
-            ? `${proxyBase}/${encodeURIComponent(img.thumbnailS3Key)}`
+            ? `${proxyBase}/${img.thumbnailS3Key}`
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,
@@ -117,9 +117,9 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: `${proxyBase}/${encodeURIComponent(img.s3Key)}`,
+          url: `${proxyBase}/${img.s3Key}`,
           thumbnailUrl: img.thumbnailS3Key
-            ? `${proxyBase}/${encodeURIComponent(img.thumbnailS3Key)}`
+            ? `${proxyBase}/${img.thumbnailS3Key}`
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,
@@ -246,10 +246,10 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
   );
 
   /**
-   * GET /api/admin/proxy/:key — Proxy S3 images through HTTPS backend.
+   * GET /api/admin/proxy/* — Proxy S3 images through HTTPS backend.
    */
-  app.get('/proxy/:key', async (request: FastifyRequest<{ Params: { key: string } }>, reply: FastifyReply) => {
-    const key = decodeURIComponent(request.params.key);
+  app.get('/proxy/*', async (request: FastifyRequest, reply: FastifyReply) => {
+    const key = (request.params as Record<string, string>)['*'];
 
     // Only allow keys under sessions/ prefix
     if (!key.startsWith('sessions/')) {
