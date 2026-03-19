@@ -157,16 +157,7 @@ async function triggerImageGeneration(sessionId: string): Promise<void> {
     },
   });
 
-  // Atualizar estado
-  await prisma.leadSession.update({
-    where: { id: sessionId },
-    data: { funnelState: FUNNEL_STATES.GENERATING },
-  });
-
-  await prisma.lead.update({
-    where: { id: session.leadId },
-    data: { status: 'GENERATING' },
-  });
+  // Estado permanece PAID — o worker muda para GENERATING após submissão bem-sucedida ao Kie.ai
 
   // Enfileirar no BullMQ
   const queue = getQueue(QUEUE_NAMES.IMAGE_GENERATION);

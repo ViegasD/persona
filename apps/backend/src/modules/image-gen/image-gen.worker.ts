@@ -92,6 +92,16 @@ export async function processImageGeneration(
 
     log.info({ taskIds, count: taskIds.length }, 'Tasks enviadas ao Kie.ai');
 
+    // Só agora transicionar para GENERATING (tasks confirmadas no Kie.ai)
+    await prisma.leadSession.update({
+      where: { id: leadSessionId },
+      data: { funnelState: FUNNEL_STATES.GENERATING },
+    });
+    await prisma.lead.update({
+      where: { id: session.leadId },
+      data: { status: 'GENERATING' },
+    });
+
     // Enviar mensagem de progresso
     await queueTextMessage(session.lead.phone, MESSAGES.generationProgress());
 
@@ -175,6 +185,16 @@ export async function processImageGeneration(
         completedAt: new Date(),
       },
     });
+
+    // Reverter estado para PAID para permitir nova tentativa
+    await prisma.leadSession.update({
+      where: { id: leadSessionId },
+      data: { funnelState: FUNNEL_STATES.PAID },
+    }).catch(() => {});
+    await prisma.lead.update({
+      where: { id: session.leadId },
+      data: { status: 'PAID' },
+    }).catch(() => {});
 
     await queueTextMessage(session.lead.phone, MESSAGES.errorOccurred());
     throw error; // BullMQ fará retry

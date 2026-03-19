@@ -77,7 +77,7 @@ export async function callLlmJson<T>(
   messages: LlmMessage[],
   options?: { leadId?: string; agentName?: string },
 ): Promise<{ data: T; usage: LlmResponse['usage'] }> {
-  const MAX_ATTEMPTS = 2;
+  const MAX_ATTEMPTS = 3;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const startMs = Date.now();
@@ -92,6 +92,8 @@ export async function callLlmJson<T>(
 
     const choice = completion.choices[0];
     const raw = (choice?.message?.content ?? '').trim();
+    const finishReason = choice?.finish_reason;
+    const refusal = (choice?.message as any)?.refusal;
     const usage = {
       promptTokens: completion.usage?.prompt_tokens ?? 0,
       completionTokens: completion.usage?.completion_tokens ?? 0,
@@ -101,7 +103,7 @@ export async function callLlmJson<T>(
     const durationMs = Date.now() - startMs;
 
     log.info(
-      { model: env.OPENAI_MODEL, tokens: usage.totalTokens, durationMs, agent: options?.agentName, attempt },
+      { model: env.OPENAI_MODEL, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, durationMs, agent: options?.agentName, attempt, finishReason, refusal },
       '[LLM:JSON] Call completed',
     );
     log.info({ rawResponse: raw.substring(0, 500) }, '[LLM:JSON] Raw response');
@@ -119,9 +121,13 @@ export async function callLlmJson<T>(
 
     // Handle empty / whitespace-only response
     if (!raw || raw.length < 2) {
-      log.warn({ attempt, rawLength: raw.length }, '[LLM:JSON] Empty response from LLM');
+      log.warn(
+        { attempt, rawLength: raw.length, finishReason, refusal, completionTokens: usage.completionTokens },
+        '[LLM:JSON] Empty response from LLM',
+      );
       if (attempt < MAX_ATTEMPTS) {
         log.info('[LLM:JSON] Retrying...');
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
         continue;
       }
       throw new Error('LLM returned empty response after retries');
@@ -134,6 +140,7 @@ export async function callLlmJson<T>(
       log.warn({ attempt, rawSnippet: raw.substring(0, 200) }, '[LLM:JSON] JSON parse failed');
       if (attempt < MAX_ATTEMPTS) {
         log.info('[LLM:JSON] Retrying...');
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
         continue;
       }
       throw parseErr;
