@@ -11,6 +11,7 @@ import { whatsappRouter } from './modules/whatsapp/whatsapp.router.js';
 import { galleryRouter } from './modules/gallery/gallery.router.js';
 import { paymentRouter } from './modules/payment/payment.router.js';
 import { analyticsRouter } from './modules/analytics/analytics.router.js';
+import { imageProxyRouter } from './modules/analytics/image-proxy.router.js';
 import { devRouter } from './modules/dev/dev.router.js';
 
 const log = createChildLogger('app');
@@ -58,6 +59,7 @@ export async function buildApp() {
   await app.register(paymentRouter, { prefix: '/api' });
   await app.register(galleryRouter, { prefix: '/api/gallery' });
   await app.register(analyticsRouter, { prefix: '/api/admin' });
+  await app.register(imageProxyRouter, { prefix: '/api/admin/proxy' });
 
   // Dev routes — available in all environments (protected by API key in router)
   await app.register(devRouter, { prefix: '/api/dev' });

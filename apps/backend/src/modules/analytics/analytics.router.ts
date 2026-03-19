@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { verifyAdminAuth } from '../../shared/middleware/auth.js';
 import { getFunnelMetrics, getCostMetrics } from './analytics.service.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { getS3Object } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
+import { proxyUrl } from './image-proxy.router.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
 import { trackEvent } from './analytics.service.js';
 import { getQueue, QUEUE_NAMES, type DeliveryJobData, type ImageGenerationJobData } from '../../shared/queue/queues.js';
@@ -61,17 +61,15 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       prisma.lead.count({ where }),
     ]);
 
-    const proxyBase = `${env.API_BASE_URL}/api/admin/proxy`;
-
     const data = leads.map((lead) => ({
       ...lead,
       sessions: lead.sessions.map((session) => ({
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: `${proxyBase}/${img.s3Key}`,
+          url: proxyUrl(img.s3Key),
           thumbnailUrl: img.thumbnailS3Key
-            ? `${proxyBase}/${img.thumbnailS3Key}`
+            ? proxyUrl(img.thumbnailS3Key)
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,
@@ -109,17 +107,15 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       return;
     }
 
-    const proxyBase = `${env.API_BASE_URL}/api/admin/proxy`;
-
     const data = {
       ...lead,
       sessions: lead.sessions.map((session) => ({
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: `${proxyBase}/${img.s3Key}`,
+          url: proxyUrl(img.s3Key),
           thumbnailUrl: img.thumbnailS3Key
-            ? `${proxyBase}/${img.thumbnailS3Key}`
+            ? proxyUrl(img.thumbnailS3Key)
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,
@@ -244,29 +240,4 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       reply.send({ success: true, generationJobId: genJob.id });
     },
   );
-
-  /**
-   * GET /api/admin/proxy/* — Proxy S3 images through HTTPS backend.
-   */
-  app.get('/proxy/*', async (request: FastifyRequest, reply: FastifyReply) => {
-    const key = (request.params as Record<string, string>)['*'];
-
-    // Only allow keys under sessions/ prefix
-    if (!key.startsWith('sessions/')) {
-      reply.status(403).send({ error: 'Forbidden' });
-      return;
-    }
-
-    try {
-      const obj = await getS3Object(key);
-      const contentType = obj.ContentType ?? 'image/jpeg';
-
-      reply
-        .header('Content-Type', contentType)
-        .header('Cache-Control', 'private, max-age=3600')
-        .send(obj.Body);
-    } catch {
-      reply.status(404).send({ error: 'Image not found' });
-    }
-  });
 }
