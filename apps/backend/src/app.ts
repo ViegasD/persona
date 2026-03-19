@@ -19,6 +19,7 @@ export async function buildApp() {
   const app = Fastify({
     logger: false, // Usando pino customizado
     trustProxy: true,
+    bodyLimit: 10 * 1024 * 1024, // 10 MB — webhooks Evolution podem conter mídia base64
   });
 
   // ─── Plugins ─────────────────────────────────────────────
