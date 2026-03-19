@@ -3,34 +3,55 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('kie-ai-client');
 
+// ─── Request types ──────────────────────────────────────
+
 interface KieGenerateRequest {
   prompt: string;
-  referenceImages: string[]; // URLs das imagens de referência
-  numImages: number;
-  width?: number;
-  height?: number;
+  referenceImages: string[]; // URLs das imagens de referência (max 14)
+  aspectRatio?: string;
+  resolution?: string;
+  outputFormat?: string;
 }
 
-interface KieJobResponse {
-  jobId: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+// ─── API response types ─────────────────────────────────
+
+interface KieApiResponse<T> {
+  code: number;
+  msg: string;
+  data: T;
 }
 
-interface KieResultResponse {
-  jobId: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
-  images?: Array<{
-    url: string;
-    seed?: number;
-  }>;
+interface KieCreateTaskData {
+  taskId: string;
+}
+
+interface KieTaskDetailData {
+  taskId: string;
+  model: string;
+  state: 'waiting' | 'queuing' | 'generating' | 'success' | 'fail';
+  resultJson?: string; // JSON string: { resultUrls: string[] }
+  failCode?: string;
+  failMsg?: string;
+  costTime?: number;
+}
+
+// ─── Public types ───────────────────────────────────────
+
+export interface KieJobResponse {
+  taskId: string;
+  state: KieTaskDetailData['state'];
+}
+
+export interface KieResultResponse {
+  taskId: string;
+  state: KieTaskDetailData['state'];
+  imageUrls: string[];
   error?: string;
 }
 
 /**
- * Client para a API Kie.ai (Nano Banana 2 ou similar).
- *
- * NOTA: Os endpoints abaixo são baseados em padrões comuns de APIs de geração.
- * Ajuste conforme a documentação oficial do Kie.ai quando disponível.
+ * Client para a API Kie.ai — endpoints Unified Market API.
+ * Docs: https://docs.kie.ai/market/quickstart
  */
 export class KieAiClient {
   private baseUrl: string;
@@ -41,7 +62,7 @@ export class KieAiClient {
     this.apiKey = env.KIE_API_KEY;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async request<T>(method: string, path: string, body?: unknown): Promise<KieApiResponse<T>> {
     const url = `${this.baseUrl}${path}`;
     log.debug({ method, url }, 'Kie.ai request');
 
@@ -54,41 +75,58 @@ export class KieAiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      log.error({ status: response.status, body: errorText, url }, 'Kie.ai API error');
-      throw new Error(`Kie.ai error ${response.status}: ${errorText}`);
+    const json = await response.json() as KieApiResponse<T>;
+
+    if (!response.ok || (json.code && json.code !== 200)) {
+      log.error({ status: response.status, code: json.code, msg: json.msg, url }, 'Kie.ai API error');
+      throw new Error(`Kie.ai error ${json.code ?? response.status}: ${json.msg ?? 'unknown'}`);
     }
 
-    return response.json() as Promise<T>;
+    return json;
   }
 
   /**
-   * Submete job de geração de imagens.
+   * Submete job de geração de imagem (1 imagem por chamada).
    */
   async submitGeneration(params: KieGenerateRequest): Promise<KieJobResponse> {
-    return this.request<KieJobResponse>('POST', '/v1/generate', {
-      prompt: params.prompt,
-      reference_images: params.referenceImages,
-      num_images: params.numImages,
-      width: params.width ?? 1024,
-      height: params.height ?? 1024,
+    const res = await this.request<KieCreateTaskData>('POST', '/api/v1/jobs/createTask', {
       model: 'nano-banana-2',
+      input: {
+        prompt: params.prompt,
+        image_input: params.referenceImages,
+        aspect_ratio: params.aspectRatio ?? '1:1',
+        resolution: params.resolution ?? '1K',
+        output_format: params.outputFormat ?? 'png',
+      },
     });
+
+    log.info({ taskId: res.data.taskId }, 'Task criada no Kie.ai');
+    return { taskId: res.data.taskId, state: 'waiting' };
   }
 
   /**
-   * Consulta status de um job de geração.
+   * Consulta status de uma task.
    */
-  async getJobStatus(jobId: string): Promise<KieResultResponse> {
-    return this.request<KieResultResponse>('GET', `/v1/jobs/${jobId}`);
-  }
+  async getTaskStatus(taskId: string): Promise<KieResultResponse> {
+    const res = await this.request<KieTaskDetailData>('GET', `/api/v1/jobs/recordInfo?taskId=${taskId}`);
+    const data = res.data;
 
-  /**
-   * Cancela um job de geração.
-   */
-  async cancelJob(jobId: string): Promise<void> {
-    await this.request('DELETE', `/v1/jobs/${jobId}`);
+    let imageUrls: string[] = [];
+    if (data.state === 'success' && data.resultJson) {
+      try {
+        const result = JSON.parse(data.resultJson) as { resultUrls?: string[] };
+        imageUrls = result.resultUrls ?? [];
+      } catch {
+        log.warn({ taskId, resultJson: data.resultJson }, 'Failed to parse resultJson');
+      }
+    }
+
+    return {
+      taskId: data.taskId,
+      state: data.state,
+      imageUrls,
+      error: data.failMsg || undefined,
+    };
   }
 }
 

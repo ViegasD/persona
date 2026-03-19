@@ -75,49 +75,57 @@ export async function processImageGeneration(
       session.referenceImages.map((ref) => getPresignedUrl(ref.s3Key, 3600)),
     );
 
-    // Enviar para Kie.ai
-    const kieJob = await kieApi.submitGeneration({
-      prompt,
-      referenceImages: referenceUrls,
-      numImages: pkg.photos,
-    });
+    // Enviar para Kie.ai — 1 task por imagem (Nano Banana 2 gera 1 por chamada)
+    const taskPromises = Array.from({ length: pkg.photos }, () =>
+      kieApi.submitGeneration({
+        prompt,
+        referenceImages: referenceUrls,
+      }),
+    );
+    const kieTasks = await Promise.all(taskPromises);
+    const taskIds = kieTasks.map((t) => t.taskId);
 
     await prisma.generationJob.update({
       where: { id: generationJobId },
-      data: { kieJobId: kieJob.jobId },
+      data: { kieJobId: taskIds.join(',') },
     });
 
-    log.info({ kieJobId: kieJob.jobId }, 'Job enviado ao Kie.ai');
+    log.info({ taskIds, count: taskIds.length }, 'Tasks enviadas ao Kie.ai');
 
     // Enviar mensagem de progresso
     await queueTextMessage(session.lead.phone, MESSAGES.generationProgress());
 
-    // Polling até completar
+    // Polling de todas as tasks até completarem
     let attempts = 0;
-    let result = kieJob;
+    const completedUrls: string[] = [];
+    const pendingTasks = new Set(taskIds);
 
-    while (result.status !== 'completed' && result.status !== 'failed') {
+    while (pendingTasks.size > 0) {
       if (attempts >= MAX_POLL_ATTEMPTS) {
-        throw new Error('Timeout aguardando geração');
+        throw new Error(`Timeout aguardando geração (${pendingTasks.size} tasks pendentes)`);
       }
 
       await sleep(POLL_INTERVAL_MS);
-      const status = await kieApi.getJobStatus(kieJob.jobId);
-      result = { ...result, ...status };
       attempts++;
 
+      for (const taskId of [...pendingTasks]) {
+        const status = await kieApi.getTaskStatus(taskId);
+
+        if (status.state === 'success') {
+          completedUrls.push(...status.imageUrls);
+          pendingTasks.delete(taskId);
+        } else if (status.state === 'fail') {
+          log.error({ taskId, error: status.error }, 'Kie.ai task falhou');
+          pendingTasks.delete(taskId);
+        }
+      }
+
       if (attempts % 12 === 0) {
-        log.debug({ kieJobId: kieJob.jobId, attempts, status: result.status }, 'Polling...');
+        log.debug({ attempts, pending: pendingTasks.size, completed: completedUrls.length }, 'Polling...');
       }
     }
 
-    if (result.status === 'failed') {
-      throw new Error(`Kie.ai falhou: ${(result as any).error ?? 'unknown'}`);
-    }
-
-    // Processar imagens
-    const kieResult = await kieApi.getJobStatus(kieJob.jobId);
-    const imageUrls = kieResult.images?.map((img) => img.url) ?? [];
+    const imageUrls = completedUrls;
 
     if (imageUrls.length === 0) {
       throw new Error('Nenhuma imagem retornada pelo Kie.ai');
