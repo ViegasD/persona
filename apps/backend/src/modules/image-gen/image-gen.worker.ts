@@ -12,7 +12,6 @@ import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
-import { createGalleryToken } from '../gallery/token.service.js';
 
 const log = createChildLogger('image-gen-worker');
 const POLL_INTERVAL_MS = 5_000;
@@ -152,10 +151,6 @@ export async function processImageGeneration(
       },
     });
 
-    // Criar token da galeria e enviar link
-    const { token } = await createGalleryToken(leadSessionId);
-    const galleryUrl = `${env.WEB_BASE_URL}/gallery/${token}`;
-
     await prisma.leadSession.update({
       where: { id: leadSessionId },
       data: { funnelState: FUNNEL_STATES.GALLERY_SENT },
@@ -166,7 +161,7 @@ export async function processImageGeneration(
       data: { status: 'APPROVING' },
     });
 
-    await queueTextMessage(session.lead.phone, MESSAGES.galleryReady(galleryUrl));
+    await queueTextMessage(session.lead.phone, MESSAGES.generationComplete());
 
     await trackEvent(session.leadId, 'IMAGES_GENERATED', {
       count: imageIds.length,

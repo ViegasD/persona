@@ -88,9 +88,7 @@ export async function approveImages(
     return { success: false, message: 'IDs de imagem inválidos' };
   }
 
-  if (selectedImageIds.length < 5) {
-    return { success: false, message: 'Selecione pelo menos 5 imagens' };
-  }
+
 
   // Já aprovou antes → idempotente
   const alreadyApproved = session.generatedImages.some((img) => img.isApproved);

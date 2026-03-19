@@ -54,11 +54,10 @@ export const MESSAGES = {
   generationProgress: () =>
     `🎨 Suas fotos estão sendo criadas... A mágica tá acontecendo! ✨`,
 
-  galleryReady: (galleryUrl: string) =>
-    `🎉 Seu ensaio ficou pronto!\n\n` +
-    `Acesse a galeria pra ver suas fotos:\n\n` +
-    `👉 ${galleryUrl}\n\n` +
-    `O link é válido por 24 horas ⏰`,
+  generationComplete: () =>
+    `✨ Suas fotos ficaram prontas!\n\n` +
+    `Estamos fazendo uma revisão de qualidade antes de enviar pra você 🔍\n\n` +
+    `Já já te mando tudo aqui mesmo! 😊`,
 
   // ─── Entrega ─────────────────────────────────────────────
   deliveryStart: () =>
