@@ -65,7 +65,7 @@ services:
   # ─── Evolution API (WhatsApp) ────────────────────────────
 
   evolution:
-    image: atendai/evolution-api:v2.3.7
+    image: evoapicloud/evolution-api:v2.3.7
     restart: unless-stopped
     depends_on:
       redis:
