@@ -4,7 +4,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { env } from './shared/config/env.js';
 import { errorHandler } from './shared/middleware/error-handler.js';
-import { createChildLogger } from './shared/utils/logger.js';
+import { createChildLogger, getRecentLogs } from './shared/utils/logger.js';
 
 // Module routers
 import { whatsappRouter } from './modules/whatsapp/whatsapp.router.js';
@@ -42,6 +42,16 @@ export async function buildApp() {
 
   // ─── Health Check ────────────────────────────────────────
   app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+
+  // ─── Logs (protected by API key) ────────────────────────
+  app.get('/api/logs', async (request, reply) => {
+    const key = request.headers['x-api-key'] ?? (request.query as Record<string, string>).key;
+    if (key !== env.EVOLUTION_API_KEY) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
+    const limit = Number((request.query as Record<string, string>).limit) || 200;
+    return getRecentLogs(limit);
+  });
 
   // ─── Module Routes ───────────────────────────────────────
   await app.register(whatsappRouter, { prefix: '/api/webhooks' });
