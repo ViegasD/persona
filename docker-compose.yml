@@ -1,0 +1,126 @@
+services:
+  # ─── Infrastructure ──────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ensaio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ensaio_dev_123}
+      POSTGRES_DB: ${POSTGRES_DB:-ensaio}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ensaio"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${S3_ACCESS_KEY:-minioadmin} $${S3_SECRET_KEY:-minioadmin123};
+      mc mb local/${S3_BUCKET:-ensaio-images} --ignore-existing;
+      mc anonymous set download local/${S3_BUCKET:-ensaio-images};
+      echo 'Bucket criado com sucesso';
+      "
+
+  # ─── Evolution API (WhatsApp) ────────────────────────────
+
+  evolution:
+    image: atendai/evolution-api:v2.3.7
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - SERVER_URL=${EVOLUTION_API_URL:-http://localhost:9280}
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER:-ensaio}:${POSTGRES_PASSWORD:-ensaio_dev_123}@postgres:5432/${POSTGRES_DB:-ensaio}
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_LOCAL_ENABLED=false
+      - LOG_LEVEL=WARN
+    ports:
+      - "9280:8080"
+    volumes:
+      - evolution_data:/evolution/instances
+
+  # ─── Backend (Fastify + BullMQ workers) ──────────────────
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ensaio}:${POSTGRES_PASSWORD:-ensaio_dev_123}@postgres:5432/${POSTGRES_DB:-ensaio}
+      - REDIS_URL=redis://redis:6379
+      - S3_ENDPOINT=http://minio:9000
+      - EVOLUTION_API_URL=http://evolution:8080
+    ports:
+      - "3000:3000"
+    command: >
+      sh -c "
+        cd apps/backend &&
+        npx prisma migrate deploy &&
+        cd /app &&
+        node apps/backend/dist/server.js
+      "
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  evolution_data:

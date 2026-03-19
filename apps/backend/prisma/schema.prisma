@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  COLLECTING
+  PAYING
+  PAID
+  GENERATING
+  APPROVING
+  DELIVERED
+  CHURNED
+}
+
+enum GenerationJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERING
+  COMPLETED
+  FAILED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+// ─── Models ─────────────────────────────────────────────────
+
+model Lead {
+  id        String     @id @default(uuid())
+  phone     String     @unique
+  name      String?
+  status    LeadStatus @default(NEW)
+  source    String?
+
+  sessions  LeadSession[]
+  messages  ConversationMessage[]
+  events    AnalyticsEvent[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model LeadSession {
+  id          String  @id @default(uuid())
+  leadId      String  @map("lead_id")
+  funnelState String  @default("WELCOME") @map("funnel_state")
+  preferences Json    @default("{}") @db.JsonB
+  metadata    Json    @default("{}") @db.JsonB
+  expiresAt   DateTime? @map("expires_at")
+
+  lead             Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  referenceImages  ReferenceImage[]
+  generationJobs   GenerationJob[]
+  generatedImages  GeneratedImage[]
+  approvalTokens   ApprovalToken[]
+  payments         Payment[]
+  deliveries       Delivery[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([leadId])
+  @@index([funnelState])
+  @@map("lead_sessions")
+}
+
+model ReferenceImage {
+  id            String @id @default(uuid())
+  leadSessionId String @map("lead_session_id")
+  s3Key         String @map("s3_key")
+  s3Url         String @map("s3_url")
+  mimeType      String @map("mime_type")
+  fileSize      Int    @map("file_size")
+
+  leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadSessionId])
+  @@map("reference_images")
+}
+
+model GenerationJob {
+  id            String             @id @default(uuid())
+  leadSessionId String             @map("lead_session_id")
+  kieJobId      String?            @map("kie_job_id")
+  prompt        String             @db.Text
+  status        GenerationJobStatus @default(QUEUED)
+  costCredits   Decimal?           @map("cost_credits") @db.Decimal(10, 4)
+  errorMessage  String?            @map("error_message") @db.Text
+  startedAt     DateTime?          @map("started_at")
+  completedAt   DateTime?          @map("completed_at")
+
+  leadSession     LeadSession      @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+  generatedImages GeneratedImage[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadSessionId])
+  @@index([status])
+  @@index([kieJobId])
+  @@map("generation_jobs")
+}
+
+model GeneratedImage {
+  id              String  @id @default(uuid())
+  generationJobId String  @map("generation_job_id")
+  leadSessionId   String  @map("lead_session_id")
+  s3Key           String  @map("s3_key")
+  s3Url           String  @map("s3_url")
+  thumbnailS3Key  String? @map("thumbnail_s3_key")
+  isApproved      Boolean @default(false) @map("is_approved")
+  sequence        Int
+
+  generationJob GenerationJob @relation(fields: [generationJobId], references: [id], onDelete: Cascade)
+  leadSession   LeadSession   @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadSessionId])
+  @@index([generationJobId])
+  @@map("generated_images")
+}
+
+model ApprovalToken {
+  id            String    @id @default(uuid())
+  leadSessionId String    @map("lead_session_id")
+  token         String    @unique
+  expiresAt     DateTime  @map("expires_at")
+  usedAt        DateTime? @map("used_at")
+
+  leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([leadSessionId])
+  @@map("approval_tokens")
+}
+
+model Payment {
+  id                     String        @id @default(uuid())
+  leadSessionId          String        @map("lead_session_id")
+  mercadopagoPreferenceId String?      @map("mercadopago_preference_id")
+  mercadopagoPaymentId   String?       @map("mercadopago_payment_id")
+  amount                 Decimal       @db.Decimal(10, 2)
+  currency               String        @default("BRL")
+  status                 PaymentStatus @default(PENDING)
+  paymentMethod          String?       @map("payment_method")
+  paidAt                 DateTime?     @map("paid_at")
+
+  leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+  deliveries  Delivery[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([leadSessionId])
+  @@index([mercadopagoPaymentId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Delivery {
+  id              String         @id @default(uuid())
+  leadSessionId   String         @map("lead_session_id")
+  paymentId       String         @map("payment_id")
+  status          DeliveryStatus @default(PENDING)
+  imagesDelivered Int            @default(0) @map("images_delivered")
+  completedAt     DateTime?      @map("completed_at")
+
+  leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+  payment     Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([leadSessionId])
+  @@index([paymentId])
+  @@map("deliveries")
+}
+
+model AnalyticsEvent {
+  id        String  @id @default(uuid())
+  leadId    String? @map("lead_id")
+  eventType String  @map("event_type")
+  metadata  Json    @default("{}") @db.JsonB
+
+  lead Lead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([leadId])
+  @@map("analytics_events")
+}
+
+model ConversationMessage {
+  id                String           @id @default(uuid())
+  leadId            String           @map("lead_id")
+  direction         MessageDirection
+  messageType       String           @default("text") @map("message_type")
+  content           String           @db.Text
+  whatsappMessageId String?          @map("whatsapp_message_id")
+  metadata          Json             @default("{}") @db.JsonB
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadId])
+  @@index([whatsappMessageId])
+  @@index([createdAt])
+  @@map("conversation_messages")
+}

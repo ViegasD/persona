@@ -1,0 +1,11 @@
+node_modules
+dist
+.next
+.env
+.env.local
+*.log
+.git
+.gitignore
+chat example
+README.md
+EVOLUTION_API_V2.3.7_REFERENCE.md

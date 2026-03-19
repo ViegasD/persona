@@ -1,0 +1,20 @@
+{
+  "name": "ensaio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Funil WhatsApp com IA para ensaio fotográfico digital",
+  "scripts": {
+    "dev:backend": "pnpm --filter @ensaio/backend dev",
+    "dev:web": "pnpm --filter @ensaio/web dev",
+    "dev": "pnpm run --parallel dev:backend dev:web",
+    "build": "pnpm run --filter @ensaio/* build",
+    "db:migrate": "pnpm --filter @ensaio/backend prisma:migrate",
+    "db:generate": "pnpm --filter @ensaio/backend prisma:generate",
+    "db:seed": "pnpm --filter @ensaio/backend prisma:seed",
+    "lint": "pnpm run --filter @ensaio/* lint"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

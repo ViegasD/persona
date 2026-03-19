@@ -1,0 +1,128 @@
+import { evolutionApi } from './evolution-api.client.js';
+import { getQueue, QUEUE_NAMES, type WhatsAppSendJobData } from '../../shared/queue/queues.js';
+import { prisma } from '../../shared/database/prisma.js';
+import { createChildLogger } from '../../shared/utils/logger.js';
+import type { Job } from 'bullmq';
+
+const log = createChildLogger('whatsapp-service');
+
+/**
+ * Envia mensagem de texto via fila (evita rate limiting).
+ */
+export async function queueTextMessage(
+  phone: string,
+  text: string,
+  delay?: number,
+): Promise<void> {
+  const queue = getQueue(QUEUE_NAMES.WHATSAPP_SEND);
+  await queue.add('send-text', {
+    phone,
+    type: 'text',
+    payload: { text, delay },
+  } satisfies WhatsAppSendJobData);
+}
+
+/**
+ * Envia mídia via fila.
+ */
+export async function queueMediaMessage(
+  phone: string,
+  mediaUrl: string,
+  options: {
+    mediatype: 'image' | 'video' | 'document';
+    mimetype: string;
+    caption?: string;
+    fileName?: string;
+  },
+): Promise<void> {
+  const queue = getQueue(QUEUE_NAMES.WHATSAPP_SEND);
+  await queue.add('send-media', {
+    phone,
+    type: 'media',
+    payload: { mediaUrl, ...options },
+  } satisfies WhatsAppSendJobData);
+}
+
+/**
+ * Salva mensagem de saída no banco.
+ */
+export async function logOutboundMessage(
+  leadId: string,
+  content: string,
+  messageType: string = 'text',
+  whatsappMessageId?: string,
+): Promise<void> {
+  await prisma.conversationMessage.create({
+    data: {
+      leadId,
+      direction: 'OUTBOUND',
+      messageType,
+      content,
+      whatsappMessageId,
+    },
+  });
+}
+
+/**
+ * Salva mensagem de entrada no banco.
+ */
+export async function logInboundMessage(
+  leadId: string,
+  content: string,
+  messageType: string = 'text',
+  whatsappMessageId?: string,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  await prisma.conversationMessage.create({
+    data: {
+      leadId,
+      direction: 'INBOUND',
+      messageType,
+      content,
+      whatsappMessageId,
+      metadata: (metadata ?? {}) as any,
+    },
+  });
+}
+
+/**
+ * Worker processor para fila de envio WhatsApp.
+ */
+export async function processWhatsAppSend(job: Job<WhatsAppSendJobData>): Promise<void> {
+  const { phone, type, payload } = job.data;
+  log.debug({ phone, type, jobId: job.id }, 'Processando envio WhatsApp');
+
+  switch (type) {
+    case 'text': {
+      const { text, delay } = payload as { text: string; delay?: number };
+      await evolutionApi.sendText(phone, text, { delay });
+      break;
+    }
+    case 'media': {
+      const { mediaUrl, mediatype, mimetype, caption, fileName } = payload as {
+        mediaUrl: string;
+        mediatype: 'image' | 'video' | 'document';
+        mimetype: string;
+        caption?: string;
+        fileName?: string;
+      };
+      await evolutionApi.sendMedia(phone, mediaUrl, {
+        mediatype,
+        mimetype,
+        caption,
+        fileName,
+      });
+      break;
+    }
+    case 'reaction': {
+      const { remoteJid, messageId, reaction, fromMe } = payload as {
+        remoteJid: string;
+        messageId: string;
+        reaction: string;
+        fromMe: boolean;
+      };
+      await evolutionApi.sendReaction(remoteJid, messageId, reaction, fromMe);
+      break;
+    }
+  }
+}
