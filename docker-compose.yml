@@ -89,36 +89,6 @@ services:
     volumes:
       - evolution_data:/evolution/instances
 
-  # ─── Backend (Fastify + BullMQ workers) ──────────────────
-
-  backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ensaio}:${POSTGRES_PASSWORD:-ensaio_dev_123}@postgres:5432/${POSTGRES_DB:-ensaio}
-      - REDIS_URL=redis://redis:6379
-      - S3_ENDPOINT=http://minio:9000
-      - EVOLUTION_API_URL=http://evolution:8080
-    ports:
-      - "3000:3000"
-    command: >
-      sh -c "
-        cd apps/backend &&
-        npx prisma migrate deploy &&
-        cd /app &&
-        node apps/backend/dist/server.js
-      "
-
 volumes:
   postgres_data:
   redis_data:
