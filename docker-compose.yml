@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-ensaio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ensaio_dev_123}
       POSTGRES_DB: ${POSTGRES_DB:-ensaio}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,8 +19,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -38,9 +34,6 @@ services:
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin123}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -84,8 +77,6 @@ services:
       - CACHE_REDIS_PREFIX_KEY=evolution
       - CACHE_LOCAL_ENABLED=false
       - LOG_LEVEL=WARN
-    ports:
-      - "9280:8080"
     volumes:
       - evolution_data:/evolution/instances
 
