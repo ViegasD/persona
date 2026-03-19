@@ -1,10 +1,12 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY ?? '';
+import 'server-only';
+
+const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:3000';
+const ADMIN_ID = process.env.ADMIN_API_ID ?? '';
 
 function adminHeaders(): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    'X-API-Key': ADMIN_KEY,
+    'X-API-Key': ADMIN_ID,
   };
 }
 

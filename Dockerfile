@@ -14,13 +14,6 @@ COPY apps/web ./apps/web
 
 RUN pnpm --filter @ensaio/backend prisma:generate
 RUN pnpm --filter @ensaio/backend build
-
-# Next.js standalone build — NEXT_PUBLIC_ vars are baked at build time
-ARG NEXT_PUBLIC_API_URL=http://localhost:3000
-ARG NEXT_PUBLIC_ADMIN_KEY=
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_ADMIN_KEY=$NEXT_PUBLIC_ADMIN_KEY
-
 RUN pnpm --filter @ensaio/web build
 
 # Copy static assets into standalone output
@@ -31,9 +24,6 @@ COPY start.sh ./start.sh
 RUN chmod +x start.sh
 
 ENV NODE_ENV=production
-# Basic auth for admin panel (set at runtime)
-# ENV ADMIN_USER=admin
-# ENV ADMIN_PASS=
 EXPOSE 3000 3001
 
 CMD ["./start.sh"]

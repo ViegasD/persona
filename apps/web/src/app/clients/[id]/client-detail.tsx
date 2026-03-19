@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminLead, AdminSession, AdminImage } from '@/lib/api';
-import { approveAllImages, regenerateImage } from '@/lib/api';
+import { approveAllAction, regenerateAction } from '@/lib/actions';
 import { ImageCard } from '@/components/image-card';
 import { Lightbox } from '@/components/lightbox';
 import Link from 'next/link';
@@ -33,7 +33,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
       setApproving(sessionId);
       setError(null);
       try {
-        const result = await approveAllImages(sessionId);
+        const result = await approveAllAction(sessionId);
         if (!result.success) {
           setError(result.message);
         } else {
@@ -53,7 +53,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
       setRegenerating(imageId);
       setError(null);
       try {
-        const result = await regenerateImage(imageId);
+        const result = await regenerateAction(imageId);
         if (result.success) {
           router.refresh();
         }
