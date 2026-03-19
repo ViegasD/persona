@@ -78,17 +78,30 @@ export async function callLlmJson<T>(
   options?: { leadId?: string; agentName?: string },
 ): Promise<{ data: T; usage: LlmResponse['usage'] }> {
   const MAX_ATTEMPTS = 3;
+  let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const startMs = Date.now();
 
-    const completion = await getClient().chat.completions.create({
-      model: env.OPENAI_MODEL,
-      messages,
-      temperature: 0.7,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' },
-    });
+    let completion;
+    try {
+      completion = await getClient().chat.completions.create({
+        model: env.OPENAI_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' },
+      });
+    } catch (apiErr) {
+      const durationMs = Date.now() - startMs;
+      log.error({ attempt, durationMs, err: apiErr }, '[LLM:JSON] OpenAI API call failed');
+      lastError = apiErr;
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+      throw apiErr;
+    }
 
     const choice = completion.choices[0];
     const raw = (choice?.message?.content ?? '').trim();
