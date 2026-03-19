@@ -59,10 +59,8 @@ export async function buildApp() {
   await app.register(galleryRouter, { prefix: '/api/gallery' });
   await app.register(analyticsRouter, { prefix: '/api/admin' });
 
-  // Dev routes — only in development
-  if (env.NODE_ENV === 'development') {
-    await app.register(devRouter, { prefix: '/api/dev' });
-  }
+  // Dev routes — available in all environments (protected by API key in router)
+  await app.register(devRouter, { prefix: '/api/dev' });
 
   log.info('App configurado');
   return app;

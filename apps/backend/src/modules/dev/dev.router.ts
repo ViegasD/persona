@@ -3,14 +3,24 @@ import { prisma } from '../../shared/database/prisma.js';
 import { handleFunnelBatch } from '../funnel/funnel.service.js';
 import { handlePaymentApproved } from '../payment/payment.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
+import { env } from '../../shared/config/env.js';
 
 const log = createChildLogger('dev-router');
 
 /**
  * Rotas de desenvolvimento — simulam mensagens sem Evolution API.
- * Disponível apenas em NODE_ENV=development.
+ * Em produção, protegidas por x-api-key header.
  */
 export async function devRouter(app: FastifyInstance) {
+  // In production, require API key
+  if (env.NODE_ENV === 'production') {
+    app.addHook('preHandler', async (request, reply) => {
+      if (request.headers['x-api-key'] !== env.EVOLUTION_API_KEY) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+    });
+  }
+
   app.post<{
     Body: { phone: string; text: string; mediaType?: string };
   }>('/simulate', async (request, reply) => {
