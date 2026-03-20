@@ -59,7 +59,7 @@ export async function buildApp() {
   await app.register(paymentRouter, { prefix: '/api' });
   await app.register(galleryRouter, { prefix: '/api/gallery' });
   await app.register(analyticsRouter, { prefix: '/api/admin' });
-  await app.register(imageProxyRouter, { prefix: '/api/admin/proxy' });
+  await app.register(imageProxyRouter, { prefix: '/api/internal/images' });
 
   // Dev routes — available in all environments (protected by API key in router)
   await app.register(devRouter, { prefix: '/api/dev' });

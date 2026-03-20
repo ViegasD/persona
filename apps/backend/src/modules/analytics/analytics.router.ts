@@ -2,12 +2,15 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { verifyAdminAuth } from '../../shared/middleware/auth.js';
 import { getFunnelMetrics, getCostMetrics } from './analytics.service.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { env } from '../../shared/config/env.js';
-import { proxyUrl } from './image-proxy.router.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
 import { trackEvent } from './analytics.service.js';
 import { getQueue, QUEUE_NAMES, type DeliveryJobData, type ImageGenerationJobData } from '../../shared/queue/queues.js';
 import { buildPrompt } from '../image-gen/prompt.engine.js';
+
+/** Build a relative image URL served by the Next.js admin panel. */
+function imageUrl(s3Key: string): string {
+  return `/manager/api/images/${s3Key}`;
+}
 
 export async function analyticsRouter(app: FastifyInstance): Promise<void> {
   // Todas as rotas admin requerem autenticação
@@ -67,9 +70,9 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: proxyUrl(img.s3Key),
+          url: imageUrl(img.s3Key),
           thumbnailUrl: img.thumbnailS3Key
-            ? proxyUrl(img.thumbnailS3Key)
+            ? imageUrl(img.thumbnailS3Key)
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,
@@ -113,9 +116,9 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         ...session,
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
-          url: proxyUrl(img.s3Key),
+          url: imageUrl(img.s3Key),
           thumbnailUrl: img.thumbnailS3Key
-            ? proxyUrl(img.thumbnailS3Key)
+            ? imageUrl(img.thumbnailS3Key)
             : null,
           sequence: img.sequence,
           isApproved: img.isApproved,

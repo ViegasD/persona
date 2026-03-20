@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect } from 'react';
-import Image from 'next/image';
 import type { AdminImage } from '@/lib/api';
 
 interface LightboxProps {
@@ -57,14 +56,12 @@ export function Lightbox({ images, currentIndex, onClose, onNavigate }: Lightbox
       )}
 
       {/* Image */}
-      <div className="relative w-full h-full max-w-4xl max-h-[85vh] mx-16">
-        <Image
+      <div className="relative w-full h-full max-w-4xl max-h-[85vh] mx-16 flex items-center justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={image.url}
           alt={`Foto ${image.sequence}`}
-          fill
-          className="object-contain"
-          sizes="100vw"
-          priority
+          className="max-w-full max-h-full object-contain"
         />
       </div>
 
