@@ -6,6 +6,7 @@ import { logInboundMessage } from './whatsapp.service.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { downloadAndStoreMedia } from './media.handler.js';
 import { debounceFunnelMessage } from '../ai/debounce.service.js';
+import { env } from '../../shared/config/env.js';
 
 const log = createChildLogger('whatsapp-controller');
 
@@ -66,11 +67,14 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
 
   const phone = phoneFromJid(key.remoteJid);
 
-  // ── Testing filter: only respond to allowed numbers ──
-  const ALLOWED_PHONES = ['+556399941790', '556399941790', '+556399303330', '556399303330'];
-  if (!ALLOWED_PHONES.includes(phone)) {
-    log.debug({ phone }, 'Mensagem ignorada — telefone fora da lista de teste');
-    return;
+  // ── Whitelist filter: when enabled, only respond to listed numbers ──
+  if (env.WHITELIST) {
+    const allowed = env.WHITELIST_NUMBERS.split(',').map((n) => n.trim()).filter(Boolean);
+    const normalized = phone.replace(/\D/g, '');
+    if (!allowed.some((n) => normalized.endsWith(n.replace(/\D/g, '')))) {
+      log.debug({ phone }, 'Mensagem ignorada — telefone fora da whitelist');
+      return;
+    }
   }
 
   const text = extractMessageText(message ?? undefined);

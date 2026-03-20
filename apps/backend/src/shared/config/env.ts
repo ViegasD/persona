@@ -59,6 +59,10 @@ const envSchema = z.object({
 
   // Debounce
   MESSAGE_DEBOUNCE_MS: z.coerce.number().default(12_000),
+
+  // Whitelist (set WHITELIST=true to restrict to WHITELIST_NUMBERS only)
+  WHITELIST: z.coerce.boolean().default(false),
+  WHITELIST_NUMBERS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
