@@ -105,42 +105,33 @@ export async function processImageGeneration(
     await queueTextMessage(session.lead.phone, MESSAGES.generationProgress());
 
     // Polling de todas as tasks até completarem
-    let attempts = 0;
-    const completedUrls: string[] = [];
-    const pendingTasks = new Set(taskIds);
+    const completedUrls = await pollTasks(taskIds);
 
-    while (pendingTasks.size > 0) {
-      if (attempts >= MAX_POLL_ATTEMPTS) {
-        throw new Error(`Timeout aguardando geração (${pendingTasks.size} tasks pendentes)`);
-      }
-
-      await sleep(POLL_INTERVAL_MS);
-      attempts++;
-
-      for (const taskId of [...pendingTasks]) {
-        const status = await kieApi.getTaskStatus(taskId);
-
-        if (status.state === 'success') {
-          completedUrls.push(...status.imageUrls);
-          pendingTasks.delete(taskId);
-        } else if (status.state === 'fail') {
-          log.error({ taskId, error: status.error }, 'Kie.ai task falhou');
-          pendingTasks.delete(taskId);
-        }
-      }
-
-      if (attempts % 12 === 0) {
-        log.debug({ attempts, pending: pendingTasks.size, completed: completedUrls.length }, 'Polling...');
-      }
+    // ── Auto-retry failed tasks (one round) ──
+    const failedCount = pkg.photos - completedUrls.length;
+    if (failedCount > 0 && completedUrls.length > 0) {
+      log.warn({ expected: pkg.photos, got: completedUrls.length, retrying: failedCount }, 'Algumas tasks falharam — retentando');
+      const retryTasks = await Promise.all(
+        Array.from({ length: failedCount }, () =>
+          kieApi.submitGeneration({ prompt, referenceImages: referenceUrls }),
+        ),
+      );
+      const retryIds = retryTasks.map((t) => t.taskId);
+      log.info({ retryIds }, 'Retry tasks enviadas ao Kie.ai');
+      const retryUrls = await pollTasks(retryIds);
+      completedUrls.push(...retryUrls);
     }
 
-    const imageUrls = completedUrls;
-
-    if (imageUrls.length === 0) {
+    const totalFailed = pkg.photos - completedUrls.length;
+    if (completedUrls.length === 0) {
       throw new Error('Nenhuma imagem retornada pelo Kie.ai');
     }
 
-    const imageIds = await processGeneratedImages(imageUrls, generationJobId, leadSessionId);
+    if (totalFailed > 0) {
+      log.warn({ expected: pkg.photos, delivered: completedUrls.length, failed: totalFailed }, 'Geração parcial — algumas imagens não puderam ser geradas');
+    }
+
+    const imageIds = await processGeneratedImages(completedUrls, generationJobId, leadSessionId);
 
     // Atualizar status
     await prisma.generationJob.update({
@@ -151,9 +142,19 @@ export async function processImageGeneration(
       },
     });
 
+    // Store expected count in session metadata so admin panel can show "X of Y"
+    const currentMeta = (session.metadata ?? {}) as Record<string, unknown>;
     await prisma.leadSession.update({
       where: { id: leadSessionId },
-      data: { funnelState: FUNNEL_STATES.GALLERY_SENT },
+      data: {
+        funnelState: FUNNEL_STATES.GALLERY_SENT,
+        metadata: {
+          ...currentMeta,
+          expectedPhotos: pkg.photos,
+          deliveredPhotos: imageIds.length,
+          failedPhotos: totalFailed,
+        },
+      },
     });
 
     await prisma.lead.update({
@@ -194,6 +195,44 @@ export async function processImageGeneration(
     await queueTextMessage(session.lead.phone, MESSAGES.errorOccurred());
     throw error; // BullMQ fará retry
   }
+}
+
+/**
+ * Polls a set of Kie.ai tasks until all complete or fail.
+ * Returns image URLs from successful tasks only.
+ */
+async function pollTasks(taskIds: string[]): Promise<string[]> {
+  let attempts = 0;
+  const completedUrls: string[] = [];
+  const pendingTasks = new Set(taskIds);
+
+  while (pendingTasks.size > 0) {
+    if (attempts >= MAX_POLL_ATTEMPTS) {
+      log.warn({ pending: pendingTasks.size }, 'Polling timeout — treating remaining as failed');
+      break;
+    }
+
+    await sleep(POLL_INTERVAL_MS);
+    attempts++;
+
+    for (const taskId of [...pendingTasks]) {
+      const status = await kieApi.getTaskStatus(taskId);
+
+      if (status.state === 'success') {
+        completedUrls.push(...status.imageUrls);
+        pendingTasks.delete(taskId);
+      } else if (status.state === 'fail') {
+        log.error({ taskId, error: status.error }, 'Kie.ai task falhou');
+        pendingTasks.delete(taskId);
+      }
+    }
+
+    if (attempts % 12 === 0) {
+      log.debug({ attempts, pending: pendingTasks.size, completed: completedUrls.length }, 'Polling...');
+    }
+  }
+
+  return completedUrls;
 }
 
 function sleep(ms: number): Promise<void> {

@@ -164,6 +164,9 @@ function SessionCard({
   onViewImage: (index: number) => void;
 }) {
   const prefs = session.preferences as Record<string, string>;
+  const meta = (session.metadata ?? {}) as Record<string, number>;
+  const expectedPhotos = meta.expectedPhotos ?? 0;
+  const failedPhotos = meta.failedPhotos ?? 0;
   const hasImages = session.generatedImages.length > 0;
   const allApproved = hasImages && session.generatedImages.every((i) => i.isApproved);
   const canApprove =
@@ -173,6 +176,18 @@ function SessionCard({
 
   return (
     <div className="border border-[var(--border)] rounded-lg p-5 mb-4">
+      {/* Partial generation warning */}
+      {failedPhotos > 0 && (
+        <div
+          className="mb-4 p-3 rounded-lg text-sm flex items-center justify-between"
+          style={{ background: 'var(--warning)', color: '#000' }}
+        >
+          <span>
+            ⚠ {session.generatedImages.length} de {expectedPhotos} fotos geradas — {failedPhotos} falharam no Kie.ai
+          </span>
+        </div>
+      )}
+
       {/* Session header */}
       <div className="flex items-center justify-between mb-4">
         <div>

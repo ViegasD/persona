@@ -10,6 +10,13 @@ function adminHeaders(): HeadersInit {
   };
 }
 
+// Helper for POSTs with no body
+function adminPostHeaders(): HeadersInit {
+  return {
+    'X-API-Key': ADMIN_ID,
+  };
+}
+
 // ─── Types ──────────────────────────────────────────────────
 
 export interface AdminImage {
@@ -30,6 +37,7 @@ export interface AdminSession {
   id: string;
   funnelState: string;
   preferences: Record<string, unknown>;
+  metadata: Record<string, unknown>;
   generatedImages: AdminImage[];
   payments: AdminPayment[];
   createdAt: string;
@@ -85,7 +93,7 @@ export async function approveAllImages(
 ): Promise<{ success: boolean; message: string }> {
   const res = await fetch(
     `${API_BASE}/api/admin/sessions/${encodeURIComponent(sessionId)}/approve-all`,
-    { method: 'POST', headers: adminHeaders() },
+    { method: 'POST', headers: adminPostHeaders() },
   );
   return res.json();
 }
