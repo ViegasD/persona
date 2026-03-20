@@ -152,9 +152,9 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         return;
       }
 
-      const alreadyApproved = session.generatedImages.some((img) => img.isApproved);
-      if (alreadyApproved) {
-        reply.send({ success: true, message: 'Imagens já aprovadas' });
+      const allApproved = session.generatedImages.every((img) => img.isApproved);
+      if (allApproved) {
+        reply.send({ success: true, message: 'Todas as imagens já estão aprovadas' });
         return;
       }
 

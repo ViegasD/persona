@@ -14,20 +14,30 @@ export async function GET(
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  const res = await fetch(`${API_BASE}/api/internal/images/${s3Key}`, {
-    headers: { 'x-api-key': API_KEY },
-  });
+  const url = `${API_BASE}/api/internal/images/${s3Key}`;
 
-  if (!res.ok) {
-    return new NextResponse('Image not found', { status: res.status });
+  try {
+    const res = await fetch(url, {
+      headers: { 'x-api-key': API_KEY },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error(`[image-proxy] Backend ${res.status}: ${url} — ${body}`);
+      return new NextResponse(`Upstream error ${res.status}`, { status: 502 });
+    }
+
+    const buffer = await res.arrayBuffer();
+
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': res.headers.get('content-type') ?? 'image/jpeg',
+        'Cache-Control': 'private, max-age=3600',
+      },
+    });
+  } catch (err) {
+    console.error(`[image-proxy] Fetch failed: ${url}`, err);
+    return new NextResponse(`Proxy error: ${String(err)}`, { status: 502 });
   }
-
-  const buffer = await res.arrayBuffer();
-
-  return new NextResponse(buffer, {
-    headers: {
-      'Content-Type': res.headers.get('content-type') ?? 'image/jpeg',
-      'Cache-Control': 'private, max-age=3600',
-    },
-  });
 }

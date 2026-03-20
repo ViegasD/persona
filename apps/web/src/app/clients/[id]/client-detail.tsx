@@ -169,7 +169,7 @@ function SessionCard({
   const canApprove =
     hasImages &&
     !allApproved &&
-    ['GALLERY_SENT', 'GENERATING', 'PAID'].includes(session.funnelState);
+    ['GALLERY_SENT', 'GENERATING', 'PAID', 'APPROVING'].includes(session.funnelState);
 
   return (
     <div className="border border-[var(--border)] rounded-lg p-5 mb-4">

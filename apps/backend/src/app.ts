@@ -36,6 +36,7 @@ export async function buildApp() {
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
+    allowList: (req) => req.url?.startsWith('/api/internal/') ?? false,
   });
 
   // ─── Error Handler ───────────────────────────────────────
