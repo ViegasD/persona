@@ -95,8 +95,10 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
 
     log.info({ agentName, state }, '[BATCH:AGENT] Selected agent');
 
-    // Build context
-    const conversationHistory = await buildConversationContext(leadId);
+    // Build context — for DELIVERED (reengagement), only include messages after
+    // delivery completed so old delivery-phase messages don't corrupt the new agent.
+    const historySince = agentName === 'reengagement' ? session.updatedAt : undefined;
+    const conversationHistory = await buildConversationContext(leadId, 20, historySince);
     log.info(
       { messageCount: conversationHistory.length, roles: conversationHistory.map((m) => m.role) },
       '[BATCH:HISTORY] Conversation history loaded',

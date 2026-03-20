@@ -8,9 +8,10 @@ import type { LlmMessage } from './llm.client.js';
 export async function buildConversationContext(
   leadId: string,
   limit: number = 20,
+  since?: Date,
 ): Promise<LlmMessage[]> {
   const dbMessages = await prisma.conversationMessage.findMany({
-    where: { leadId },
+    where: { leadId, ...(since ? { createdAt: { gte: since } } : {}) },
     orderBy: { createdAt: 'asc' },
     take: limit,
     select: {
