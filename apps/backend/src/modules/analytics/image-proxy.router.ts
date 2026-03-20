@@ -24,11 +24,18 @@ export async function imageProxyRouter(app: FastifyInstance): Promise<void> {
     try {
       const obj = await getS3Object(key);
       const contentType = obj.ContentType ?? 'image/jpeg';
+      const body = await obj.Body?.transformToByteArray();
+
+      if (!body) {
+        log.warn({ key }, '[PROXY] Empty S3 body');
+        reply.status(404).send({ error: 'Image not found' });
+        return;
+      }
 
       reply
         .header('Content-Type', contentType)
         .header('Cache-Control', 'private, max-age=3600')
-        .send(obj.Body);
+        .send(Buffer.from(body));
     } catch (err: any) {
       log.warn({ key, code: err?.name, message: err?.message }, '[PROXY] S3 object not found');
       reply.status(404).send({ error: 'Image not found' });
