@@ -18,8 +18,28 @@ export const PACKAGES: Package[] = [
   { id: 'pkg_6', photos: 6, price: 34.90, label: '6 fotos — R$ 34,90', popular: true },
 ];
 
+/**
+ * Returning-customer (loyalty) packages — ~20% discount applied.
+ * IDs follow the pattern `pkg_ret_N` so payment service resolves correct price.
+ */
+export const RETURNING_PACKAGES: Package[] = [
+  { id: 'pkg_ret_2', photos: 2, price: 9.90,  label: '2 fotos — R$ 9,90',  popular: false },
+  { id: 'pkg_ret_3', photos: 3, price: 13.90, label: '3 fotos — R$ 13,90', popular: false },
+  { id: 'pkg_ret_5', photos: 5, price: 22.90, label: '5 fotos — R$ 22,90', popular: false },
+  { id: 'pkg_ret_6', photos: 6, price: 27.90, label: '6 fotos — R$ 27,90', popular: true },
+];
+
 export function getPackageById(id: string): Package | undefined {
-  return PACKAGES.find((p) => p.id === id);
+  return PACKAGES.find((p) => p.id === id) ?? RETURNING_PACKAGES.find((p) => p.id === id);
+}
+
+/**
+ * Formats the returning-customer packages for display in system prompts.
+ */
+export function formatReturningPackagesForPrompt(): string {
+  return RETURNING_PACKAGES.map((p) =>
+    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
+  ).join('\n');
 }
 
 export function getPackageByPhotos(photos: number): Package | undefined {

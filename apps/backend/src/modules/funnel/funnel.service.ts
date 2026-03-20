@@ -19,6 +19,7 @@ import { engagementAgent } from '../ai/agents/engagement.agent.js';
 import { photoCollectionAgent } from '../ai/agents/photo-collection.agent.js';
 import { paymentAgent } from '../ai/agents/payment.agent.js';
 import { supportAgent } from '../ai/agents/support.agent.js';
+import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 
 const log = createChildLogger('funnel-service');
 
@@ -27,6 +28,7 @@ const AGENTS: Record<string, AgentConfig> = {
   'photo-collection': photoCollectionAgent,
   payment: paymentAgent,
   support: supportAgent,
+  reengagement: reengagementAgent,
 };
 
 /**
@@ -244,13 +246,25 @@ async function handleTransition(
     }
 
     case FUNNEL_STATES.DELIVERED: {
-      if (extractedData.newSession) {
-        log.info('[TRANSITION:DELIVERED→ENGAGING] New session requested');
-        await prisma.leadSession.create({
-          data: { leadId, funnelState: FUNNEL_STATES.ENGAGING },
-        });
-        await trackEvent(leadId, 'NEW_SESSION_REQUESTED');
+      // Reengagement agent collected occasion+package — jump straight to COLLECTING_PHOTOS
+      log.info('[TRANSITION:DELIVERED→COLLECTING_PHOTOS] Returning customer new session');
+      const retPrefs: Record<string, unknown> = {};
+      for (const key of ['packageId', 'occasion', 'occasionDetails']) {
+        if (extractedData[key] !== undefined) retPrefs[key] = extractedData[key];
       }
+      await prisma.leadSession.create({
+        data: {
+          leadId,
+          funnelState: FUNNEL_STATES.COLLECTING_PHOTOS,
+          preferences: retPrefs as any,
+        },
+      });
+      await prisma.lead.update({ where: { id: leadId }, data: { status: 'COLLECTING' } });
+      const askMsg = MESSAGES.askPhotos();
+      await queueTextMessage(phone, askMsg);
+      await logOutboundMessage(leadId, askMsg);
+      await trackEvent(leadId, 'NEW_SESSION_REQUESTED', { returning: true });
+      log.info('[TRANSITION:DELIVERED→COLLECTING_PHOTOS] Done — new session created, askPhotos sent');
       break;
     }
 

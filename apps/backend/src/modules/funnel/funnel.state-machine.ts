@@ -67,8 +67,9 @@ export function getAgentForState(state: FunnelState): string {
     case FUNNEL_STATES.GALLERY_SENT:
     case FUNNEL_STATES.APPROVING:
     case FUNNEL_STATES.DELIVERING:
-    case FUNNEL_STATES.DELIVERED:
       return 'support';
+    case FUNNEL_STATES.DELIVERED:
+      return 'reengagement';
     default:
       return 'engagement';
   }
