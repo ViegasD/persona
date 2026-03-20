@@ -2,6 +2,9 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { createHmac } from 'node:crypto';
 import { getS3Object } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
+import { createChildLogger } from '../../shared/utils/logger.js';
+
+const log = createChildLogger('image-proxy');
 
 /** Sign an S3 key so the proxy can verify it without exposing the master API key. */
 export function signS3Key(s3Key: string): string {
@@ -25,12 +28,14 @@ export async function imageProxyRouter(app: FastifyInstance): Promise<void> {
 
     // Verify HMAC signature
     if (!sig || sig !== signS3Key(key)) {
+      log.warn({ key, sig }, '[PROXY] Invalid signature');
       reply.status(403).send({ error: 'Invalid signature' });
       return;
     }
 
     // Only allow keys under sessions/ prefix
     if (!key.startsWith('sessions/')) {
+      log.warn({ key }, '[PROXY] Forbidden key prefix');
       reply.status(403).send({ error: 'Forbidden' });
       return;
     }
@@ -43,7 +48,8 @@ export async function imageProxyRouter(app: FastifyInstance): Promise<void> {
         .header('Content-Type', contentType)
         .header('Cache-Control', 'private, max-age=3600')
         .send(obj.Body);
-    } catch {
+    } catch (err: any) {
+      log.warn({ key, code: err?.name, message: err?.message }, '[PROXY] S3 object not found');
       reply.status(404).send({ error: 'Image not found' });
     }
   });

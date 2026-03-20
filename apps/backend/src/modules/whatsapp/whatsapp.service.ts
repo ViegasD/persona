@@ -12,14 +12,18 @@ const log = createChildLogger('whatsapp-service');
 export async function queueTextMessage(
   phone: string,
   text: string,
-  delay?: number,
+  options?: { typingDelay?: number; jobDelay?: number },
 ): Promise<void> {
   const queue = getQueue(QUEUE_NAMES.WHATSAPP_SEND);
-  await queue.add('send-text', {
-    phone,
-    type: 'text',
-    payload: { text, delay },
-  } satisfies WhatsAppSendJobData);
+  await queue.add(
+    'send-text',
+    {
+      phone,
+      type: 'text',
+      payload: { text, delay: options?.typingDelay },
+    } satisfies WhatsAppSendJobData,
+    options?.jobDelay ? { delay: options.jobDelay } : undefined,
+  );
 }
 
 /**

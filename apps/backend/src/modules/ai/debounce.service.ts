@@ -18,19 +18,32 @@ export async function debounceFunnelMessage(
 ): Promise<void> {
   const redis = getRedisConnection();
   const debounceKey = `${DEBOUNCE_KEY_PREFIX}${phone}`;
-  const jobId = `batch_${phone}`;
+  const primaryJobId = `batch_${phone}`;
+  let effectiveJobId = primaryJobId;
 
   // Update timestamp in Redis
   await redis.set(debounceKey, Date.now().toString(), 'PX', env.MESSAGE_DEBOUNCE_MS + 5_000);
 
-  // Remove existing delayed job if present
   const queue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
-  const existingJob = await queue.getJob(jobId);
+
+  // Check primary job
+  const existingJob = await queue.getJob(primaryJobId);
   if (existingJob) {
     const state = await existingJob.getState();
     if (state === 'delayed' || state === 'waiting') {
       await existingJob.remove();
       log.debug({ phone }, 'Removed previous debounce job');
+    } else if (state === 'active') {
+      // Batch is currently processing — use alternate jobId to avoid BullMQ dedup
+      effectiveJobId = `${primaryJobId}_next`;
+      const nextJob = await queue.getJob(effectiveJobId);
+      if (nextJob) {
+        const nextState = await nextJob.getState();
+        if (nextState === 'delayed' || nextState === 'waiting') {
+          await nextJob.remove();
+        }
+      }
+      log.info({ phone }, 'Batch active — scheduling follow-up debounce');
     }
   }
 
@@ -39,7 +52,7 @@ export async function debounceFunnelMessage(
     'process-batch',
     { phone, leadId } satisfies MessageBatchJobData,
     {
-      jobId,
+      jobId: effectiveJobId,
       delay: env.MESSAGE_DEBOUNCE_MS,
       removeOnComplete: true,
       removeOnFail: { count: 100 },
@@ -48,5 +61,5 @@ export async function debounceFunnelMessage(
     },
   );
 
-  log.debug({ phone, delayMs: env.MESSAGE_DEBOUNCE_MS }, 'Debounce job scheduled');
+  log.debug({ phone, delayMs: env.MESSAGE_DEBOUNCE_MS, jobId: effectiveJobId }, 'Debounce job scheduled');
 }

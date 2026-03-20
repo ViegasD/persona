@@ -137,10 +137,13 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
       await applyExtractedData(session.id, lead.id, agentResponse.extractedData);
     }
 
-    // Send messages
+    // Send messages with staggered delays to preserve ordering
+    let stagger = 0;
     for (const msg of agentResponse.messages) {
       if (msg.trim()) {
-        await queueTextMessage(phone, msg);
+        await queueTextMessage(phone, msg, stagger > 0 ? { jobDelay: stagger } : undefined);
+        // 1.5–3.5s between bubbles to mimic human typing
+        stagger += 1500 + Math.floor(Math.random() * 2000);
       }
     }
 

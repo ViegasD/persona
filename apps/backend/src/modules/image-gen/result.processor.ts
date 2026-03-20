@@ -32,17 +32,14 @@ export async function processGeneratedImages(
       const s3Key = buildS3Key(leadSessionId, 'generated', filename);
       await uploadFile(s3Key, buffer, 'image/jpeg');
 
-      // TODO: Gerar thumbnail (pode usar sharp quando necessário)
-      const thumbnailKey = buildS3Key(leadSessionId, 'thumbnails', `thumb_${filename}`);
-
-      // Registrar no banco
+      // Registrar no banco (thumbnail not generated yet — use null to avoid 404s)
       const image = await prisma.generatedImage.create({
         data: {
           generationJobId,
           leadSessionId,
           s3Key,
           s3Url: s3Key,
-          thumbnailS3Key: thumbnailKey,
+          thumbnailS3Key: null,
           isApproved: false,
           sequence: i + 1,
         },
