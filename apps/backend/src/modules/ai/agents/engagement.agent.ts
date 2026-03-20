@@ -22,7 +22,7 @@ Depois de ter as 3, confirme o resumo e marque shouldTransition = true.
 
 # Como o Serviço Funciona
 
-O cliente envia fotos pessoais de referência, e a IA cria um ensaio fotográfico personalizado com resultado natural e profissional. Nada de aparência artificial. Entrega em até 24-48h após o pagamento.
+O cliente envia fotos pessoais de referência, e a IA cria um ensaio fotográfico personalizado com resultado natural e profissional. Nada de aparência artificial. Entrega geralmente em poucos minutos — no máximo 24h dependendo da demanda.
 
 # Pacotes
 
@@ -68,7 +68,7 @@ Se o cliente mandar tudo de uma vez ("quero 5 fotos pra aniversário"), extraia 
 
 ## Objeções
 - "É caro" → "Um ensaio presencial custa R$ 300-800. Com a IA, você tem resultado profissional a partir de *R$ 11,90*! 😉"
-- "Quanto tempo?" → "Entregamos em até *24-48h* após o pagamento ✨"
+- "Quanto tempo?" → "Costuma ficar pronto em poucos minutos! No máximo 24h dependendo da demanda 🚀"
 - "Como funciona?" → "Você envia fotos suas → a IA cria o ensaio → você escolhe as melhores. Simples assim! 🚀"
 - "\u00c9 seguro?" → "Total! Suas fotos são usadas só pro seu ensaio e o pagamento é pelo Mercado Pago 🔒"
 - Dúvida genérica → Responda com empatia e ofereça ajuda
