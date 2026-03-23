@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { webhookEventSchema, messageUpsertSchema, extractMessageText, getMediaType, isGroupMessage } from './message.handler.js';
+import { webhookEventSchema, messageUpsertSchema, extractMessageText, getMediaType, isGroupMessage, resolveJid } from './message.handler.js';
 import { phoneFromJid } from '../../shared/utils/phone.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { logInboundMessage } from './whatsapp.service.js';
@@ -59,13 +59,16 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
   const { data } = parsed.data;
   const { key, message, pushName } = data;
 
+  // Resolve o JID canônico (WA Business pode enviar @lid em vez do JID real)
+  const jid = resolveJid(key);
+
   // Ignora mensagens de grupo
-  if (isGroupMessage(key.remoteJid)) return;
+  if (isGroupMessage(jid)) return;
 
   // Ignora mensagens enviadas por nós
   if (key.fromMe) return;
 
-  const phone = phoneFromJid(key.remoteJid);
+  const phone = phoneFromJid(jid);
 
   // ── Whitelist filter: when enabled, only respond to listed numbers ──
   if (env.WHITELIST) {
@@ -111,7 +114,7 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
     if (session) {
       log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:IMAGE] Session found — downloading media...');
       try {
-        const result = await downloadAndStoreMedia(key.remoteJid, key.id, key.fromMe, session.id);
+        const result = await downloadAndStoreMedia(jid, key.id, key.fromMe, session.id);
         log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:IMAGE] ✅ Image downloaded and stored');
       } catch (err) {
         log.error(err, '[WEBHOOK:IMAGE] ❌ Falha ao baixar mídia');

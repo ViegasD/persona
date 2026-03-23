@@ -9,8 +9,10 @@ export const messageUpsertSchema = z.object({
   data: z.object({
     key: z.object({
       remoteJid: z.string(),
+      remoteJidAlt: z.string().optional(),
       fromMe: z.boolean(),
       id: z.string(),
+      addressingMode: z.string().optional(),
     }),
     message: z.object({
       conversation: z.string().optional(),
@@ -79,4 +81,16 @@ export function getMediaType(message: MessageUpsertPayload['data']['message']): 
  */
 export function isGroupMessage(remoteJid: string): boolean {
   return remoteJid.endsWith('@g.us');
+}
+
+/**
+ * Resolve o JID canônico (@s.whatsapp.net) a partir do key do webhook.
+ * WhatsApp Business com LID addressing pode enviar remoteJid como @lid —
+ * nesse caso usa remoteJidAlt que sempre contém o JID real do telefone.
+ */
+export function resolveJid(key: { remoteJid: string; remoteJidAlt?: string }): string {
+  if (key.remoteJid.endsWith('@lid') && key.remoteJidAlt) {
+    return key.remoteJidAlt;
+  }
+  return key.remoteJid;
 }
