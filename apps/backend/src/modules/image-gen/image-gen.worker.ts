@@ -7,6 +7,7 @@ import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { kieApi } from './kie-ai.client.js';
 import { buildPrompt } from './prompt.engine.js';
+import { pickRandomStyleTemplates } from './templates.config.js';
 import { processGeneratedImages } from './result.processor.js';
 import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
@@ -58,9 +59,21 @@ export async function processImageGeneration(
     // Montar prompt
     const prefs = session.preferences as Record<string, string>;
     const pkg = getPackageById(prefs.packageId) ?? PACKAGES[PACKAGES.length - 1];
+    const occasion = prefs.occasion ?? 'casual';
+    const isCoupleShot = occasion === 'casal';
+
+    // Buscar style templates do S3 (uma vez por job)
+    const styleTemplateUrls = await pickRandomStyleTemplates(occasion, pkg.photos);
+    const hasStyleTemplate = styleTemplateUrls.length > 0;
+
     const { prompt, negativePrompt } = buildPrompt({
-      occasion: prefs.occasion ?? 'casual',
+      occasion,
       occasionDetails: prefs.occasionDetails,
+      ageAtBirthday: prefs.ageAtBirthday,
+      profession: prefs.profession,
+      graduationCourse: prefs.graduationCourse,
+      hasStyleTemplate,
+      isCoupleShot,
     });
 
     // Atualizar prompt no job
@@ -75,12 +88,15 @@ export async function processImageGeneration(
     );
 
     // Enviar para Kie.ai — 1 task por imagem (Nano Banana 2 gera 1 por chamada)
-    const taskPromises = Array.from({ length: pkg.photos }, () =>
-      kieApi.submitGeneration({
+    // Cada task recebe as fotos de referência + um template de estilo como última imagem
+    const taskPromises = Array.from({ length: pkg.photos }, (_, i) => {
+      const styleUrl = styleTemplateUrls[i];
+      const imagesForTask = styleUrl ? [...referenceUrls, styleUrl] : referenceUrls;
+      return kieApi.submitGeneration({
         prompt,
-        referenceImages: referenceUrls,
-      }),
-    );
+        referenceImages: imagesForTask,
+      });
+    });
     const kieTasks = await Promise.all(taskPromises);
     const taskIds = kieTasks.map((t) => t.taskId);
 
@@ -112,9 +128,11 @@ export async function processImageGeneration(
     if (failedCount > 0 && completedUrls.length > 0) {
       log.warn({ expected: pkg.photos, got: completedUrls.length, retrying: failedCount }, 'Algumas tasks falharam — retentando');
       const retryTasks = await Promise.all(
-        Array.from({ length: failedCount }, () =>
-          kieApi.submitGeneration({ prompt, referenceImages: referenceUrls }),
-        ),
+        Array.from({ length: failedCount }, (_, i) => {
+          const styleUrl = styleTemplateUrls[completedUrls.length + i];
+          const imagesForTask = styleUrl ? [...referenceUrls, styleUrl] : referenceUrls;
+          return kieApi.submitGeneration({ prompt, referenceImages: imagesForTask });
+        }),
       );
       const retryIds = retryTasks.map((t) => t.taskId);
       log.info({ retryIds }, 'Retry tasks enviadas ao Kie.ai');

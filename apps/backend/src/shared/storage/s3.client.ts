@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../config/env.js';
@@ -71,6 +72,35 @@ export async function deleteFile(key: string): Promise<void> {
     }),
   );
   log.debug({ key }, 'Arquivo removido do S3');
+}
+
+/**
+ * Lista todas as chaves S3 sob um prefixo (suporta paginação automática).
+ * Retorna array de chaves (strings), excluindo prefixos de subpasta.
+ */
+export async function listObjects(prefix: string): Promise<string[]> {
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const res = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: env.S3_BUCKET,
+        Prefix: prefix.endsWith('/') ? prefix : `${prefix}/`,
+        ContinuationToken: continuationToken,
+      }),
+    );
+
+    for (const obj of res.Contents ?? []) {
+      if (obj.Key && obj.Key !== prefix) {
+        keys.push(obj.Key);
+      }
+    }
+
+    continuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return keys;
 }
 
 /**
