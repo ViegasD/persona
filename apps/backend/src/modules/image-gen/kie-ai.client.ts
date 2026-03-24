@@ -95,7 +95,7 @@ export class KieAiClient {
         prompt: params.prompt,
         image_input: params.referenceImages,
         aspect_ratio: params.aspectRatio ?? '1:1',
-        resolution: params.resolution ?? '1K',
+        resolution: params.resolution ?? '2K',
         output_format: params.outputFormat ?? 'png',
       },
     });

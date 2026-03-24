@@ -224,7 +224,7 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
           prompt: buildPrompt({
             occasion: prefs.occasion ?? 'casual',
             occasionDetails: prefs.occasionDetails,
-          }).prompt,
+          }),
           status: 'QUEUED',
         },
       });
