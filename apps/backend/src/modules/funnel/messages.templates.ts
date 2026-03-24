@@ -32,13 +32,9 @@ export const MESSAGES = {
   pixPayment: (amount: number) =>
     `💰 *Pagamento via Pix*\n\n` +
     `Valor: *R$ ${amount.toFixed(2).replace('.', ',')}*\n\n` +
-    `Escaneie o QR Code acima no app do seu banco 📱\n\n` +
-    `✅ Confirmação instantânea — seu ensaio começa assim que pagar!`,
+    `Escaneie o QR Code acima no app do seu banco 📱`,
 
-  pixCopyPaste: (code: string) =>
-    `📋 Se preferir, copie o código Pix abaixo:\n\n` +
-    `${code}\n\n` +
-    `Cole no app do seu banco em *"Pix Copia e Cola"* 😉`,
+  pixCopyPaste: (code: string) => code,
 
   paymentConfirmed: (name: string) =>
     `✅ Pagamento confirmado, ${name}!\n\n` +

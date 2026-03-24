@@ -219,7 +219,7 @@ async function handleTransition(
 
       await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.AWAITING_PAYMENT);
 
-      // Send QR code image with caption
+      // 1. QR code image with caption
       const caption = MESSAGES.pixPayment(amount);
       await queueMediaMessage(phone, qrImageUrl, {
         mediatype: 'image',
@@ -228,9 +228,9 @@ async function handleTransition(
       });
       await logOutboundMessage(leadId, `[QR Code Pix] ${caption}`, 'image');
 
-      // Send copy-paste code as text message
+      // 2. Raw PIX code alone — user can long-press to copy
       const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-      await queueTextMessage(phone, copyPasteMsg);
+      await queueTextMessage(phone, copyPasteMsg, { jobDelay: 1500 });
       await logOutboundMessage(leadId, copyPasteMsg);
 
       await trackEvent(leadId, 'PIX_QR_SENT');
