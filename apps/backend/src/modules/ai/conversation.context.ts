@@ -12,7 +12,7 @@ export async function buildConversationContext(
 ): Promise<LlmMessage[]> {
   const dbMessages = await prisma.conversationMessage.findMany({
     where: { leadId, ...(since ? { createdAt: { gte: since } } : {}) },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
     take: limit,
     select: {
       direction: true,
@@ -21,7 +21,8 @@ export async function buildConversationContext(
     },
   });
 
-  return dbMessages.map((m) => ({
+  // Reverse so messages arrive in chronological order for the LLM
+  return dbMessages.reverse().map((m) => ({
     role: m.direction === 'INBOUND' ? 'user' as const : 'assistant' as const,
     content: m.messageType === 'text'
       ? m.content
