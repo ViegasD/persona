@@ -1,4 +1,6 @@
-FROM local/node:20-alpine
+# Using ECR Public mirror to avoid Docker Hub rate limits in BuildKit/EasyPanel builds.
+# ECR Public is unauthenticated and not subject to Docker Hub pull limits.
+FROM public.ecr.aws/docker/library/node:20-alpine
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 WORKDIR /app
