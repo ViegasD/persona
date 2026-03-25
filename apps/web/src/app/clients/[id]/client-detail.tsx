@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getUTCFullYear()}`;
+}
 import { useRouter } from 'next/navigation';
 import type { AdminLead, AdminSession, AdminImage } from '@/lib/api';
 import { approveAllAction, regenerateAction, generateSessionAction } from '@/lib/actions';
@@ -122,7 +129,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
           </div>
           <div>
             <span className="text-[var(--muted-foreground)]">Desde: </span>
-            <span>{new Date(lead.createdAt).toLocaleDateString('pt-BR')}</span>
+            <span>{fmtDate(lead.createdAt)}</span>
           </div>
           <div>
             <span className="text-[var(--muted-foreground)]">Sessões: </span>
@@ -234,7 +241,7 @@ function SessionCard({
           <p className="text-sm text-[var(--muted-foreground)] mt-1">
             {prefs.occasion && `Ocasião: ${prefs.occasion}`}
             {prefs.packageId && ` · Pacote: ${prefs.packageId}`}
-            {` · ${new Date(session.createdAt).toLocaleDateString('pt-BR')}`}
+            {` · ${fmtDate(session.createdAt)}`}
           </p>
         </div>
 

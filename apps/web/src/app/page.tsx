@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { fetchLeads } from '@/lib/api';
+import { AutoRefresh } from '@/components/auto-refresh';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   NEW: { label: 'Novo', color: 'var(--muted-foreground)' },
@@ -39,6 +40,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Clientes</h2>
+        <AutoRefresh />
+      </div>
+
       {/* Filters */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <span className="text-sm font-medium text-[var(--muted-foreground)]">Status:</span>
