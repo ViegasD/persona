@@ -1,20 +1,19 @@
 import type { Job } from 'bullmq';
+import { UnrecoverableError } from 'bullmq';
 import type { ImageGenerationJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
 import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
-import { kieApi } from './kie-ai.client.js';
+import { kieApi, KieApiError } from './kie-ai.client.js';
 import { buildPromptVariations } from './prompt.engine.js';
 import { pickRandomStyleTemplates } from './templates.config.js';
 import { processGeneratedImages } from './result.processor.js';
 import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
-
-const log = createChildLogger('image-gen-worker');
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';const log = createChildLogger('image-gen-worker');
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_ATTEMPTS = 120; // 10 minutos máximo
 
@@ -191,18 +190,19 @@ export async function processImageGeneration(
 
     log.info({ leadSessionId, imageCount: imageIds.length }, 'Geração concluída com sucesso');
   } catch (error) {
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
     log.error({ generationJobId, error }, 'Falha na geração');
 
     await prisma.generationJob.update({
       where: { id: generationJobId },
       data: {
         status: 'FAILED',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorMessage: errMsg,
         completedAt: new Date(),
       },
     });
 
-    // Reverter estado para PAID para permitir nova tentativa
+    // Reverter estado para PAID — lead fica em espera, admin pode re-disparar geração
     await prisma.leadSession.update({
       where: { id: leadSessionId },
       data: { funnelState: FUNNEL_STATES.PAID },
@@ -212,8 +212,17 @@ export async function processImageGeneration(
       data: { status: 'PAID' },
     }).catch(() => {});
 
-    await queueTextMessage(session.lead.phone, MESSAGES.errorOccurred());
-    throw error; // BullMQ fará retry
+    // NUNCA avisar o cliente sobre problemas internos de geração.
+    // O admin vê o job com status FAILED e pode re-disparar pelo painel.
+
+    // Para erros de créditos insuficientes (402), parar retries imediatamente —
+    // não adianta tentar de novo sem recarregar créditos.
+    if (error instanceof KieApiError && error.code === 402) {
+      log.warn({ generationJobId }, '[KIE] Créditos insuficientes — job marcado sem retry, admin deve recarregar e re-disparar');
+      throw new UnrecoverableError(errMsg);
+    }
+
+    throw error; // Para outros erros, BullMQ pode tentar novamente
   }
 }
 

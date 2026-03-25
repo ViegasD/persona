@@ -243,4 +243,59 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       reply.send({ success: true, generationJobId: genJob.id });
     },
   );
+
+  /**
+   * POST /api/admin/sessions/:sessionId/generate
+   * Dispara manualmente a geração de imagens para um lead cujo job falhou.
+   * Útil quando a geração falhou por créditos insuficientes (402) ou outro erro de infra —
+   * o admin recarrega os créditos e clica para re-disparar.
+   */
+  app.post(
+    '/sessions/:sessionId/generate',
+    async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
+      const { sessionId } = request.params;
+
+      const session = await prisma.leadSession.findUnique({
+        where: { id: sessionId },
+        include: { lead: true },
+      });
+
+      if (!session) {
+        reply.status(404).send({ error: 'Sessão não encontrada' });
+        return;
+      }
+
+      const payment = await prisma.payment.findFirst({
+        where: { leadSessionId: sessionId, status: 'APPROVED' },
+      });
+
+      if (!payment) {
+        reply.status(400).send({ error: 'Nenhum pagamento aprovado para esta sessão' });
+        return;
+      }
+
+      const prefs = session.preferences as Record<string, string>;
+
+      const genJob = await prisma.generationJob.create({
+        data: {
+          leadSessionId: session.id,
+          prompt: `[manual-retry] occasion:${prefs.occasion ?? 'casual'}`,
+          status: 'QUEUED',
+        },
+      });
+
+      const queue = getQueue(QUEUE_NAMES.IMAGE_GENERATION);
+      await queue.add('manual-generate', {
+        leadSessionId: session.id,
+        generationJobId: genJob.id,
+      } satisfies ImageGenerationJobData);
+
+      await trackEvent(session.leadId, 'GENERATION_MANUAL_RETRY', {
+        generationJobId: genJob.id,
+        triggeredBy: 'admin',
+      });
+
+      reply.send({ success: true, generationJobId: genJob.id });
+    },
+  );
 }

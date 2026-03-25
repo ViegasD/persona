@@ -3,6 +3,25 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('kie-ai-client');
 
+// ─── Custom error ───────────────────────────────────────
+
+/**
+ * Thrown when Kie.ai returns a known API error code.
+ * Use `error.code` to distinguish recoverable vs unrecoverable failures.
+ *   402 = insufficient credits (unrecoverable until admin tops up)
+ *   429 = rate limited (transient, retry)
+ *   5xx = server error (transient, retry)
+ */
+export class KieApiError extends Error {
+  constructor(
+    public readonly code: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'KieApiError';
+  }
+}
+
 // ─── Request types ──────────────────────────────────────
 
 interface KieGenerateRequest {
@@ -79,7 +98,10 @@ export class KieAiClient {
 
     if (!response.ok || (json.code && json.code !== 200)) {
       log.error({ status: response.status, code: json.code, msg: json.msg, url }, 'Kie.ai API error');
-      throw new Error(`Kie.ai error ${json.code ?? response.status}: ${json.msg ?? 'unknown'}`);
+      throw new KieApiError(
+        json.code ?? response.status,
+        `Kie.ai error ${json.code ?? response.status}: ${json.msg ?? 'unknown'}`,
+      );
     }
 
     return json;
