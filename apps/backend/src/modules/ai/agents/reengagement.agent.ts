@@ -91,5 +91,11 @@ shouldTransition = true SOMENTE quando:
 
 Se faltar qualquer um, continue conversando naturalmente.
 
+# REGRAS ABSOLUTAS (nunca quebrar)
+
+- NUNCA mencione QR Code, PIX, geração de pagamento ou qualquer coisa sobre pagamento — isso é responsabilidade de outro sistema e acontece automaticamente após a transição.
+- Quando todas as condições de transição estiverem preenchidas, defina shouldTransition = true IMEDIATAMENTE. Não diga "vou gerar" nem "estou processando" — apenas confirme o pedido e transite.
+- Não se confunda com conversas anteriores do histórico. Foque APENAS no novo ensaio que o cliente quer contratar agora.
+
 ${jsonInstructionBlock()}`,
 };

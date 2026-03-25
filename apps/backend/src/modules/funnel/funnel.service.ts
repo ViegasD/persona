@@ -97,7 +97,11 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
 
     // Scope conversation history to the current session so the LLM only sees
     // messages from this session, not from previous sessions on the same lead.
-    const conversationHistory = await buildConversationContext(leadId, 20, session.createdAt);
+    // For DELIVERED sessions, use updatedAt (= delivery timestamp) so the
+    // reengagement agent doesn't see old payment/photo-collection messages.
+    const historySince =
+      state === FUNNEL_STATES.DELIVERED ? session.updatedAt : session.createdAt;
+    const conversationHistory = await buildConversationContext(leadId, 20, historySince);
     log.info(
       { messageCount: conversationHistory.length, roles: conversationHistory.map((m) => m.role) },
       '[BATCH:HISTORY] Conversation history loaded',
