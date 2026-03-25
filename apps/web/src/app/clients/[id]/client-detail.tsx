@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminLead, AdminSession, AdminImage } from '@/lib/api';
-import { approveAllAction, regenerateAction } from '@/lib/actions';
+import { approveAllAction, regenerateAction, generateSessionAction } from '@/lib/actions';
 import { ImageCard } from '@/components/image-card';
 import { Lightbox } from '@/components/lightbox';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
   const router = useRouter();
   const [approving, setApproving] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState<string | null>(null);
+  const [generating, setGenerating] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ images: AdminImage[]; index: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +62,26 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
         setError('Erro ao regenerar imagem.');
       } finally {
         setRegenerating(null);
+      }
+    },
+    [router],
+  );
+
+  const handleGenerate = useCallback(
+    async (sessionId: string) => {
+      setGenerating(sessionId);
+      setError(null);
+      try {
+        const result = await generateSessionAction(sessionId);
+        if (!result.success) {
+          setError('Erro ao disparar geração.');
+        } else {
+          router.refresh();
+        }
+      } catch {
+        setError('Erro ao disparar geração.');
+      } finally {
+        setGenerating(null);
       }
     },
     [router],
@@ -123,8 +144,10 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
           session={session}
           approving={approving === session.id}
           regenerating={regenerating}
+          generating={generating === session.id}
           onApproveAll={() => handleApproveAll(session.id)}
           onRegenerate={handleRegenerate}
+          onGenerate={() => handleGenerate(session.id)}
           onViewImage={(index) => openLightbox(session.generatedImages, index)}
         />
       ))}
@@ -152,15 +175,19 @@ function SessionCard({
   session,
   approving,
   regenerating,
+  generating,
   onApproveAll,
   onRegenerate,
+  onGenerate,
   onViewImage,
 }: {
   session: AdminSession;
   approving: boolean;
   regenerating: string | null;
+  generating: boolean;
   onApproveAll: () => void;
   onRegenerate: (imageId: string) => void;
+  onGenerate: () => void;
   onViewImage: (index: number) => void;
 }) {
   const prefs = session.preferences as Record<string, string>;
@@ -173,6 +200,7 @@ function SessionCard({
     hasImages &&
     !allApproved &&
     ['GALLERY_SENT', 'GENERATING', 'PAID', 'APPROVING'].includes(session.funnelState);
+  const canGenerate = !hasImages && session.funnelState === 'PAID';
 
   return (
     <div className="border border-[var(--border)] rounded-lg p-5 mb-4">
@@ -210,16 +238,29 @@ function SessionCard({
           </p>
         </div>
 
-        {canApprove && (
-          <button
-            onClick={onApproveAll}
-            disabled={approving}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
-            style={{ background: 'var(--success)', color: 'white' }}
-          >
-            {approving ? 'Aprovando...' : `✓ Aprovar todas (${session.generatedImages.length})`}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {canGenerate && (
+            <button
+              onClick={onGenerate}
+              disabled={generating}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
+              style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+            >
+              {generating ? 'Disparando...' : '▶ Gerar imagens'}
+            </button>
+          )}
+
+          {canApprove && (
+            <button
+              onClick={onApproveAll}
+              disabled={approving}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
+              style={{ background: 'var(--success)', color: 'white' }}
+            >
+              {approving ? 'Aprovando...' : `✓ Aprovar todas (${session.generatedImages.length})`}
+            </button>
+          )}
+        </div>
 
         {allApproved && (
           <span className="text-sm font-medium" style={{ color: 'var(--success)' }}>

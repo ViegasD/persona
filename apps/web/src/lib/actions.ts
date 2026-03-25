@@ -1,6 +1,6 @@
 'use server';
 
-import { approveAllImages, regenerateImage } from '@/lib/api';
+import { approveAllImages, regenerateImage, generateSession } from '@/lib/api';
 
 export async function approveAllAction(
   sessionId: string,
@@ -12,4 +12,10 @@ export async function regenerateAction(
   imageId: string,
 ): Promise<{ success: boolean; generationJobId?: string }> {
   return regenerateImage(imageId);
+}
+
+export async function generateSessionAction(
+  sessionId: string,
+): Promise<{ success: boolean; generationJobId?: string }> {
+  return generateSession(sessionId);
 }

@@ -107,3 +107,13 @@ export async function regenerateImage(
   );
   return res.json();
 }
+
+export async function generateSession(
+  sessionId: string,
+): Promise<{ success: boolean; generationJobId?: string }> {
+  const res = await fetch(
+    `${API_BASE}/api/admin/sessions/${encodeURIComponent(sessionId)}/generate`,
+    { method: 'POST', headers: adminPostHeaders() },
+  );
+  return res.json();
+}
