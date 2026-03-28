@@ -122,7 +122,7 @@ export async function handleCloudWebhook(
         const lead = await prisma.lead.upsert({
           where: { phone },
           create: { phone, name: pushName, source: 'whatsapp-cloud' },
-          update: { name: pushName ?? undefined },
+          update: { name: pushName ?? undefined, source: 'whatsapp-cloud' },
         });
 
         log.info({ leadId: lead.id, phone }, '[CLOUD WEBHOOK] Lead upserted');
