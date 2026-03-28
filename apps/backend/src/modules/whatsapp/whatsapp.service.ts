@@ -1,7 +1,9 @@
 import { evolutionApi } from './evolution-api.client.js';
+import { getCloudApi } from './whatsapp-cloud-api.client.js';
 import { getQueue, QUEUE_NAMES, type WhatsAppSendJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
+import { env } from '../../shared/config/env.js';
 import type { Job } from 'bullmq';
 
 const log = createChildLogger('whatsapp-service');
@@ -96,6 +98,58 @@ export async function processWhatsAppSend(job: Job<WhatsAppSendJobData>): Promis
   const { phone, type, payload } = job.data;
   log.debug({ phone, type, jobId: job.id }, 'Processando envio WhatsApp');
 
+  // Detect channel: if lead came from Cloud API, route outbound there too
+  const useCloud = await isCloudLead(phone);
+
+  if (useCloud) {
+    await processCloudSend(phone, type, payload);
+  } else {
+    await processEvolutionSend(phone, type, payload);
+  }
+}
+
+async function isCloudLead(phone: string): Promise<boolean> {
+  if (!env.WA_CLOUD_API_TOKEN || !env.WA_PHONE_NUMBER_ID) return false;
+  const lead = await prisma.lead.findFirst({
+    where: { phone },
+    select: { source: true },
+  });
+  return lead?.source === 'whatsapp-cloud';
+}
+
+async function processCloudSend(
+  phone: string,
+  type: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const api = getCloudApi();
+
+  switch (type) {
+    case 'text': {
+      const { text } = payload as { text: string };
+      await api.sendText(phone, text);
+      break;
+    }
+    case 'media': {
+      const { caption } = payload as { caption?: string };
+      log.warn({ phone }, 'Cloud API media sending not fully supported — sending caption as text');
+      if (caption) {
+        await api.sendText(phone, caption);
+      }
+      break;
+    }
+    case 'reaction': {
+      log.warn({ phone }, 'Cloud API does not support reactions — skipping');
+      break;
+    }
+  }
+}
+
+async function processEvolutionSend(
+  phone: string,
+  type: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
   switch (type) {
     case 'text': {
       const { text, delay } = payload as { text: string; delay?: number };

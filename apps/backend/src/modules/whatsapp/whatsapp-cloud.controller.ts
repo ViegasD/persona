@@ -1,0 +1,168 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { FastifyRequest, FastifyReply } from 'fastify';
+import { createChildLogger } from '../../shared/utils/logger.js';
+import { logInboundMessage } from './whatsapp.service.js';
+import { prisma } from '../../shared/database/prisma.js';
+import { debounceFunnelMessage } from '../ai/debounce.service.js';
+import { env } from '../../shared/config/env.js';
+import { getCloudApi } from './whatsapp-cloud-api.client.js';
+
+const log = createChildLogger('whatsapp-cloud-controller');
+
+// ─── Webhook Verification (GET) ────────────────────────────
+
+export async function handleCloudVerification(
+  request: FastifyRequest<{
+    Querystring: {
+      'hub.mode'?: string;
+      'hub.verify_token'?: string;
+      'hub.challenge'?: string;
+    };
+  }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const mode = request.query['hub.mode'];
+  const token = request.query['hub.verify_token'];
+  const challenge = request.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === env.WA_VERIFY_TOKEN) {
+    log.info('Webhook verification succeeded');
+    reply.type('text/plain').status(200).send(challenge);
+    return;
+  }
+
+  log.warn({ mode, tokenMatch: token === env.WA_VERIFY_TOKEN }, 'Webhook verification failed');
+  reply.status(403).send({ error: 'Forbidden' });
+}
+
+// ─── Webhook Event Handler (POST) ──────────────────────────
+
+export async function handleCloudWebhook(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  // Respond 200 immediately (Meta requirement)
+  reply.status(200).send({ received: true });
+
+  try {
+    // HMAC signature verification
+    if (env.WA_APP_SECRET) {
+      const signature = request.headers['x-hub-signature-256'] as string | undefined;
+      const rawBody = (request as any).rawBody as Buffer | undefined;
+
+      if (!signature || !rawBody) {
+        log.warn('Missing signature or raw body — rejecting');
+        return;
+      }
+
+      const expected = 'sha256=' + createHmac('sha256', env.WA_APP_SECRET)
+        .update(rawBody)
+        .digest('hex');
+
+      const sigBuf = Buffer.from(signature);
+      const expBuf = Buffer.from(expected);
+
+      if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+        log.warn('Invalid HMAC signature — rejecting');
+        return;
+      }
+    }
+
+    const body = request.body as CloudWebhookPayload;
+
+    if (body.object !== 'whatsapp_business_account') {
+      log.debug({ object: body.object }, 'Ignoring non-WhatsApp payload');
+      return;
+    }
+
+    for (const entry of body.entry ?? []) {
+      for (const change of entry.changes ?? []) {
+        if (change.field !== 'messages') continue;
+
+        const value = change.value;
+        const messages = value?.messages;
+        if (!messages || messages.length === 0) continue;
+
+        const msg = messages[0];
+        const phone = msg.from; // E.164 without '+', e.g. "5511999999999"
+        const messageId = msg.id;
+        const pushName = value.contacts?.[0]?.profile?.name ?? null;
+        const text = msg.text?.body ?? null;
+        const mediaType = msg.type; // 'text', 'image', 'audio', 'document', 'video', etc.
+
+        // Whitelist filter
+        if (env.WHITELIST) {
+          const allowed = env.WHITELIST_NUMBERS.split(',').map((n) => n.trim()).filter(Boolean);
+          const normalized = phone.replace(/\D/g, '');
+          if (!allowed.some((n) => normalized.endsWith(n.replace(/\D/g, '')))) {
+            log.debug({ phone }, 'Mensagem ignorada — telefone fora da whitelist');
+            continue;
+          }
+        }
+
+        log.info(
+          { phone, text: text?.substring(0, 80), mediaType, pushName, messageId },
+          '[CLOUD WEBHOOK] Mensagem recebida',
+        );
+
+        // Upsert lead
+        const lead = await prisma.lead.upsert({
+          where: { phone },
+          create: { phone, name: pushName, source: 'whatsapp-cloud' },
+          update: { name: pushName ?? undefined },
+        });
+
+        log.info({ leadId: lead.id, phone }, '[CLOUD WEBHOOK] Lead upserted');
+
+        // Log inbound message
+        await logInboundMessage(
+          lead.id,
+          text ?? `[${mediaType}]`,
+          mediaType,
+          messageId,
+        );
+
+        // Mark as read (fire-and-forget)
+        if (env.WA_CLOUD_API_TOKEN && env.WA_PHONE_NUMBER_ID) {
+          getCloudApi().markRead(messageId).catch((err) => {
+            log.warn(err, 'Failed to mark message as read');
+          });
+        }
+
+        // Route through funnel debounce
+        await debounceFunnelMessage(phone, lead.id);
+      }
+    }
+  } catch (error) {
+    log.error(error, 'Erro ao processar Cloud API webhook');
+  }
+}
+
+// ─── Types ──────────────────────────────────────────────────
+
+interface CloudWebhookPayload {
+  object: string;
+  entry?: Array<{
+    id: string;
+    changes?: Array<{
+      field: string;
+      value: {
+        messaging_product?: string;
+        metadata?: { phone_number_id: string; display_phone_number: string };
+        contacts?: Array<{ profile: { name: string }; wa_id: string }>;
+        messages?: Array<{
+          from: string;
+          id: string;
+          timestamp: string;
+          type: string;
+          text?: { body: string };
+          image?: { id: string; mime_type: string; sha256: string };
+          audio?: { id: string; mime_type: string };
+          document?: { id: string; mime_type: string; filename: string };
+          video?: { id: string; mime_type: string };
+        }>;
+        statuses?: Array<unknown>;
+      };
+    }>;
+  }>;
+}

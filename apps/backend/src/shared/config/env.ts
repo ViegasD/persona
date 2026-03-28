@@ -60,6 +60,12 @@ const envSchema = z.object({
   // Debounce
   MESSAGE_DEBOUNCE_MS: z.coerce.number().default(12_000),
 
+  // WhatsApp Cloud API (Meta official — optional, parallel to Evolution)
+  WA_CLOUD_API_TOKEN: z.string().optional(),
+  WA_PHONE_NUMBER_ID: z.string().optional(),
+  WA_VERIFY_TOKEN: z.string().optional(),
+  WA_APP_SECRET: z.string().optional(),
+
   // Whitelist (set WHITELIST=true to restrict to WHITELIST_NUMBERS only)
   WHITELIST: z.string().default('false').transform((v) => v === 'true' || v === '1'),
   WHITELIST_NUMBERS: z.string().default(''),

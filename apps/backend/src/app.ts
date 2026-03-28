@@ -8,6 +8,7 @@ import { createChildLogger, getRecentLogs } from './shared/utils/logger.js';
 
 // Module routers
 import { whatsappRouter } from './modules/whatsapp/whatsapp.router.js';
+import { whatsappCloudRouter } from './modules/whatsapp/whatsapp-cloud.router.js';
 import { galleryRouter } from './modules/gallery/gallery.router.js';
 import { paymentRouter } from './modules/payment/payment.router.js';
 import { analyticsRouter } from './modules/analytics/analytics.router.js';
@@ -57,6 +58,7 @@ export async function buildApp() {
 
   // ─── Module Routes ───────────────────────────────────────
   await app.register(whatsappRouter, { prefix: '/api/webhooks' });
+  await app.register(whatsappCloudRouter, { prefix: '/api/webhooks' });
   await app.register(paymentRouter, { prefix: '/api' });
   await app.register(galleryRouter, { prefix: '/api/gallery' });
   await app.register(analyticsRouter, { prefix: '/api/admin' });
