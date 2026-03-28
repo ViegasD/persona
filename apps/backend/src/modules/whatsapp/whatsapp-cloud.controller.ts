@@ -52,6 +52,8 @@ export async function handleCloudWebhook(
       const signature = request.headers['x-hub-signature-256'] as string | undefined;
       const rawBody = (request as any).rawBody as Buffer | undefined;
 
+      log.info({ hasSignature: !!signature, hasRawBody: !!rawBody, rawBodyLen: rawBody?.length }, '[CLOUD WEBHOOK] HMAC check');
+
       if (!signature || !rawBody) {
         log.warn('Missing signature or raw body — rejecting');
         return;
@@ -65,15 +67,21 @@ export async function handleCloudWebhook(
       const expBuf = Buffer.from(expected);
 
       if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
-        log.warn('Invalid HMAC signature — rejecting');
+        log.warn({ receivedLen: sigBuf.length, expectedLen: expBuf.length }, 'Invalid HMAC signature — rejecting');
         return;
       }
+
+      log.info('[CLOUD WEBHOOK] HMAC válido');
+    } else {
+      log.info('[CLOUD WEBHOOK] WA_APP_SECRET não configurado — pulando HMAC');
     }
 
     const body = request.body as CloudWebhookPayload;
 
+    log.info({ object: body?.object, hasEntry: !!body?.entry, entryLen: body?.entry?.length }, '[CLOUD WEBHOOK] Payload parsed');
+
     if (body.object !== 'whatsapp_business_account') {
-      log.info({ object: body.object, body: JSON.stringify(body).substring(0, 300) }, '[CLOUD WEBHOOK] Payload ignorado — object não é whatsapp_business_account (pode ser teste do dashboard Meta)');
+      log.info({ object: body.object, body: JSON.stringify(body).substring(0, 500) }, '[CLOUD WEBHOOK] Payload ignorado — object não é whatsapp_business_account');
       return;
     }
 
