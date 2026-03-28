@@ -41,6 +41,8 @@ export async function handleCloudWebhook(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  log.info({ method: request.method, url: request.url }, '[CLOUD WEBHOOK] POST recebido');
+
   // Respond 200 immediately (Meta requirement)
   reply.status(200).send({ received: true });
 
@@ -71,7 +73,7 @@ export async function handleCloudWebhook(
     const body = request.body as CloudWebhookPayload;
 
     if (body.object !== 'whatsapp_business_account') {
-      log.debug({ object: body.object }, 'Ignoring non-WhatsApp payload');
+      log.info({ object: body.object, body: JSON.stringify(body).substring(0, 300) }, '[CLOUD WEBHOOK] Payload ignorado — object não é whatsapp_business_account (pode ser teste do dashboard Meta)');
       return;
     }
 
@@ -81,7 +83,10 @@ export async function handleCloudWebhook(
 
         const value = change.value;
         const messages = value?.messages;
-        if (!messages || messages.length === 0) continue;
+        if (!messages || messages.length === 0) {
+          log.info({ field: change.field }, '[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando');
+          continue;
+        }
 
         const msg = messages[0];
         const phone = msg.from; // E.164 without '+', e.g. "5511999999999"
