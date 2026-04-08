@@ -33,12 +33,13 @@ export async function processGeneratedImages(
       await uploadFile(s3Key, buffer, 'image/jpeg');
 
       // Registrar no banco (thumbnail not generated yet — use null to avoid 404s)
+      // s3Url stores the original Kie.ai CDN URL (HTTPS) — used for Cloud API delivery
       const image = await prisma.generatedImage.create({
         data: {
           generationJobId,
           leadSessionId,
           s3Key,
-          s3Url: s3Key,
+          s3Url: url,
           thumbnailS3Key: null,
           isApproved: false,
           sequence: i + 1,

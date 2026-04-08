@@ -60,65 +60,20 @@ export class WhatsAppCloudApiClient {
   }
 
   /**
-   * Upload media to Meta and send the image by media ID.
-   * Works around MinIO being HTTP-only (Meta requires HTTPS for image.link).
+   * Send an image via image.link (URL must be HTTPS and under 5 MB).
+   * Kie.ai CDN URLs are HTTPS — use them directly.
    */
   async sendImage(to: string, imageUrl: string, caption?: string): Promise<void> {
-    log.debug({ to, imageUrl, caption }, 'Sending image via Cloud API (media upload)');
-
-    // 1. Download image bytes from the presigned S3 URL
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) {
-      throw new Error(`Failed to download image from S3: ${imgRes.status}`);
-    }
-    const buffer = Buffer.from(await imgRes.arrayBuffer());
-    const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-
-    // 2. Upload to Meta's media API
-    const mediaId = await this.uploadMedia(buffer, mimeType);
-
-    // 3. Send using media ID
+    log.debug({ to, imageUrl, caption }, 'Sending image via Cloud API (image.link)');
     await this.request({
       messaging_product: 'whatsapp',
       to,
       type: 'image',
       image: {
-        id: mediaId,
+        link: imageUrl,
         ...(caption ? { caption } : {}),
       },
     });
-  }
-
-  /**
-   * Upload a media file to Meta's servers.
-   * POST /{phone-number-id}/media (multipart/form-data)
-   * Returns the media ID.
-   */
-  async uploadMedia(buffer: Buffer, mimeType: string): Promise<string> {
-    const url = `${GRAPH_API_BASE}/${this.phoneNumberId}/media`;
-
-    const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), 'image.jpg');
-    formData.append('type', mimeType);
-    formData.append('messaging_product', 'whatsapp');
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      log.error({ status: response.status, body: errorText }, 'Cloud API media upload error');
-      throw new Error(`WhatsApp Cloud API media upload error ${response.status}: ${errorText}`);
-    }
-
-    const json = (await response.json()) as { id: string };
-    log.debug({ mediaId: json.id, mimeType }, 'Media uploaded to Meta');
-    return json.id;
   }
 
   /**

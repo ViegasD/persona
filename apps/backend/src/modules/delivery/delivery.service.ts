@@ -51,7 +51,12 @@ export async function deliverApprovedImages(
 
   for (const image of session.generatedImages) {
     try {
-      const url = await getPresignedUrl(image.s3Key, 3600);
+      // Use the original Kie.ai HTTPS URL (stored in s3Url) for Cloud API leads,
+      // fall back to presigned S3 URL for Evolution API leads.
+      const isCloud = session.lead.source === 'whatsapp-cloud';
+      const url = isCloud && image.s3Url.startsWith('https://')
+        ? image.s3Url
+        : await getPresignedUrl(image.s3Key, 3600);
       await queueMediaMessage(session.lead.phone, url, {
         mediatype: 'image',
         mimetype: 'image/jpeg',
