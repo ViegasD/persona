@@ -131,9 +131,18 @@ async function processCloudSend(
       break;
     }
     case 'media': {
-      const { caption } = payload as { caption?: string };
-      log.warn({ phone }, 'Cloud API media sending not fully supported — sending caption as text');
-      if (caption) {
+      const { mediaUrl, mediatype, caption } = payload as {
+        mediaUrl: string;
+        mediatype?: string;
+        caption?: string;
+      };
+      if (mediatype === 'image' && mediaUrl) {
+        await api.sendImage(phone, mediaUrl, caption);
+      } else if (mediaUrl) {
+        // For non-image media, send URL as text with caption
+        log.warn({ phone, mediatype }, 'Cloud API: non-image media — sending URL + caption as text');
+        await api.sendText(phone, caption ? `${caption}\n${mediaUrl}` : mediaUrl);
+      } else if (caption) {
         await api.sendText(phone, caption);
       }
       break;

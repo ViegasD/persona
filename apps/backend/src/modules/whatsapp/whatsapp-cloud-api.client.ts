@@ -60,6 +60,23 @@ export class WhatsAppCloudApiClient {
   }
 
   /**
+   * Send an image message by URL.
+   * The URL must be publicly reachable by Meta servers.
+   */
+  async sendImage(to: string, imageUrl: string, caption?: string): Promise<void> {
+    log.debug({ to, imageUrl, caption }, 'Sending image via Cloud API');
+    await this.request({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'image',
+      image: {
+        link: imageUrl,
+        ...(caption ? { caption } : {}),
+      },
+    });
+  }
+
+  /**
    * Mark a message as read.
    */
   async markRead(messageId: string): Promise<void> {

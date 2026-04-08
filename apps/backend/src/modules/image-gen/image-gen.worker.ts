@@ -87,6 +87,11 @@ export async function processImageGeneration(
       session.referenceImages.map((ref) => getPresignedUrl(ref.s3Key, 3600)),
     );
 
+    log.info(
+      { refCount: referenceUrls.length, urls: referenceUrls.map(u => u.substring(0, 80) + '...') },
+      'Reference image URLs para Kie.ai',
+    );
+
     // Enviar para Kie.ai — 1 task por imagem (Nano Banana 2 gera 1 por chamada)
     // Cada task recebe referências + template de estilo + prompt com pose única
     const taskPromises = Array.from({ length: pkg.photos }, (_, i) => {

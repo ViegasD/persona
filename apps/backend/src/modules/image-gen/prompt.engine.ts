@@ -18,13 +18,31 @@ export interface PromptParams {
 /**
  * Motor de composição de prompts otimizado para Gemini 3.1 Flash Image (Nano Banana 2).
  * Usa prosa natural seguindo as recomendações do Google Imagen: Subject → Context → Style → Quality.
- * Evita tags SDXL/Flux (camera gear, tokens como "8K UHD") que não funcionam bem em modelos LLM.
+ *
+ * REALISM RULES (from hyper-realism skill):
+ * - NEVER use: "photorealistic", "ultra detailed", "8K", "4K", "HDR", "beautiful",
+ *   "flawless", "perfect", "stunning", "gorgeous", "studio lighting", "dramatic lighting",
+ *   "highly detailed" — these push toward retouched/rendered look.
+ * - ALWAYS address the 6-tier realism hierarchy: skin texture, eyes, hair, expression, lighting, background.
  */
 
-const BASE_QUALITY =
-  'professional portrait photography, 4K HDR, sharp facial details, natural skin texture, ' +
-  'photorealistic, 35mm portrait lens, soft background bokeh, studio-level lighting quality, ' +
-  'high-end color grading';
+/**
+ * Realism block replaces old BASE_QUALITY. Addresses all 6 tiers of the realism hierarchy
+ * with grounded, imperfect descriptors instead of beauty-filter trigger words.
+ */
+const REALISM_BLOCK =
+  'Skin: visible pores on forehead and nose, subtle unevenness in skin tone, faint under-eye shadows, ' +
+  'natural micro-texture — not smoothed or airbrushed. ' +
+  'Eyes: slight moisture reflection, fine red capillaries in the sclera, natural catchlight from the environment, ' +
+  'iris has organic color variation — not uniformly saturated. ' +
+  'Hair: a few flyaway strands, natural frizz at the hairline, individual hairs catching light differently — ' +
+  'not uniformly smooth or perfectly styled. ' +
+  'Expression: slightly asymmetric — one eye a fraction more open, one corner of the mouth slightly higher, ' +
+  'natural mid-motion feel rather than a held pose. ' +
+  'Lighting: single dominant light source consistent with the environment, soft natural falloff on the shadow side, ' +
+  'no fill light that flattens the face. ' +
+  'Background: specific to the location with incidental real-world objects, slight depth-of-field blur, ' +
+  'not a generic gradient or seamless backdrop.';
 
 /**
  * Builds the occasion-specific scene description using structured details.
@@ -40,34 +58,34 @@ function buildOccasionContext(params: PromptParams): string {
       const decor = age
         ? `balloons and decorations with the number ${age}, a birthday cake with ${age} candles`
         : 'colorful birthday balloons and a birthday cake';
-      return `a birthday celebration setting for ${ageDesc}, featuring ${decor}, colorful confetti, and warm celebratory lighting`;
+      return `a birthday celebration for ${ageDesc}, featuring ${decor}, some confetti on the table, warm overhead light like a living room chandelier`;
     }
     case 'profissional': {
       const prof = profession ?? occasionDetails ?? 'professional';
-      return `a professional portrait setting appropriate for a ${prof} — clean modern background or appropriate workplace environment, professional attire suited for a ${prof}, polished and confident expression`;
+      return `a workplace headshot for a ${prof} — real office or workspace background with visible desk clutter, window light from one side casting a natural shadow, wearing professional attire appropriate for a ${prof}`;
     }
     case 'formatura': {
       const course = graduationCourse ?? occasionDetails ?? 'graduation';
-      return `a ${course} graduation setting, wearing academic cap and gown appropriate for ${course}, holding a diploma, proud and joyful expression befitting a graduation ceremony`;
+      return `a ${course} graduation scene, wearing academic cap and gown for ${course}, holding a rolled diploma, outdoor campus setting with trees and other graduates blurred in the background`;
     }
     case 'casal':
-      return 'a romantic couple portrait setting with two people in love, warm intimate mood, elegant surroundings, soft flattering natural lighting';
+      return 'a couple portrait with two people close together, natural relaxed body language, shot in a real location like a park bench or café table, warm afternoon window light';
     case 'gravidez':
-      return 'a maternity photography setting, gentle and elegant pose that highlights the baby bump beautifully, flowing dress, soft diffused natural lighting, serene and tender atmosphere';
+      return 'a maternity portrait, the subject cradling their bump, wearing a loose flowing dress, standing near a window with soft diffused daylight, calm unhurried atmosphere';
     case 'familia':
-      return 'a warm family portrait setting, joyful and natural expressions, soft natural lighting, comfortable and harmonious environment';
+      return 'a family portrait in a lived-in environment like a living room or backyard, natural unposed body language, overhead daylight or lamp light, genuine relaxed expressions';
     case 'infantil':
-      return 'a children photography setting, playful and colorful surroundings, bright cheerful lighting, genuine joyful expression';
+      return 'a children portrait in a playful setting with scattered toys or colored objects, bright but not harsh window light, spontaneous genuine expression';
     case 'fitness':
-      return 'a fitness and athletic portrait setting, confident athletic pose, gym or outdoor workout environment, dynamic energetic lighting that highlights strength';
+      return 'an athletic portrait in a real gym or outdoor setting, wearing workout clothes with visible sweat or exertion, overhead fluorescent or natural outdoor light, determined focused expression';
     case 'natalino':
-      return 'a Christmas-themed portrait setting with festive holiday decorations, red and green color scheme, warm cozy lighting, cheerful festive atmosphere';
+      return 'a Christmas portrait next to a decorated tree with string lights, warm tungsten glow from the lights, wearing a casual holiday sweater, relaxed genuine expression';
     case 'debutante':
-      return 'a debutante ball portrait setting, elegant formal gown, glamorous venue with chandeliers, soft romantic lighting, graceful and poised expression';
+      return 'a debutante portrait in a formal venue with visible chandeliers and wall details, wearing a long formal gown, warm amber overhead light, composed but natural expression';
     case 'pet':
-      return 'a heartwarming portrait setting with the person and their pet, affectionate bond on display, warm natural lighting that flatters owner and pet';
+      return 'a portrait with the person and their pet together, real home or park setting, the pet slightly in motion or looking away, natural window or outdoor light';
     default:
-      return `a ${occasion} themed portrait setting with natural surroundings, flattering and appropriate lighting`;
+      return `a ${occasion} themed portrait in a real-world location with incidental background details, natural ambient light from the environment`;
   }
 }
 
@@ -104,10 +122,10 @@ export function buildPrompt(params: PromptParams, poseVariation?: string): strin
   // 1. Face identity instruction — explicit natural language (Gemini follows this well)
   parts.push(buildIdentityInstruction(params));
 
-  // 2. Subject + scene description
+  // 2. Subject + scene description (no banned words like "photorealistic")
   const subjectDesc = params.isCoupleShot
-    ? `Generate a photorealistic portrait of this same couple in ${occasionContext}.`
-    : `Generate a photorealistic portrait of this same person in ${occasionContext}.`;
+    ? `Generate a natural, candid-looking portrait of this same couple in ${occasionContext}.`
+    : `Generate a natural, candid-looking portrait of this same person in ${occasionContext}.`;
   parts.push(subjectDesc);
 
   // 3. Pose (per-image variation for batch diversity)
@@ -123,8 +141,8 @@ export function buildPrompt(params: PromptParams, poseVariation?: string): strin
     parts.push(params.additionalNotes);
   }
 
-  // 5. Quality modifiers (natural language, not SDXL tags)
-  parts.push(BASE_QUALITY);
+  // 5. Realism hierarchy — grounded imperfect details (replaces old BASE_QUALITY)
+  parts.push(REALISM_BLOCK);
 
   // 6. Exclusion constraint — phrased as a positive instruction
   if (params.isCoupleShot) {
@@ -144,106 +162,106 @@ export function buildPrompt(params: PromptParams, poseVariation?: string): strin
  */
 const VARIATIONS_BY_OCCASION: Record<string, string[]> = {
   aniversario: [
-    'blowing out birthday candles on a cake, joyful expression, candid and natural',
-    'holding a slice of birthday cake, laughing and delighted',
-    'surrounded by colorful balloons, big genuine smile looking at the camera',
-    'wearing a birthday crown, festive decorations in the background',
-    'candid moment mid-celebration, confetti falling around the subject',
-    'toasting with a glass, elegant birthday atmosphere, warm glow',
+    'leaning forward to blow out candles, mid-breath with cheeks slightly puffed, warm overhead light casting shadows on the cake',
+    'holding a slice of cake on a paper plate, caught mid-laugh with one eye slightly squinted, crumbs on the table',
+    'standing among scattered balloons, looking at the camera with a relaxed lopsided grin, one hand resting on a chair',
+    'wearing a crooked birthday crown, candid mid-conversation expression, party cups and plates visible behind',
+    'confetti stuck in their hair, caught mid-clap, natural motion blur on the hands',
+    'raising a glass in a toast, slight head tilt, warm lamp light from behind creating a rim glow on one side',
   ],
   profissional: [
-    'confident headshot, direct eye contact, neutral clean background',
-    'arms crossed, standing, authoritative yet approachable expression',
-    'three-quarter angle, looking slightly to the side, thoughtful',
-    'seated at a desk, relaxed and professional environment',
-    'standing in an office setting, warm and approachable smile',
-    'close-up headshot, slight smile, very clean background',
+    'headshot with direct eye contact, slight asymmetric smile, visible office window reflection in one eye',
+    'arms loosely crossed, weight shifted to one leg, blurred whiteboard with writing in the background',
+    'three-quarter turn looking past the camera, natural resting expression, one hand on a desk edge',
+    'seated at a desk with a laptop open, relaxed posture leaning back slightly, daylight from a side window',
+    'standing near a glass partition, reflection faintly visible, composed but not rigid expression',
+    'close headshot, slight furrow between the brows suggesting thought, neutral wall with a shadow line behind',
   ],
   formatura: [
-    'throwing graduation cap in the air, euphoric and joyful expression',
-    'holding diploma with both hands, proud and emotional expression',
-    'close-up portrait wearing academic cap, big genuine smile',
-    'full body shot in graduation gown, standing tall and proud',
-    'candid laugh during graduation ceremony celebrations',
-    'looking down at diploma in hands, proud and reflective moment',
+    'tossing graduation cap upward, caught mid-throw with arm extended, campus trees and sky behind',
+    'both hands gripping diploma, looking down at it, emotional half-smile, other graduates blurred behind',
+    'close-up wearing academic cap slightly askew, wide genuine grin, tassel hanging across the forehead',
+    'full body in graduation gown, standing on campus steps, one hand in pocket, relaxed proud posture',
+    'candid mid-laugh with classmates blurred behind, cap pushed back, sunlight from the left',
+    'reading the diploma text, head slightly bowed, warm late-afternoon outdoor light',
   ],
   casal: [
-    'couple gazing at each other, tender and loving eye contact',
-    'couple laughing together, candid and genuinely joyful moment',
-    'close-up of two faces side by side, warm and intimate mood',
-    'couple walking together, natural candid documentary style',
-    'romantic embrace, soft diffused dreamy lighting',
-    'couple holding hands, both looking at the camera with warm smiles',
+    'looking at each other mid-conversation, one person slightly blurred, natural depth of field',
+    'both laughing at something off-camera, caught in a candid unposed moment, hands interlocked loosely',
+    'foreheads nearly touching, eyes closed, natural overhead café light, table clutter visible',
+    'walking together on a sidewalk, slight motion blur on feet, candid documentary feel',
+    'one person resting head on the other\'s shoulder, relaxed quiet moment, window light from behind',
+    'holding hands across a small table, both looking at camera with relaxed easy smiles, drinks on the table',
   ],
   gravidez: [
-    'hands gently cradling baby bump, serene and peaceful expression',
-    'elegant side profile silhouette that highlights the baby bump beautifully',
-    'sitting gracefully, flowing dress cascading, soft natural light',
-    'standing tall with hands resting on belly, confident and radiant',
-    'close-up portrait, hands lovingly on bump, warm gentle light',
-    'outdoor setting, golden natural light, peaceful glowing expression',
+    'both hands cradling the bump from below, looking down with a calm thoughtful expression, window light from one side',
+    'side profile near a window, soft daylight wrapping around the bump, loose dress fabric catching a slight breeze',
+    'sitting in an armchair with one hand on the bump, relaxed half-smile, a book or mug on the side table',
+    'standing with weight shifted to one hip, hands resting on the bump, natural unposed stance, soft indoor light',
+    'close-up of face and upper body, gentle inward-looking expression, natural skin glow from nearby window',
+    'outdoors in late afternoon light, walking slowly on grass, loose dress, warm golden ambient glow',
   ],
   familia: [
-    'whole family smiling together naturally, candid warm moment',
-    'close-up group portrait, joyful and genuine expressions',
-    'family sharing a laugh, natural and unposed candid moment',
-    'formal portrait with everyone looking at the camera, harmonious',
-    'outdoor family portrait, warm golden natural lighting',
-    'family in a warm group embrace, loving and cozy atmosphere',
+    'the whole family grouped on a couch, some leaning into each other, natural overhead room light, lived-in background',
+    'close group portrait, one kid looking slightly away, adults with relaxed genuine smiles, daylight from a window',
+    'family caught mid-laugh at something off-camera, natural unposed moment, kitchen or living room setting',
+    'everyone looking at the camera, one person blinking or mid-expression, warm overhead lamp light',
+    'outdoor backyard portrait, dappled tree shade on faces, kids slightly restless, parents relaxed',
+    'group hug with arms around each other, some faces partially hidden, warm natural light',
   ],
   infantil: [
-    'playing with colorful toys, naturally joyful and candid expression',
-    'big genuine laugh, candid and playful spontaneous moment',
-    'sitting on the floor, curious wide-eyed expression',
-    'close-up portrait, bright expressive eyes, innocent smile',
-    'playful outdoor scene, sunny and cheerful natural setting',
-    'holding a balloon, carefree and happy expression',
+    'sitting on the floor surrounded by scattered toys, looking up at the camera with wide curious eyes',
+    'mid-laugh with mouth wide open, slightly blurry hands from clapping, bright window light',
+    'concentrating on stacking blocks, tongue slightly out, natural overhead room light',
+    'close-up with big round eyes and a half-smile, a smudge on one cheek, soft daylight',
+    'running outdoors on grass, slight motion blur, sunny but not harsh light, candid moment',
+    'holding a balloon string, looking at it going up, genuine wonder on the face, outdoor park light',
   ],
   fitness: [
-    'confident athletic stance, arms crossed, gym background',
-    'dynamic power pose showing strength, intense focused expression',
-    'outdoor setting suggesting movement and energy, athletic attire',
-    'close-up portrait post-workout, confident and proud expression',
-    'standing with weights, powerful and composed stance',
-    'stretching pose in athletic attire, natural outdoor lighting',
+    'standing with arms crossed in a gym, overhead fluorescent light, chalk dust visible on hands, focused expression',
+    'mid-rep with a dumbbell, veins slightly visible on forearm, mirror reflection blurred behind, slight grimace of effort',
+    'outdoor park setting mid-run, slight motion blur, natural sweat on forehead, determined eyes',
+    'close-up portrait leaning against gym equipment, catch-breath expression, towel over one shoulder',
+    'standing near a pull-up bar, hands on hips, relaxed but athletic posture, rubber floor visible below',
+    'stretching one arm across the body outdoors, squinting slightly from sunlight, athletic wear with visible creases',
   ],
   natalino: [
-    'next to a beautifully decorated Christmas tree, warm holiday glow',
-    'holding wrapped Christmas gifts, joyful and festive expression',
-    'seated by a fireplace, cozy warm winter atmosphere',
-    'wearing a festive holiday sweater, cheerful genuine expression',
-    'candid moment of holiday celebration, warm and magical lighting',
-    'portrait surrounded by Christmas ornaments and holiday decor',
+    'sitting cross-legged next to a Christmas tree, string lights reflected in eyes, relaxed easy smile',
+    'holding a wrapped gift box, looking at it rather than the camera, warm tungsten glow from tree lights',
+    'seated near a fireplace, face lit from one side by the fire glow, cozy sweater, relaxed slouch',
+    'wearing a knitted holiday sweater, standing by a window with frost, natural cool daylight mixed with warm interior light',
+    'candid moment decorating the tree, reaching up to hang an ornament, caught mid-action',
+    'at a table with holiday food and candles, mid-conversation expression, warm amber candlelight on the face',
   ],
   debutante: [
-    'graceful full-length portrait in formal gown, standing elegantly',
-    'close-up portrait with tiara, elegant and poised expression',
-    'gentle dancing pose, elegant movement of the gown',
-    'seated elegantly holding a bouquet of flowers, serene expression',
-    'standing on a grand staircase, regal and beautiful composition',
-    'romantic close-up portrait with soft bokeh lights in background',
+    'full-length in a formal gown, standing near a column in a venue, warm overhead chandelier light, composed posture',
+    'close portrait with a small tiara, slight head tilt, one side of face in soft shadow from overhead light',
+    'mid-twirl with the gown fabric in motion, slight motion blur at the hem, caught between poses',
+    'seated on a cushioned bench holding a small bouquet, looking down at the flowers, quiet reflective moment',
+    'standing at the top of a staircase, hand on the railing, looking back over shoulder, natural overhead light',
+    'close portrait with bokeh from chandelier lights behind, relaxed asymmetric smile, warm amber tones',
   ],
   pet: [
-    'laughing together with pet, candid and genuinely joyful moment',
-    'cuddling pet close, warm affectionate bond clearly visible',
-    'pet nuzzling owner, tender loving close-up portrait',
-    'both subject and pet looking at camera together, adorable pair',
-    'playful moment with pet outdoors, natural warm lighting',
-    'tender portrait with pet resting on lap, warm and cozy',
+    'laughing as the pet licks their face, slightly scrunched-up expression, natural indoor light',
+    'sitting on a couch with pet curled up next to them, one hand scratching behind pet\'s ear, relaxed smile',
+    'pet nuzzling their chin, eyes half-closed, tender unguarded expression, window light from the side',
+    'both looking at camera, pet slightly blurry from movement, owner with a patient amused expression',
+    'outdoors on grass, pet mid-stride, owner crouching down with arms open, natural afternoon light',
+    'pet resting on their lap, owner looking down at it with a soft quiet smile, warm lamp light',
   ],
   default: [
-    'natural relaxed pose, warm genuine expression, looking at the camera',
-    'slight smile, three-quarter view, soft bokeh background',
-    'full body shot, confident and natural relaxed stance',
-    'close-up portrait, direct intense yet warm eye contact',
-    'candid natural moment, unposed and authentic expression',
-    'profile view, contemplative thoughtful expression, beautiful side light',
-    'laughing naturally with genuine joy, authentic emotion',
-    'environmental portrait with contextual meaningful background',
-    'backlit subject with beautiful rim lighting, artistic dramatic contrast',
-    'low camera angle, slightly powerful and confident perspective',
-    'high camera angle, gentle gaze downward, soft and introspective',
-    'looking slightly away from camera, storytelling composition',
+    'natural relaxed pose, weight shifted to one hip, faint asymmetric smile, looking at the camera',
+    'three-quarter turn, looking slightly past the lens, one hand at their side, soft window light from the left',
+    'full body standing naturally, hands loosely at sides, real-world background with incidental objects',
+    'close-up, direct eye contact, one eyebrow very slightly raised, natural indoor ambient light',
+    'caught mid-motion turning toward the camera, slight motion blur on hair, candid unposed feel',
+    'profile view looking to the side, jaw and ear visible, light from behind creating a thin rim on the cheek',
+    'mid-laugh with eyes slightly squinted, genuine emotion, natural overhead light',
+    'seated on steps or a bench, elbows on knees, relaxed thoughtful expression, environment visible',
+    'backlit with light wrapping around hair and shoulders, face in gentle open shade, warm tone',
+    'low angle looking slightly up, chin lifted, relaxed confident expression, sky or ceiling visible',
+    'looking down at something in their hands, soft top-down light, quiet introspective moment',
+    'glancing to the side with a half-smile, as if reacting to someone off-camera, natural moment',
   ],
 };
 
