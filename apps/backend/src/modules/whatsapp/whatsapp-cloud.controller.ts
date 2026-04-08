@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { logInboundMessage } from './whatsapp.service.js';
@@ -6,6 +7,7 @@ import { prisma } from '../../shared/database/prisma.js';
 import { debounceFunnelMessage } from '../ai/debounce.service.js';
 import { env } from '../../shared/config/env.js';
 import { getCloudApi } from './whatsapp-cloud-api.client.js';
+import { uploadFile, buildS3Key } from '../../shared/storage/s3.client.js';
 
 const log = createChildLogger('whatsapp-cloud-controller');
 
@@ -134,6 +136,42 @@ export async function handleCloudWebhook(
           mediaType,
           messageId,
         );
+
+        // Handle image uploads — download from Meta and store as reference
+        if (mediaType === 'image' && msg.image?.id) {
+          log.info({ phone, mediaId: msg.image.id, messageId }, '[CLOUD WEBHOOK:IMAGE] Image detected — downloading...');
+          const session = await prisma.leadSession.findFirst({
+            where: { leadId: lead.id },
+            orderBy: { createdAt: 'desc' },
+          });
+          if (session) {
+            try {
+              const api = getCloudApi();
+              const { buffer, mimeType } = await api.downloadMedia(msg.image.id);
+              const extMap: Record<string, string> = {
+                'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+              };
+              const ext = extMap[mimeType] ?? 'jpg';
+              const filename = `${randomUUID()}.${ext}`;
+              const s3Key = buildS3Key(session.id, 'references', filename);
+              await uploadFile(s3Key, buffer, mimeType);
+              await prisma.referenceImage.create({
+                data: {
+                  leadSessionId: session.id,
+                  s3Key,
+                  s3Url: s3Key,
+                  mimeType,
+                  fileSize: buffer.length,
+                },
+              });
+              log.info({ s3Key, fileSize: buffer.length, mimeType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
+            } catch (err) {
+              log.error(err, '[CLOUD WEBHOOK:IMAGE] ❌ Failed to download/store image');
+            }
+          } else {
+            log.warn({ leadId: lead.id }, '[CLOUD WEBHOOK:IMAGE] ⚠️ No session found — image NOT stored');
+          }
+        }
 
         // Mark as read (fire-and-forget)
         if (env.WA_CLOUD_API_TOKEN && env.WA_PHONE_NUMBER_ID) {

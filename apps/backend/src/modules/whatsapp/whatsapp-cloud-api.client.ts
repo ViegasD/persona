@@ -87,6 +87,42 @@ export class WhatsAppCloudApiClient {
       message_id: messageId,
     });
   }
+
+  /**
+   * Download media by its Media ID.
+   * Step 1: GET /{media-id} to get the download URL.
+   * Step 2: GET the download URL with Bearer auth to get bytes.
+   */
+  async downloadMedia(mediaId: string): Promise<{ buffer: Buffer; mimeType: string }> {
+    log.debug({ mediaId }, 'Downloading media via Cloud API');
+
+    // Step 1: Get the media URL
+    const metaRes = await fetch(`${GRAPH_API_BASE}/${mediaId}`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!metaRes.ok) {
+      const errText = await metaRes.text();
+      log.error({ status: metaRes.status, body: errText }, 'Failed to get media URL');
+      throw new Error(`Cloud API media URL error ${metaRes.status}: ${errText}`);
+    }
+    const metaJson = (await metaRes.json()) as { url: string; mime_type: string };
+
+    // Step 2: Download the actual file
+    const fileRes = await fetch(metaJson.url, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!fileRes.ok) {
+      const errText = await fileRes.text();
+      log.error({ status: fileRes.status }, 'Failed to download media bytes');
+      throw new Error(`Cloud API media download error ${fileRes.status}: ${errText}`);
+    }
+
+    const arrayBuffer = await fileRes.arrayBuffer();
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      mimeType: metaJson.mime_type,
+    };
+  }
 }
 
 // Lazy singleton — only instantiated if env vars are present
