@@ -2,7 +2,7 @@
  * Máquina de estados do funil de vendas (v2 — LLM-powered).
  *
  * Fluxo simplificado:
- *   ENGAGING → COLLECTING_PHOTOS → AWAITING_PAYMENT → PAID
+ *   ENGAGING → COLLECTING_PHOTOS → COLLECTING_STYLE_REFS → AWAITING_PAYMENT → PAID
  *   → GENERATING → GALLERY_SENT → APPROVING → DELIVERING → DELIVERED
  *
  * ENGAGING agrupa: boas-vindas, qualificação, oferta, coleta de preferências (nome, pacote, ocasião).
@@ -16,6 +16,7 @@
 export const FUNNEL_STATES = {
   ENGAGING: 'ENGAGING',
   COLLECTING_PHOTOS: 'COLLECTING_PHOTOS',
+  COLLECTING_STYLE_REFS: 'COLLECTING_STYLE_REFS',
   AWAITING_PAYMENT: 'AWAITING_PAYMENT',
   PAID: 'PAID',
   GENERATING: 'GENERATING',
@@ -33,8 +34,9 @@ export type FunnelState = (typeof FUNNEL_STATES)[keyof typeof FUNNEL_STATES];
  */
 export const TRANSITIONS: Record<FunnelState, FunnelState[]> = {
   ENGAGING: ['COLLECTING_PHOTOS', 'CHURNED'],
-  COLLECTING_PHOTOS: ['AWAITING_PAYMENT', 'ENGAGING', 'CHURNED'], // pode voltar p/ editar
-  AWAITING_PAYMENT: ['PAID', 'ENGAGING', 'CHURNED'],              // pode mudar pacote
+  COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'ENGAGING', 'CHURNED'], // fotos ok → style refs
+  COLLECTING_STYLE_REFS: ['AWAITING_PAYMENT', 'CHURNED'],              // style refs ok ou skip → pagamento
+  AWAITING_PAYMENT: ['PAID', 'ENGAGING', 'CHURNED'],                   // pode mudar pacote
   PAID: ['GENERATING'],
   GENERATING: ['GALLERY_SENT'],
   GALLERY_SENT: ['APPROVING'],
@@ -60,6 +62,8 @@ export function getAgentForState(state: FunnelState): string {
       return 'engagement';
     case FUNNEL_STATES.COLLECTING_PHOTOS:
       return 'photo-collection';
+    case FUNNEL_STATES.COLLECTING_STYLE_REFS:
+      return 'style-collection';
     case FUNNEL_STATES.AWAITING_PAYMENT:
       return 'payment';
     case FUNNEL_STATES.PAID:

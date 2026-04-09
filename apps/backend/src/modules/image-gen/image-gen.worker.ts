@@ -61,8 +61,25 @@ export async function processImageGeneration(
     const occasion = prefs.occasion ?? 'casual';
     const isCoupleShot = occasion === 'casal';
 
-    // Buscar style templates do S3 (uma vez por job)
-    const styleTemplateUrls = await pickRandomStyleTemplates(occasion, pkg.photos);
+    // Separar fotos de rosto (face) e referências de estilo (style) do usuário
+    const faceRefs = session.referenceImages.filter((r) => (r as any).type !== 'style');
+    const userStyleRefs = session.referenceImages.filter((r) => (r as any).type === 'style');
+
+    // Se o usuário enviou style refs, usá-las; senão, fallback para templates do MinIO
+    let styleTemplateUrls: string[];
+    if (userStyleRefs.length > 0) {
+      const allStyleUrls = await Promise.all(
+        userStyleRefs.map((ref) => getPresignedUrl(ref.s3Key, 3600)),
+      );
+      // Shuffle and pick one per image (consistent with MinIO template behavior)
+      const shuffled = [...allStyleUrls].sort(() => Math.random() - 0.5);
+      styleTemplateUrls = Array.from({ length: pkg.photos }, (_, i) => shuffled[i % shuffled.length]);
+      log.info({ userStyleRefCount: userStyleRefs.length, pickedCount: styleTemplateUrls.length }, 'Usando style refs do usuário');
+    } else {
+      // Buscar style templates do S3 (uma vez por job)
+      styleTemplateUrls = await pickRandomStyleTemplates(occasion, pkg.photos);
+      log.info({ templateCount: styleTemplateUrls.length }, 'Usando style templates do MinIO');
+    }
     const hasStyleTemplate = styleTemplateUrls.length > 0;
 
     // Gerar uma variação de prompt por imagem — cada imagem do batch tem pose distinta
@@ -82,9 +99,9 @@ export async function processImageGeneration(
       data: { prompt: prompts[0] },
     });
 
-    // Obter URLs pré-assinadas das referências
+    // Obter URLs pré-assinadas das referências de rosto
     const referenceUrls = await Promise.all(
-      session.referenceImages.map((ref) => getPresignedUrl(ref.s3Key, 3600)),
+      faceRefs.map((ref) => getPresignedUrl(ref.s3Key, 3600)),
     );
 
     log.info(

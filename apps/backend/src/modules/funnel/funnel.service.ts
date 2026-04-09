@@ -20,12 +20,14 @@ import { photoCollectionAgent } from '../ai/agents/photo-collection.agent.js';
 import { paymentAgent } from '../ai/agents/payment.agent.js';
 import { supportAgent } from '../ai/agents/support.agent.js';
 import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
+import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 
 const log = createChildLogger('funnel-service');
 
 const AGENTS: Record<string, AgentConfig> = {
   engagement: engagementAgent,
   'photo-collection': photoCollectionAgent,
+  'style-collection': styleCollectionAgent,
   payment: paymentAgent,
   support: supportAgent,
   reengagement: reengagementAgent,
@@ -70,7 +72,11 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
   }
 
   const photoCount = await prisma.referenceImage.count({
-    where: { leadSessionId: session.id },
+    where: { leadSessionId: session.id, type: 'face' },
+  });
+
+  const styleRefCount = await prisma.referenceImage.count({
+    where: { leadSessionId: session.id, type: 'style' },
   });
 
   const prefs = (session.preferences as Record<string, unknown>) ?? {};
@@ -109,7 +115,7 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
 
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
-      { preferences: prefs, photoCount },
+      { preferences: prefs, photoCount, styleRefCount },
     );
 
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
@@ -214,7 +220,14 @@ async function handleTransition(
     }
 
     case FUNNEL_STATES.COLLECTING_PHOTOS: {
-      log.info({ sessionId }, '[TRANSITION:COLLECTING_PHOTOS→AWAITING_PAYMENT] Creating Pix payment...');
+      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Starting...');
+      await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_STYLE_REFS);
+      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Done — style-collection agent takes over');
+      break;
+    }
+
+    case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
+      log.info({ sessionId }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Creating Pix payment...');
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'PAYING' } });
 
       log.info('[TRANSITION:PAYMENT] Calling initiatePixPayment...');
@@ -238,7 +251,7 @@ async function handleTransition(
       await logOutboundMessage(leadId, copyPasteMsg);
 
       await trackEvent(leadId, 'PIX_QR_SENT');
-      log.info('[TRANSITION:COLLECTING_PHOTOS→AWAITING_PAYMENT] Done — Pix QR sent');
+      log.info('[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Done — Pix QR sent');
       break;
     }
 
@@ -302,6 +315,12 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
     }
     case FUNNEL_STATES.COLLECTING_PHOTOS: {
       const msg = MESSAGES.askPhotos();
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
+    case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
+      const msg = 'Se tiver fotos de inspiração (Pinterest, Instagram, algum ensaio que curtiu), manda aqui! Ou diga *pular* pra seguir sem 😊';
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);
       break;

@@ -101,6 +101,7 @@ model ReferenceImage {
   s3Url         String @map("s3_url")
   mimeType      String @map("mime_type")
   fileSize      Int    @map("file_size")
+  type          String @default("face") @map("type") // "face" | "style"
 
   leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
 

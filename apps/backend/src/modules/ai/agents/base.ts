@@ -127,6 +127,7 @@ export function buildLeadContext(lead: {
 }, session: {
   preferences: Record<string, unknown>;
   photoCount: number;
+  styleRefCount?: number;
 }): string {
   const prefs = session.preferences;
   const parts: string[] = [
@@ -139,6 +140,9 @@ export function buildLeadContext(lead: {
   if (prefs.occasion) parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
   if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
   parts.push(`  <fotos_enviadas>${session.photoCount}</fotos_enviadas>`);
+  if (session.styleRefCount !== undefined) {
+    parts.push(`  <fotos_inspiracao_enviadas>${session.styleRefCount}</fotos_inspiracao_enviadas>`);
+  }
 
   parts.push('</lead_context>');
   return parts.join('\n');

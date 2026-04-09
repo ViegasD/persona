@@ -153,7 +153,10 @@ export async function handleCloudWebhook(
               };
               const ext = extMap[mimeType] ?? 'jpg';
               const filename = `${randomUUID()}.${ext}`;
-              const s3Key = buildS3Key(session.id, 'references', filename);
+              const isStyleRef = session.funnelState === 'COLLECTING_STYLE_REFS';
+              const folder = isStyleRef ? 'style-refs' as const : 'references' as const;
+              const imageType = isStyleRef ? 'style' : 'face';
+              const s3Key = buildS3Key(session.id, folder, filename);
               await uploadFile(s3Key, buffer, mimeType);
               await prisma.referenceImage.create({
                 data: {
@@ -162,9 +165,10 @@ export async function handleCloudWebhook(
                   s3Url: s3Key,
                   mimeType,
                   fileSize: buffer.length,
+                  type: imageType,
                 },
               });
-              log.info({ s3Key, fileSize: buffer.length, mimeType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
+              log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
             } catch (err) {
               log.error(err, '[CLOUD WEBHOOK:IMAGE] ❌ Failed to download/store image');
             }
