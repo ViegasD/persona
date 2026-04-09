@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import type { AdminTemplate } from '@/lib/templates-api';
 import {
   uploadTemplatesAction,
@@ -17,35 +16,33 @@ interface Props {
 }
 
 export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [templates, setTemplates] = useState(initial);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState('');
   const [editTags, setEditTags] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const [uploadProgress, setUploadProgress] = useState('');
-
+  /* ── Upload (one at a time) ────────────────────────── */
   async function handleUpload(files: FileList) {
     setUploading(true);
     const fileArray = Array.from(files);
     let uploaded = 0;
     try {
       for (const file of fileArray) {
-        setUploadProgress(`Enviando ${++uploaded}/${fileArray.length}: ${file.name}...`);
+        setUploadProgress(`${++uploaded}/${fileArray.length} — ${file.name}`);
         const base64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve((reader.result as string).split(',')[1]);
           reader.readAsDataURL(file);
         });
-
         const result = await uploadTemplatesAction(slug, [
           { base64, filename: file.name, mimeType: file.type },
         ]);
         setTemplates((prev) => [...result.templates, ...prev]);
       }
-      alert(`${fileArray.length} template(s) criado(s) com análise de cena via GPT-4o`);
     } catch (err) {
       alert(`Erro no upload (${uploaded}/${fileArray.length}): ${err}`);
     } finally {
@@ -55,13 +52,16 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     }
   }
 
-  function startEdit(t: AdminTemplate) {
+  /* ── Edit ───────────────────────────────────────────── */
+  function openEdit(t: AdminTemplate) {
     setEditingId(t.id);
     setEditPrompt(t.scenePrompt);
     setEditTags(t.tags.join(', '));
   }
 
-  async function saveEdit(id: string) {
+  async function saveEdit() {
+    if (!editingId) return;
+    const id = editingId;
     try {
       const tags = editTags.split(',').map((t) => t.trim()).filter(Boolean);
       await updateTemplateAction(id, { scenePrompt: editPrompt, tags });
@@ -74,8 +74,9 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     }
   }
 
+  /* ── Delete ─────────────────────────────────────────── */
   async function handleDelete(id: string) {
-    if (!confirm('Desativar este template?')) return;
+    if (!confirm('Remover este template?')) return;
     try {
       await deleteTemplateAction(id);
       setTemplates((prev) => prev.filter((t) => t.id !== id));
@@ -84,24 +85,42 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     }
   }
 
+  /* ── Regenerate ─────────────────────────────────────── */
   async function handleRegenerate(id: string) {
+    setBusyId(id);
     try {
       const updated = await regeneratePromptAction(id);
       setTemplates((prev) =>
         prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags } : t)),
       );
-      alert('Prompt regenerado com GPT-4o');
     } catch (err) {
       alert(`Erro: ${err}`);
+    } finally {
+      setBusyId(null);
     }
   }
 
+  /* ── Image error fallback ───────────────────────────── */
+  function handleImgError(e: React.SyntheticEvent<HTMLImageElement>) {
+    const img = e.currentTarget;
+    img.style.display = 'none';
+    const parent = img.parentElement;
+    if (parent && !parent.querySelector('.img-fallback')) {
+      const fallback = document.createElement('div');
+      fallback.className = 'img-fallback absolute inset-0 flex items-center justify-center text-4xl opacity-30';
+      fallback.textContent = '📷';
+      parent.appendChild(fallback);
+    }
+  }
+
+  /* ── Render ─────────────────────────────────────────── */
   return (
     <div>
-      {/* Upload area */}
-      <div
-        className="border-2 border-dashed border-[var(--border)] rounded-lg p-8 text-center mb-6 cursor-pointer hover:border-[var(--primary)] transition-colors"
+      {/* Upload bar */}
+      <button
         onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-6 rounded-lg border border-dashed border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--muted)] transition-all text-sm disabled:opacity-60"
       >
         <input
           ref={fileRef}
@@ -112,115 +131,137 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
         />
         {uploading ? (
-          <p className="text-[var(--muted-foreground)]">
-            {uploadProgress || 'Preparando upload...'}
-          </p>
+          <span className="text-[var(--muted-foreground)]">⏳ {uploadProgress}</span>
         ) : (
           <>
-            <p className="text-lg font-medium">📸 Clique ou arraste para enviar templates</p>
-            <p className="text-sm text-[var(--muted-foreground)] mt-1">
-              JPG, PNG ou WebP. Cada imagem será analisada por GPT-4o para gerar o prompt de cena.
-            </p>
+            <span>📸</span>
+            <span>Enviar imagens de template</span>
+            <span className="text-[var(--muted-foreground)]">— GPT-4o gera o prompt automaticamente</span>
           </>
         )}
-      </div>
+      </button>
 
-      {/* Template grid */}
+      {/* Empty state */}
       {templates.length === 0 ? (
-        <p className="text-center text-[var(--muted-foreground)] py-12">
-          Nenhum template para &quot;{occasionLabel}&quot;. Envie imagens acima.
-        </p>
+        <div className="text-center py-16 text-[var(--muted-foreground)]">
+          <p className="text-4xl mb-3">📷</p>
+          <p>Nenhum template para &quot;{occasionLabel}&quot;</p>
+          <p className="text-sm mt-1">Envie imagens acima para começar.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        /* Grid */
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {templates.map((t) => (
-            <div key={t.id} className="border border-[var(--border)] rounded-lg overflow-hidden">
+            <div
+              key={t.id}
+              className="group relative rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--background)]"
+            >
               {/* Image */}
-              {t.imageUrl && (
-                <div className="aspect-square relative bg-[var(--muted)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
+              <div className="aspect-[3/4] relative bg-[var(--muted)]">
+                {t.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={t.imageUrl}
-                    alt={`Template ${t.id.slice(0, 8)}`}
+                    alt=""
+                    loading="lazy"
+                    onError={handleImgError}
                     className="w-full h-full object-cover"
                   />
-                </div>
-              )}
-
-              {/* Details */}
-              <div className="p-4">
-                {editingId === t.id ? (
-                  <div className="space-y-3">
-                    <textarea
-                      value={editPrompt}
-                      onChange={(e) => setEditPrompt(e.target.value)}
-                      rows={4}
-                      className="w-full p-2 border border-[var(--border)] rounded text-sm bg-[var(--background)]"
-                    />
-                    <input
-                      value={editTags}
-                      onChange={(e) => setEditTags(e.target.value)}
-                      placeholder="Tags (comma separated)"
-                      className="w-full p-2 border border-[var(--border)] rounded text-sm bg-[var(--background)]"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => saveEdit(t.id)}
-                        className="px-3 py-1 text-sm rounded"
-                        style={{ background: 'var(--success)', color: 'white' }}
-                      >
-                        Salvar
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="px-3 py-1 text-sm rounded"
-                        style={{ background: 'var(--muted)' }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
                 ) : (
-                  <>
-                    <p className="text-sm leading-relaxed mb-2">{t.scenePrompt}</p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {t.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 rounded-full text-xs"
-                          style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEdit(t)}
-                        className="px-2 py-1 text-xs rounded"
-                        style={{ background: 'var(--muted)' }}
+                  <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">📷</div>
+                )}
+
+                {/* Hover overlay with actions */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-end justify-center gap-1.5 p-2 opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={() => openEdit(t)}
+                    className="p-1.5 rounded-md bg-white/90 hover:bg-white text-black text-xs"
+                    title="Editar prompt"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleRegenerate(t.id)}
+                    disabled={busyId === t.id}
+                    className="p-1.5 rounded-md bg-white/90 hover:bg-white text-black text-xs disabled:opacity-50"
+                    title="Regenerar prompt com GPT-4o"
+                  >
+                    {busyId === t.id ? '⏳' : '🔄'}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t.id)}
+                    className="p-1.5 rounded-md bg-red-500/90 hover:bg-red-500 text-white text-xs"
+                    title="Remover"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="p-2.5">
+                <p className="text-xs leading-snug line-clamp-2 text-[var(--foreground)]">
+                  {t.scenePrompt}
+                </p>
+                {t.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {t.tags.slice(0, 4).map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--muted)] text-[var(--muted-foreground)]"
                       >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => handleRegenerate(t.id)}
-                        className="px-2 py-1 text-xs rounded"
-                        style={{ background: 'var(--muted)' }}
-                      >
-                        🔄 Regenerar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(t.id)}
-                        className="px-2 py-1 text-xs rounded"
-                        style={{ background: 'var(--error)', color: 'white' }}
-                      >
-                        🗑️ Remover
-                      </button>
-                    </div>
-                  </>
+                        {tag}
+                      </span>
+                    ))}
+                    {t.tags.length > 4 && (
+                      <span className="text-[10px] text-[var(--muted-foreground)]">
+                        +{t.tags.length - 4}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editingId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={(e) => e.target === e.currentTarget && setEditingId(null)}
+        >
+          <div className="bg-[var(--background)] rounded-xl border border-[var(--border)] w-full max-w-lg p-5 shadow-xl">
+            <h3 className="text-sm font-semibold mb-3">Editar prompt do template</h3>
+            <textarea
+              value={editPrompt}
+              onChange={(e) => setEditPrompt(e.target.value)}
+              rows={5}
+              className="w-full p-2.5 border border-[var(--border)] rounded-lg text-sm bg-[var(--background)] resize-y focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+            />
+            <label className="block text-xs text-[var(--muted-foreground)] mt-3 mb-1">Tags (separadas por vírgula)</label>
+            <input
+              value={editTags}
+              onChange={(e) => setEditTags(e.target.value)}
+              className="w-full p-2 border border-[var(--border)] rounded-lg text-sm bg-[var(--background)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setEditingId(null)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--muted)] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveEdit}
+                className="px-3 py-1.5 text-sm rounded-lg text-white transition-colors"
+                style={{ background: 'var(--primary)' }}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
