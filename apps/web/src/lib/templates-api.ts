@@ -3,8 +3,10 @@ import 'server-only';
 const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:3000';
 const ADMIN_ID = process.env.ADMIN_API_ID ?? '';
 
-function headers(): HeadersInit {
-  return { 'Content-Type': 'application/json', 'X-API-Key': ADMIN_ID };
+function headers(json = true): HeadersInit {
+  const h: Record<string, string> = { 'X-API-Key': ADMIN_ID };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
 }
 
 // ─── Types ──────────────────────────────────────────────
@@ -79,7 +81,7 @@ export async function updateTemplate(id: string, data: { scenePrompt?: string; t
 
 export async function deleteTemplate(id: string) {
   const res = await fetch(`${API_BASE}/api/admin/templates/${encodeURIComponent(id)}`, {
-    method: 'DELETE', headers: headers(),
+    method: 'DELETE', headers: headers(false),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
@@ -87,7 +89,7 @@ export async function deleteTemplate(id: string) {
 
 export async function regeneratePrompt(id: string) {
   const res = await fetch(`${API_BASE}/api/admin/templates/${encodeURIComponent(id)}/regenerate-prompt`, {
-    method: 'POST', headers: headers(),
+    method: 'POST', headers: headers(false),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
@@ -95,7 +97,7 @@ export async function regeneratePrompt(id: string) {
 
 export async function seedOccasions(): Promise<{ created: number; total: number }> {
   const res = await fetch(`${API_BASE}/api/admin/seed-occasions`, {
-    method: 'POST', headers: headers(),
+    method: 'POST', headers: headers(false),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
@@ -103,7 +105,7 @@ export async function seedOccasions(): Promise<{ created: number; total: number 
 
 export async function syncTemplates(): Promise<{ synced: number }> {
   const res = await fetch(`${API_BASE}/api/admin/sync-templates`, {
-    method: 'POST', headers: headers(),
+    method: 'POST', headers: headers(false),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
