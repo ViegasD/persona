@@ -38,6 +38,12 @@ RULES:
 - Include natural imperfections (flyaway hair, slight wrinkles, uneven lighting)
 - Do NOT describe the person's identity, race, or specific facial features — only describe what they're DOING, WEARING, and the SETTING around them
 
+DYNAMIC PLACEHOLDERS — use these exact tokens when relevant (they will be replaced with real client data):
+- {age} — the person's age (use for birthday candles, number balloons, age-related props: e.g. "blow out {age} candles")
+- {profession} — the person's profession (use for professional/corporate scenes: e.g. "the composed stance of a working {profession}")
+- {course} — graduation course name (use for graduation scenes: e.g. "completing {course}")
+Only use a placeholder if the image content suggests that kind of detail (candles with a number → {age}, office setting → {profession}, cap and gown → {course}). Do NOT force placeholders where they don't fit.
+
 TAGS: Also extract 5–10 single-word or hyphenated tags that describe the visual style (e.g. "vintage", "golden-hour", "indoor", "warm-tones", "minimalist", "urban", "bokeh", "film-grain", "casual", "formal").
 
 Respond ONLY with valid JSON:
