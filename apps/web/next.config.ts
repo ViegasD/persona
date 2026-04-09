@@ -5,6 +5,9 @@ const nextConfig = {
   output: 'standalone',
   basePath: '/manager',
   outputFileTracingRoot: path.join(import.meta.dirname, '../../'),
+  serverActions: {
+    bodySizeLimit: '50mb',
+  },
   images: {
     remotePatterns: [
       {
