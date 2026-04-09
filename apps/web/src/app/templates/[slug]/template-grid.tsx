@@ -25,26 +25,32 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
   const [editPrompt, setEditPrompt] = useState('');
   const [editTags, setEditTags] = useState('');
 
+  const [uploadProgress, setUploadProgress] = useState('');
+
   async function handleUpload(files: FileList) {
     setUploading(true);
+    const fileArray = Array.from(files);
+    let uploaded = 0;
     try {
-      const images: Array<{ base64: string; filename: string; mimeType: string }> = [];
-      for (const file of Array.from(files)) {
+      for (const file of fileArray) {
+        setUploadProgress(`Enviando ${++uploaded}/${fileArray.length}: ${file.name}...`);
         const base64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = () => resolve((reader.result as string).split(',')[1]);
           reader.readAsDataURL(file);
         });
-        images.push({ base64, filename: file.name, mimeType: file.type });
-      }
 
-      const result = await uploadTemplatesAction(slug, images);
-      setTemplates((prev) => [...result.templates, ...prev]);
-      alert(`${result.created} template(s) criado(s) com análise de cena via GPT-4o`);
+        const result = await uploadTemplatesAction(slug, [
+          { base64, filename: file.name, mimeType: file.type },
+        ]);
+        setTemplates((prev) => [...result.templates, ...prev]);
+      }
+      alert(`${fileArray.length} template(s) criado(s) com análise de cena via GPT-4o`);
     } catch (err) {
-      alert(`Erro no upload: ${err}`);
+      alert(`Erro no upload (${uploaded}/${fileArray.length}): ${err}`);
     } finally {
       setUploading(false);
+      setUploadProgress('');
       if (fileRef.current) fileRef.current.value = '';
     }
   }
@@ -107,7 +113,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
         />
         {uploading ? (
           <p className="text-[var(--muted-foreground)]">
-            Enviando e analisando com GPT-4o... (pode levar alguns segundos por imagem)
+            {uploadProgress || 'Preparando upload...'}
           </p>
         ) : (
           <>
