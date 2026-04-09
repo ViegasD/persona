@@ -139,10 +139,6 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: 'images array is required' });
       }
 
-      if (images.length > 10) {
-        return reply.status(400).send({ error: 'Maximum 10 images per upload' });
-      }
-
       const results: Array<{
         id: string;
         s3Key: string;

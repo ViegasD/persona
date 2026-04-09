@@ -30,8 +30,11 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     try {
       const images: Array<{ base64: string; filename: string; mimeType: string }> = [];
       for (const file of Array.from(files)) {
-        const buffer = await file.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.readAsDataURL(file);
+        });
         images.push({ base64, filename: file.name, mimeType: file.type });
       }
 
@@ -110,7 +113,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
           <>
             <p className="text-lg font-medium">📸 Clique ou arraste para enviar templates</p>
             <p className="text-sm text-[var(--muted-foreground)] mt-1">
-              JPG, PNG ou WebP — máx. 10 imagens por vez. Cada uma será analisada por GPT-4o para gerar o prompt de cena.
+              JPG, PNG ou WebP. Cada imagem será analisada por GPT-4o para gerar o prompt de cena.
             </p>
           </>
         )}
