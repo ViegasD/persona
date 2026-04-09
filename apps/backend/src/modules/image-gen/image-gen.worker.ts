@@ -8,7 +8,7 @@ import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { kieApi, KieApiError } from './kie-ai.client.js';
 import { buildPromptVariations } from './prompt.engine.js';
-import { pickRandomStyleTemplates } from './templates.config.js';
+import { pickRandomStyleTemplates, pickStyleTemplatesFromDb } from './templates.config.js';
 import { processGeneratedImages } from './result.processor.js';
 import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
@@ -77,13 +77,14 @@ export async function processImageGeneration(
       log.info({ userStyleRefCount: userStyleRefs.length, pickedCount: styleTemplateUrls.length }, 'Usando style refs do usuário');
     } else {
       // Buscar style templates do S3 (uma vez por job)
-      styleTemplateUrls = await pickRandomStyleTemplates(occasion, pkg.photos);
-      log.info({ templateCount: styleTemplateUrls.length }, 'Usando style templates do MinIO');
+      const styleDesc = (prefs.styleDescription as string) ?? undefined;
+      styleTemplateUrls = await pickStyleTemplatesFromDb(occasion, pkg.photos, styleDesc);
+      log.info({ templateCount: styleTemplateUrls.length, fromDb: true }, 'Usando style templates (DB → MinIO fallback)');
     }
     const hasStyleTemplate = styleTemplateUrls.length > 0;
 
     // Gerar uma variação de prompt por imagem — cada imagem do batch tem pose distinta
-    const prompts = buildPromptVariations({
+    const prompts = await buildPromptVariations({
       occasion,
       occasionDetails: prefs.occasionDetails,
       ageAtBirthday: prefs.ageAtBirthday,

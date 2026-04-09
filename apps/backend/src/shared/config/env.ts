@@ -37,6 +37,7 @@ const envSchema = z.object({
   // OpenAI
   OPENAI_API_KEY: z.string(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  OPENAI_VISION_MODEL: z.string().default('gpt-4o'),
 
   // Kie.ai
   KIE_API_URL: z.string().url(),

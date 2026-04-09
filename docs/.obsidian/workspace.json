@@ -1,0 +1,239 @@
+{
+  "main": {
+    "id": "bea9e0c72366ebf5",
+    "type": "split",
+    "children": [
+      {
+        "id": "40e3fcfe1da55353",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3a97e2d03787e8ac",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "02_API/CTAs do Site.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CTAs do Site"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "877e0d0d7f0ecf9a",
+    "type": "split",
+    "children": [
+      {
+        "id": "618bda0a30266ca5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5a1db99c7b501533",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "f581b60406004c11",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "0741f06c9fa287d3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9ae5e810905eeb47",
+    "type": "split",
+    "children": [
+      {
+        "id": "ca7d4b6a12376462",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "845c93cace4efe08",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "03_Webhooks/Eventos OPA.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos para Eventos OPA"
+            }
+          },
+          {
+            "id": "18780eda847204ff",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "03_Webhooks/Eventos OPA.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída para Eventos OPA"
+            }
+          },
+          {
+            "id": "0a67cbde037ca2b1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "c0df26ee6dcca671",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas as propriedades"
+            }
+          },
+          {
+            "id": "3f224e93a08b76b1",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "04_Workflows/01_CTA_Lead_Detector.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário de 01_CTA_Lead_Detector"
+            }
+          },
+          {
+            "id": "a3d2c3b64df13ec2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "01_Arquitetura/Fluxos N8N.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Fluxos N8N"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 380.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "graph:Abrir visualização em gráfico": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Criar nova base": false
+    }
+  },
+  "active": "3a97e2d03787e8ac",
+  "lastOpenFiles": [
+    "02_API/Assistente Victor.md",
+    "02_API/Assistente Luiza.md",
+    "01_Arquitetura/Blueprint - Entrada Hibrida OPA-N8N.md",
+    "01_Arquitetura/Arquitetura Final Ideal.md",
+    "01_Arquitetura/Acesso ao N8N.md",
+    "04_Workflows/Workflow Unificado.md",
+    "02_API/CTAs do Site.md",
+    "04_Workflows/01_CTA_Lead_Detector.md",
+    "05_Log/Revisao dos Fluxos - 2026-03-31.md",
+    "05_Log/Progresso.md",
+    "02_API/Indice APIs.md",
+    "02_API/IXC Provedor API.md",
+    "02_API/OPA Suite Endpoints.md",
+    "02_API/n8n API.md",
+    "02_API/Fluxos de Comunicacao.md",
+    "00_Governanca/Padrao do Vault e LLMs.md",
+    "01_Arquitetura/Decisoes.md",
+    "01_Arquitetura/Sistema de Atendimento - Definicao Mestra.md",
+    "01_Arquitetura/Fluxos N8N.md",
+    "01_Arquitetura/Usuarios e Departamentos.md",
+    "02_API/README.md",
+    "00_Governanca",
+    "Bem-vindo.md",
+    "03_Webhooks/Eventos OPA.md",
+    "04_Workflows/README.md",
+    "04_Workflows/03_Context_Enrichment.md",
+    "2026-03-28.md",
+    "Bem-vindo.md.tmp.33612.1774722284410",
+    "Sem título.canvas",
+    "Sem título 1.canvas",
+    "05_Log",
+    "04_Workflows",
+    "03_Webhooks",
+    "02_API",
+    "01_Arquitetura"
+  ]
+}

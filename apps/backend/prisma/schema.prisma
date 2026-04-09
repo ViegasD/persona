@@ -245,3 +245,40 @@ model ConversationMessage {
   @@index([createdAt])
   @@map("conversation_messages")
 }
+
+// ─── Template Management ────────────────────────────────────
+
+model Occasion {
+  id        String  @id @default(uuid())
+  slug      String  @unique
+  label     String
+  promptHint String @map("prompt_hint") @db.Text
+  isActive  Boolean @default(true) @map("is_active")
+
+  templates StyleTemplate[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("occasions")
+}
+
+model StyleTemplate {
+  id          String  @id @default(uuid())
+  occasionId  String  @map("occasion_id")
+  s3Key       String  @map("s3_key")
+  scenePrompt String  @map("scene_prompt") @db.Text
+  tags        String[] @default([])
+  isActive    Boolean @default(true) @map("is_active")
+
+  occasion Occasion @relation(fields: [occasionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([occasionId])
+  @@index([isActive])
+  @@map("style_templates")
+}

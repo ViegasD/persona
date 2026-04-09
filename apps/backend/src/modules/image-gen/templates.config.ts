@@ -1,4 +1,5 @@
 import { listObjects, getPresignedUrl } from '../../shared/storage/s3.client.js';
+import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('templates-config');
@@ -55,6 +56,75 @@ export async function pickRandomStyleTemplates(
   );
 
   return urls.filter((u): u is string => u !== null);
+}
+
+/**
+ * Picks templates from DB, optionally matching by style description tags.
+ * Falls back to pickRandomStyleTemplates (MinIO) if DB has no templates.
+ */
+export async function pickStyleTemplatesFromDb(
+  occasion: string,
+  count: number,
+  styleDescription?: string,
+): Promise<string[]> {
+  try {
+    const occ = await prisma.occasion.findFirst({
+      where: { slug: occasion.toLowerCase(), isActive: true },
+    });
+    if (!occ) return pickRandomStyleTemplates(occasion, count);
+
+    let templates: Array<{ s3Key: string; tags: string[] }>;
+
+    if (styleDescription) {
+      // Tag-based matching: extract words from user style description and match against DB tags
+      const words = styleDescription
+        .toLowerCase()
+        .split(/[\s,;.]+/)
+        .filter((w) => w.length > 2);
+
+      templates = await prisma.styleTemplate.findMany({
+        where: {
+          occasionId: occ.id,
+          isActive: true,
+          tags: { hasSome: words },
+        },
+        select: { s3Key: true, tags: true },
+      });
+
+      // If tag matching found nothing, fall back to all templates for this occasion
+      if (templates.length === 0) {
+        templates = await prisma.styleTemplate.findMany({
+          where: { occasionId: occ.id, isActive: true },
+          select: { s3Key: true, tags: true },
+        });
+      }
+    } else {
+      templates = await prisma.styleTemplate.findMany({
+        where: { occasionId: occ.id, isActive: true },
+        select: { s3Key: true, tags: true },
+      });
+    }
+
+    if (templates.length === 0) return pickRandomStyleTemplates(occasion, count);
+
+    const shuffled = shuffle([...templates]);
+    const picks = Array.from({ length: count }, (_, i) => shuffled[i % shuffled.length].s3Key);
+
+    const urls = await Promise.all(
+      picks.map((key) =>
+        getPresignedUrl(key, 3600).catch((err) => {
+          log.warn({ key, err }, '[TEMPLATES] Failed to get presigned URL for DB template');
+          return null;
+        }),
+      ),
+    );
+
+    const valid = urls.filter((u): u is string => u !== null);
+    return valid.length > 0 ? valid : pickRandomStyleTemplates(occasion, count);
+  } catch (err) {
+    log.warn({ occasion, err }, '[TEMPLATES] DB query failed — falling back to MinIO');
+    return pickRandomStyleTemplates(occasion, count);
+  }
 }
 
 function shuffle<T>(arr: T[]): T[] {
