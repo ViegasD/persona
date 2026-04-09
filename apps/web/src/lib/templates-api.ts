@@ -3,6 +3,8 @@ import 'server-only';
 const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:3000';
 const ADMIN_ID = process.env.ADMIN_API_ID ?? '';
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '/manager';
+
 function headers(json = true): HeadersInit {
   const h: Record<string, string> = { 'X-API-Key': ADMIN_ID };
   if (json) h['Content-Type'] = 'application/json';
@@ -57,7 +59,16 @@ export async function fetchTemplates(slug: string): Promise<OccasionTemplatesRes
     headers: headers(), cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
-  return res.json();
+  const data: OccasionTemplatesResponse = await res.json();
+
+  // Rewrite imageUrl to use the Next.js proxy (MinIO is not publicly accessible)
+  data.templates = data.templates.map((t) => {
+    const proxyUrl = `${BASE_PATH}/api/template-image/${t.id}`;
+    console.log(`[templates-api] imageUrl rewrite: ${t.imageUrl?.substring(0, 60)}... → ${proxyUrl}`);
+    return { ...t, imageUrl: proxyUrl };
+  });
+
+  return data;
 }
 
 export async function uploadTemplates(
@@ -68,7 +79,15 @@ export async function uploadTemplates(
     method: 'POST', headers: headers(), body: JSON.stringify({ images }),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}: ${await res.text()}`);
-  return res.json();
+  const data = await res.json();
+
+  // Rewrite imageUrl to use the Next.js proxy
+  data.templates = data.templates.map((t: AdminTemplate) => ({
+    ...t,
+    imageUrl: `${BASE_PATH}/api/template-image/${t.id}`,
+  }));
+
+  return data;
 }
 
 export async function updateTemplate(id: string, data: { scenePrompt?: string; tags?: string[] }) {

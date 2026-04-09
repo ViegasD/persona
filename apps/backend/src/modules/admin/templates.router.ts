@@ -234,6 +234,34 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
     },
   );
 
+  /** GET /api/admin/template-image/:id — serve template image from S3 */
+  app.get(
+    '/template-image/:id',
+    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      log.debug({ id: req.params.id }, 'template-image request');
+
+      const template = await prisma.styleTemplate.findUnique({ where: { id: req.params.id } });
+      if (!template) {
+        log.warn({ id: req.params.id }, 'template-image: template not found');
+        return reply.status(404).send({ error: 'Template not found' });
+      }
+
+      try {
+        log.debug({ s3Key: template.s3Key }, 'template-image: fetching from S3');
+        const obj = await getS3Object(template.s3Key);
+        const bodyBytes = await obj.Body!.transformToByteArray();
+        log.debug({ s3Key: template.s3Key, bytes: bodyBytes.length, contentType: obj.ContentType }, 'template-image: serving');
+        reply
+          .header('Content-Type', obj.ContentType ?? 'image/jpeg')
+          .header('Cache-Control', 'public, max-age=86400')
+          .send(Buffer.from(bodyBytes));
+      } catch (err) {
+        log.error({ err, s3Key: template.s3Key }, 'Failed to serve template image from S3');
+        return reply.status(502).send({ error: 'Failed to load image from storage' });
+      }
+    },
+  );
+
   /** POST /api/admin/templates/:id/regenerate-prompt — re-run vision analysis */
   app.post(
     '/templates/:id/regenerate-prompt',
