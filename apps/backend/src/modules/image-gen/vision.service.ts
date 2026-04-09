@@ -51,13 +51,19 @@ Respond ONLY with valid JSON:
 
 /**
  * Analyzes a template image using GPT-4o vision and generates a scene prompt + tags.
- * The scene prompt is written in the same format as SCENE_PACKS entries.
+ * Accepts a base64 string (raw, no prefix) + mimeType OR a data URI.
  */
 export async function analyzeTemplateImage(
-  imageUrl: string,
+  imageBase64: string,
+  mimeType: string,
   occasionLabel: string,
 ): Promise<VisionAnalysisResult> {
   const startMs = Date.now();
+
+  // Build data URI if not already one
+  const dataUri = imageBase64.startsWith('data:')
+    ? imageBase64
+    : `data:${mimeType};base64,${imageBase64}`;
 
   const completion = await getVisionClient().chat.completions.create({
     model: env.OPENAI_VISION_MODEL,
@@ -72,7 +78,7 @@ export async function analyzeTemplateImage(
           },
           {
             type: 'image_url',
-            image_url: { url: imageUrl, detail: 'high' },
+            image_url: { url: dataUri, detail: 'high' },
           },
         ],
       },

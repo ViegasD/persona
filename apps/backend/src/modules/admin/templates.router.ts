@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { verifyAdminAuth } from '../../shared/middleware/auth.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { uploadFile, getPresignedUrl, deleteFile, listObjects } from '../../shared/storage/s3.client.js';
+import { uploadFile, getPresignedUrl, deleteFile, listObjects, getS3Object } from '../../shared/storage/s3.client.js';
 import { analyzeTemplateImage } from '../image-gen/vision.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 
@@ -164,14 +164,11 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
           // Upload to MinIO
           await uploadFile(s3Key, buffer, mime);
 
-          // Get presigned URL for vision analysis
-          const presignedUrl = await getPresignedUrl(s3Key, 3600);
-
-          // Analyze with GPT-4o vision
+          // Analyze with GPT-4o vision (send base64 directly — MinIO is not publicly accessible)
           let scenePrompt = '';
           let tags: string[] = [];
           try {
-            const analysis = await analyzeTemplateImage(presignedUrl, occasion.label);
+            const analysis = await analyzeTemplateImage(img.base64, mime, occasion.label);
             scenePrompt = analysis.scenePrompt;
             tags = analysis.tags;
           } catch (err) {
@@ -194,7 +191,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             s3Key: template.s3Key,
             scenePrompt: template.scenePrompt,
             tags: template.tags,
-            imageUrl: presignedUrl,
+            imageUrl: await getPresignedUrl(s3Key, 3600),
           });
 
           log.info({ templateId: template.id, s3Key, tagsCount: tags.length }, 'Template created');
@@ -247,8 +244,12 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
       });
       if (!template) return reply.status(404).send({ error: 'Template not found' });
 
-      const presignedUrl = await getPresignedUrl(template.s3Key, 3600);
-      const analysis = await analyzeTemplateImage(presignedUrl, template.occasion.label);
+      const obj = await getS3Object(template.s3Key);
+      const bodyBytes = await obj.Body!.transformToByteArray();
+      const base64 = Buffer.from(bodyBytes).toString('base64');
+      const mime = obj.ContentType ?? 'image/jpeg';
+
+      const analysis = await analyzeTemplateImage(base64, mime, template.occasion.label);
 
       const updated = await prisma.styleTemplate.update({
         where: { id: req.params.id },
@@ -291,8 +292,12 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
 
       for (const s3Key of newKeys) {
         try {
-          const presignedUrl = await getPresignedUrl(s3Key, 3600);
-          const analysis = await analyzeTemplateImage(presignedUrl, occasion.label);
+          const obj = await getS3Object(s3Key);
+          const bodyBytes = await obj.Body!.transformToByteArray();
+          const base64 = Buffer.from(bodyBytes).toString('base64');
+          const mime = obj.ContentType ?? 'image/jpeg';
+
+          const analysis = await analyzeTemplateImage(base64, mime, occasion.label);
 
           await prisma.styleTemplate.create({
             data: {
