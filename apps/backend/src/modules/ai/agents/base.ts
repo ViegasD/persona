@@ -156,5 +156,10 @@ export function buildLeadContext(lead: {
   }
 
   parts.push('</lead_context>');
+
+  if (minReached) {
+    parts.push('\n⚠️ ATENÇÃO: O cliente JÁ enviou fotos suficientes. NÃO peça mais fotos.');
+  }
+
   return parts.join('\n');
 }
