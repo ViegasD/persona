@@ -35,7 +35,7 @@ export type FunnelState = (typeof FUNNEL_STATES)[keyof typeof FUNNEL_STATES];
  */
 export const TRANSITIONS: Record<FunnelState, FunnelState[]> = {
   ENGAGING: ['COLLECTING_PHOTOS', 'CHURNED'],
-  COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'ENGAGING', 'CHURNED'], // fotos ok → style refs
+  COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'UPSELLING', 'AWAITING_PAYMENT', 'ENGAGING', 'CHURNED'],
   COLLECTING_STYLE_REFS: ['UPSELLING', 'AWAITING_PAYMENT', 'CHURNED'],  // style refs ok → upsell (or skip if top pkg)
   UPSELLING: ['AWAITING_PAYMENT', 'CHURNED'],                           // upsell attempt → pagamento
   AWAITING_PAYMENT: ['PAID', 'ENGAGING', 'CHURNED'],                   // pode mudar pacote
