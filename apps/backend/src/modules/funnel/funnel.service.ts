@@ -253,11 +253,17 @@ async function handleTransition(
       log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Starting...');
       await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_PHOTOS);
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'COLLECTING' } });
-      // Send askPhotos with delay so it arrives AFTER the engagement agent's LLM confirmation bubble
-      const askMsg = MESSAGES.askPhotos();
-      await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
-      await logOutboundMessage(leadId, askMsg);
-      log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done — askPhotos queued with delay');
+
+      // Only send askPhotos if the user hasn't already sent reference photos during ENGAGING
+      const earlyPhotos = await prisma.referenceImage.count({ where: { leadSessionId: sessionId } });
+      if (earlyPhotos === 0) {
+        const askMsg = MESSAGES.askPhotos();
+        await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
+        await logOutboundMessage(leadId, askMsg);
+      } else {
+        log.info({ earlyPhotos }, '[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Photos already received — skipping askPhotos');
+      }
+      log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done');
       break;
     }
 
