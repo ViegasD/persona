@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useSyncExternalStore } from 'react';
 import type { AdminTemplate } from '@/lib/templates-api';
 import {
-  uploadTemplatesAction,
   updateTemplateAction,
   deleteTemplateAction,
   regeneratePromptAction,
 } from '@/lib/template-actions';
+import { enqueueUploads, getQueue, clearDone, subscribe, type QueueItem } from '@/lib/upload-queue';
 
 interface Props {
   slug: string;
@@ -15,41 +15,70 @@ interface Props {
   occasionLabel: string;
 }
 
+function useUploadQueue(slug: string) {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => getQueue(slug),
+    () => [] as QueueItem[],
+  );
+  return snapshot;
+}
+
 export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [templates, setTemplates] = useState(initial);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState('');
   const [editTags, setEditTags] = useState('');
+  const [editGender, setEditGender] = useState<'MALE' | 'FEMALE' | 'UNISEX'>('UNISEX');
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  /* ── Upload (one at a time) ────────────────────────── */
+  const queueItems = useUploadQueue(slug);
+  const activeUploads = queueItems.filter((q) => q.status === 'pending' || q.status === 'uploading');
+  const isUploading = activeUploads.length > 0;
+
+  // Merge completed queue items into templates list
+  useEffect(() => {
+    const done = queueItems.filter((q) => q.status === 'done' && q.result);
+    if (done.length === 0) return;
+
+    setTemplates((prev) => {
+      const existingIds = new Set(prev.map((t) => t.id));
+      const newTemplates = done
+        .map((q) => q.result!)
+        .filter((t) => !existingIds.has(t.id));
+      if (newTemplates.length === 0) return prev;
+      return [...newTemplates, ...prev];
+    });
+
+    clearDone(slug);
+  }, [queueItems, slug]);
+
+  /* ── Upload ────────────────────────────────────────── */
   async function handleUpload(files: FileList) {
-    setUploading(true);
     const fileArray = Array.from(files);
-    let uploaded = 0;
-    try {
-      for (const file of fileArray) {
-        setUploadProgress(`${++uploaded}/${fileArray.length} — ${file.name}`);
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve((reader.result as string).split(',')[1]);
-          reader.readAsDataURL(file);
-        });
-        const result = await uploadTemplatesAction(slug, [
-          { base64, filename: file.name, mimeType: file.type },
-        ]);
-        setTemplates((prev) => [...result.templates, ...prev]);
-      }
-    } catch (err) {
-      alert(`Erro no upload (${uploaded}/${fileArray.length}): ${err}`);
-    } finally {
-      setUploading(false);
-      setUploadProgress('');
-      if (fileRef.current) fileRef.current.value = '';
-    }
+
+    // Read all files as base64
+    const images = await Promise.all(
+      fileArray.map(
+        (file) =>
+          new Promise<{ base64: string; filename: string; mimeType: string }>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({
+                base64: (reader.result as string).split(',')[1],
+                filename: file.name,
+                mimeType: file.type,
+              });
+            reader.readAsDataURL(file);
+          }),
+      ),
+    );
+
+    // Enqueue — processing starts immediately and survives navigation
+    enqueueUploads(slug, images);
+
+    if (fileRef.current) fileRef.current.value = '';
   }
 
   /* ── Edit ───────────────────────────────────────────── */
@@ -57,6 +86,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     setEditingId(t.id);
     setEditPrompt(t.scenePrompt);
     setEditTags(t.tags.join(', '));
+    setEditGender(t.gender);
   }
 
   async function saveEdit() {
@@ -64,9 +94,9 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     const id = editingId;
     try {
       const tags = editTags.split(',').map((t) => t.trim()).filter(Boolean);
-      await updateTemplateAction(id, { scenePrompt: editPrompt, tags });
+      await updateTemplateAction(id, { scenePrompt: editPrompt, tags, gender: editGender });
       setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, scenePrompt: editPrompt, tags } : t)),
+        prev.map((t) => (t.id === id ? { ...t, scenePrompt: editPrompt, tags, gender: editGender } : t)),
       );
       setEditingId(null);
     } catch (err) {
@@ -91,7 +121,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     try {
       const updated = await regeneratePromptAction(id);
       setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags } : t)),
+        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags, gender: updated.gender } : t)),
       );
     } catch (err) {
       alert(`Erro: ${err}`);
@@ -119,7 +149,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
       {/* Upload bar */}
       <button
         onClick={() => fileRef.current?.click()}
-        disabled={uploading}
+        disabled={isUploading}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-6 rounded-lg border border-dashed border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--muted)] transition-all text-sm disabled:opacity-60"
       >
         <input
@@ -130,8 +160,14 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
           hidden
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
         />
-        {uploading ? (
-          <span className="text-[var(--muted-foreground)]">⏳ {uploadProgress}</span>
+        {isUploading ? (
+          <span className="text-[var(--muted-foreground)]">
+            ⏳ Enviando {activeUploads.length} imagem{activeUploads.length !== 1 ? 's' : ''}
+            {activeUploads.find((q) => q.status === 'uploading')
+              ? ` — ${activeUploads.find((q) => q.status === 'uploading')!.filename}`
+              : ''}
+            <span className="text-[10px] ml-2">(pode sair da página — continua enviando)</span>
+          </span>
         ) : (
           <>
             <span>📸</span>
@@ -170,6 +206,15 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">📷</div>
                 )}
+
+                {/* Gender badge */}
+                <span className={`absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium backdrop-blur-sm ${
+                  t.gender === 'MALE' ? 'bg-blue-500/80 text-white' :
+                  t.gender === 'FEMALE' ? 'bg-pink-500/80 text-white' :
+                  'bg-gray-500/60 text-white'
+                }`}>
+                  {t.gender === 'MALE' ? '♂' : t.gender === 'FEMALE' ? '♀' : '⚥'}
+                </span>
 
                 {/* Hover overlay with actions */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-end justify-center gap-1.5 p-2 opacity-0 group-hover:opacity-100">
@@ -246,6 +291,25 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
               onChange={(e) => setEditTags(e.target.value)}
               className="w-full p-2 border border-[var(--border)] rounded-lg text-sm bg-[var(--background)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
             />
+            <label className="block text-xs text-[var(--muted-foreground)] mt-3 mb-1">Gênero do template</label>
+            <div className="flex gap-2">
+              {(['MALE', 'FEMALE', 'UNISEX'] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setEditGender(g)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                    editGender === g
+                      ? g === 'MALE' ? 'bg-blue-500 text-white border-blue-500'
+                        : g === 'FEMALE' ? 'bg-pink-500 text-white border-pink-500'
+                        : 'bg-gray-500 text-white border-gray-500'
+                      : 'border-[var(--border)] hover:bg-[var(--muted)]'
+                  }`}
+                >
+                  {g === 'MALE' ? '♂ Masculino' : g === 'FEMALE' ? '♀ Feminino' : '⚥ Unissex'}
+                </button>
+              ))}
+            </div>
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => setEditingId(null)}

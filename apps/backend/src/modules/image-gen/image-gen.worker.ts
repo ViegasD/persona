@@ -78,8 +78,10 @@ export async function processImageGeneration(
     } else {
       // Buscar style templates do S3 (uma vez por job)
       const styleDesc = (prefs.styleDescription as string) ?? undefined;
-      styleTemplateUrls = await pickStyleTemplatesFromDb(occasion, pkg.photos, styleDesc);
-      log.info({ templateCount: styleTemplateUrls.length, fromDb: true }, 'Usando style templates (DB → MinIO fallback)');
+      // Skip gender filtering for couple shoots — templates should be UNISEX
+      const detectedGender = isCoupleShot ? undefined : ((prefs.detectedGender as string) ?? undefined);
+      styleTemplateUrls = await pickStyleTemplatesFromDb(occasion, pkg.photos, styleDesc, detectedGender);
+      log.info({ templateCount: styleTemplateUrls.length, fromDb: true, detectedGender }, 'Usando style templates (DB → MinIO fallback)');
     }
     const hasStyleTemplate = styleTemplateUrls.length > 0;
 

@@ -27,6 +27,7 @@ export interface AdminTemplate {
   s3Key: string;
   scenePrompt: string;
   tags: string[];
+  gender: 'MALE' | 'FEMALE' | 'UNISEX';
   imageUrl: string | null;
   createdAt: string;
 }
@@ -90,7 +91,7 @@ export async function uploadTemplates(
   return data;
 }
 
-export async function updateTemplate(id: string, data: { scenePrompt?: string; tags?: string[] }) {
+export async function updateTemplate(id: string, data: { scenePrompt?: string; tags?: string[]; gender?: string }) {
   const res = await fetch(`${API_BASE}/api/admin/templates/${encodeURIComponent(id)}`, {
     method: 'PUT', headers: headers(), body: JSON.stringify(data),
   });

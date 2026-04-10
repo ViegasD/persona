@@ -8,6 +8,7 @@ import { debounceFunnelMessage } from '../ai/debounce.service.js';
 import { env } from '../../shared/config/env.js';
 import { getCloudApi } from './whatsapp-cloud-api.client.js';
 import { uploadFile, buildS3Key } from '../../shared/storage/s3.client.js';
+import { detectGenderFromPhoto } from '../image-gen/vision.service.js';
 
 const log = createChildLogger('whatsapp-cloud-controller');
 
@@ -169,6 +170,29 @@ export async function handleCloudWebhook(
                 },
               });
               log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
+
+              // Fire-and-forget: detect gender from face photos (first photo only, skip couples)
+              if (imageType === 'face') {
+                const prefs = (session.preferences as Record<string, unknown>) ?? {};
+                const occasion = (prefs.occasion as string) ?? '';
+                if (!prefs.detectedGender && occasion !== 'casal') {
+                  detectGenderFromPhoto(buffer.toString('base64'), mimeType)
+                    .then(async (gender) => {
+                      if (gender) {
+                        const current = await prisma.leadSession.findUnique({ where: { id: session.id } });
+                        const curPrefs = (current?.preferences as Record<string, unknown>) ?? {};
+                        if (!curPrefs.detectedGender) {
+                          await prisma.leadSession.update({
+                            where: { id: session.id },
+                            data: { preferences: { ...curPrefs, detectedGender: gender } as any },
+                          });
+                          log.info({ gender, sessionId: session.id }, '[CLOUD WEBHOOK:IMAGE] Gender detected from selfie');
+                        }
+                      }
+                    })
+                    .catch((err) => log.warn({ err }, '[CLOUD WEBHOOK:IMAGE] Gender detection failed'));
+                }
+              }
             } catch (err) {
               log.error(err, '[CLOUD WEBHOOK:IMAGE] ❌ Failed to download/store image');
             }

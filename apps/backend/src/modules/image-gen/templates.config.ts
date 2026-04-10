@@ -66,12 +66,18 @@ export async function pickStyleTemplatesFromDb(
   occasion: string,
   count: number,
   styleDescription?: string,
+  gender?: string,
 ): Promise<string[]> {
   try {
     const occ = await prisma.occasion.findFirst({
       where: { slug: occasion.toLowerCase(), isActive: true },
     });
     if (!occ) return pickRandomStyleTemplates(occasion, count);
+
+    // Build gender filter: match specific gender + UNISEX fallback
+    const genderFilter = gender === 'male' || gender === 'female'
+      ? { gender: { in: [gender === 'male' ? 'MALE' as const : 'FEMALE' as const, 'UNISEX' as const] } }
+      : {};
 
     let templates: Array<{ s3Key: string; tags: string[] }>;
 
@@ -87,6 +93,7 @@ export async function pickStyleTemplatesFromDb(
           occasionId: occ.id,
           isActive: true,
           tags: { hasSome: words },
+          ...genderFilter,
         },
         select: { s3Key: true, tags: true },
       });
@@ -94,13 +101,13 @@ export async function pickStyleTemplatesFromDb(
       // If tag matching found nothing, fall back to all templates for this occasion
       if (templates.length === 0) {
         templates = await prisma.styleTemplate.findMany({
-          where: { occasionId: occ.id, isActive: true },
+          where: { occasionId: occ.id, isActive: true, ...genderFilter },
           select: { s3Key: true, tags: true },
         });
       }
     } else {
       templates = await prisma.styleTemplate.findMany({
-        where: { occasionId: occ.id, isActive: true },
+        where: { occasionId: occ.id, isActive: true, ...genderFilter },
         select: { s3Key: true, tags: true },
       });
     }

@@ -110,6 +110,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             s3Key: t.s3Key,
             scenePrompt: t.scenePrompt,
             tags: t.tags,
+            gender: t.gender,
             imageUrl,
             createdAt: t.createdAt,
           };
@@ -144,7 +145,9 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
         s3Key: string;
         scenePrompt: string;
         tags: string[];
+        gender: string;
         imageUrl: string | null;
+        createdAt: Date;
       }> = [];
 
       for (const img of images) {
@@ -164,25 +167,13 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
           // Upload to MinIO
           await uploadFile(s3Key, buffer, mime);
 
-          // Analyze with GPT-4o vision (send base64 directly — MinIO is not publicly accessible)
-          let scenePrompt = '';
-          let tags: string[] = [];
-          try {
-            const analysis = await analyzeTemplateImage(img.base64, mime, occasion.label);
-            scenePrompt = analysis.scenePrompt;
-            tags = analysis.tags;
-          } catch (err) {
-            log.error({ err, s3Key }, 'Vision analysis failed — saving template with empty prompt');
-            scenePrompt = `[pending] ${occasion.label} scene — vision analysis failed`;
-          }
-
-          // Save to DB
+          // Save to DB immediately with pending prompt (fast response)
           const template = await prisma.styleTemplate.create({
             data: {
               occasionId: occasion.id,
               s3Key,
-              scenePrompt,
-              tags,
+              scenePrompt: `[analyzing] ${occasion.label} scene...`,
+              tags: [],
             },
           });
 
@@ -191,10 +182,31 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             s3Key: template.s3Key,
             scenePrompt: template.scenePrompt,
             tags: template.tags,
+            gender: template.gender,
             imageUrl: await getPresignedUrl(s3Key, 3600),
+            createdAt: template.createdAt,
           });
 
-          log.info({ templateId: template.id, s3Key, tagsCount: tags.length }, 'Template created');
+          // Fire-and-forget: run vision analysis in background, update DB when done
+          const templateId = template.id;
+          const occasionLabel = occasion.label;
+          analyzeTemplateImage(img.base64, mime, occasionLabel)
+            .then(async (analysis) => {
+              await prisma.styleTemplate.update({
+                where: { id: templateId },
+                data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender },
+              });
+              log.info({ templateId, s3Key, tagsCount: analysis.tags.length, gender: analysis.gender }, 'Vision analysis completed (background)');
+            })
+            .catch((err) => {
+              prisma.styleTemplate.update({
+                where: { id: templateId },
+                data: { scenePrompt: `[pending] ${occasionLabel} scene — vision analysis failed` },
+              }).catch(() => {});
+              log.error({ err, templateId, s3Key }, 'Vision analysis failed (background)');
+            });
+
+          log.info({ templateId, s3Key }, 'Template created — vision running in background');
         } catch (err) {
           log.error({ err, filename: img.filename }, 'Failed to process template image');
         }
@@ -208,13 +220,19 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
   app.put(
     '/templates/:id',
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { scenePrompt, tags } = req.body as { scenePrompt?: string; tags?: string[] };
+      const { scenePrompt, tags, gender } = req.body as { scenePrompt?: string; tags?: string[]; gender?: string };
+
+      const validGenders = ['MALE', 'FEMALE', 'UNISEX'] as const;
+      const genderUpdate = gender && validGenders.includes(gender as any)
+        ? { gender: gender as (typeof validGenders)[number] }
+        : {};
 
       const template = await prisma.styleTemplate.update({
         where: { id: req.params.id },
         data: {
           ...(scenePrompt !== undefined && { scenePrompt: scenePrompt.trim() }),
           ...(tags !== undefined && { tags: tags.map((t) => t.toLowerCase().trim()) }),
+          ...genderUpdate,
         },
       });
 
@@ -281,7 +299,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
 
       const updated = await prisma.styleTemplate.update({
         where: { id: req.params.id },
-        data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags },
+        data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender },
       });
 
       reply.send(updated);
@@ -333,6 +351,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
               s3Key,
               scenePrompt: analysis.scenePrompt,
               tags: analysis.tags,
+              gender: analysis.gender,
             },
           });
 

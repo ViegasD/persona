@@ -43,6 +43,12 @@ enum DeliveryStatus {
   FAILED
 }
 
+enum TemplateGender {
+  MALE
+  FEMALE
+  UNISEX
+}
+
 enum MessageDirection {
   INBOUND
   OUTBOUND
@@ -266,12 +272,13 @@ model Occasion {
 }
 
 model StyleTemplate {
-  id          String  @id @default(uuid())
-  occasionId  String  @map("occasion_id")
-  s3Key       String  @map("s3_key")
-  scenePrompt String  @map("scene_prompt") @db.Text
-  tags        String[] @default([])
-  isActive    Boolean @default(true) @map("is_active")
+  id          String         @id @default(uuid())
+  occasionId  String         @map("occasion_id")
+  s3Key       String         @map("s3_key")
+  scenePrompt String         @map("scene_prompt") @db.Text
+  tags        String[]       @default([])
+  gender      TemplateGender @default(UNISEX)
+  isActive    Boolean        @default(true) @map("is_active")
 
   occasion Occasion @relation(fields: [occasionId], references: [id], onDelete: Cascade)
 
@@ -280,5 +287,6 @@ model StyleTemplate {
 
   @@index([occasionId])
   @@index([isActive])
+  @@index([gender])
   @@map("style_templates")
 }

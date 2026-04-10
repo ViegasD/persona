@@ -21,7 +21,7 @@ export async function uploadTemplatesAction(
   return uploadTemplates(slug, images);
 }
 
-export async function updateTemplateAction(id: string, data: { scenePrompt?: string; tags?: string[] }) {
+export async function updateTemplateAction(id: string, data: { scenePrompt?: string; tags?: string[]; gender?: string }) {
   return updateTemplate(id, data);
 }
 

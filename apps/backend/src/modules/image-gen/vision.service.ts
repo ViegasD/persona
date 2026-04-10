@@ -13,9 +13,12 @@ function getVisionClient(): OpenAI {
   return visionClient;
 }
 
+export type TemplateGender = 'MALE' | 'FEMALE' | 'UNISEX';
+
 export interface VisionAnalysisResult {
   scenePrompt: string;
   tags: string[];
+  gender: TemplateGender;
 }
 
 const VISION_SYSTEM_PROMPT = `You are an expert photography scene descriptor for an AI portrait generation system.
@@ -46,8 +49,13 @@ Only use a placeholder if the image content suggests that kind of detail (candle
 
 TAGS: Also extract 5–10 single-word or hyphenated tags that describe the visual style (e.g. "vintage", "golden-hour", "indoor", "warm-tones", "minimalist", "urban", "bokeh", "film-grain", "casual", "formal").
 
+GENDER DETECTION: Determine who this template is designed for based on the person visible in the image:
+- "MALE" — the subject is clearly male (masculine clothing, build, features)
+- "FEMALE" — the subject is clearly female (feminine clothing, build, features)
+- "UNISEX" — no person visible, or the scene works equally for any gender (e.g. landscape-only, abstract, back-facing silhouette)
+
 Respond ONLY with valid JSON:
-{"scenePrompt": "...", "tags": ["...", "..."]}`;
+{"scenePrompt": "...", "tags": ["...", "..."], "gender": "MALE|FEMALE|UNISEX"}`;
 
 /**
  * Analyzes a template image using GPT-4o vision and generates a scene prompt + tags.
@@ -104,17 +112,66 @@ export async function analyzeTemplateImage(
       throw new Error('Missing scenePrompt in vision response');
     }
 
+    const validGenders: TemplateGender[] = ['MALE', 'FEMALE', 'UNISEX'];
+    const rawGender = String(parsed.gender ?? '').toUpperCase() as TemplateGender;
+
     return {
       scenePrompt: parsed.scenePrompt.trim(),
       tags: Array.isArray(parsed.tags)
         ? parsed.tags.map((t) => String(t).toLowerCase().trim()).filter(Boolean)
         : [],
+      gender: validGenders.includes(rawGender) ? rawGender : 'UNISEX',
     };
   } catch (err) {
     log.error({ raw, err }, 'Failed to parse vision response — using raw text as prompt');
     return {
       scenePrompt: raw.substring(0, 500),
       tags: [],
+      gender: 'UNISEX',
     };
+  }
+}
+
+/**
+ * Detects gender from a client selfie using GPT-4o vision.
+ * Returns 'male' | 'female' | null (null if uncertain / no person visible).
+ */
+export async function detectGenderFromPhoto(
+  imageBase64: string,
+  mimeType: string,
+): Promise<'male' | 'female' | null> {
+  const dataUri = imageBase64.startsWith('data:')
+    ? imageBase64
+    : `data:${mimeType};base64,${imageBase64}`;
+
+  try {
+    const completion = await getVisionClient().chat.completions.create({
+      model: env.OPENAI_VISION_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: `You analyze photos to determine the apparent gender of the person for a photography service. Respond ONLY with valid JSON: {"gender": "male"} or {"gender": "female"} or {"gender": null} if you cannot determine.`,
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'What is the apparent gender of the person in this photo?' },
+            { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
+          ],
+        },
+      ],
+      temperature: 0,
+      max_tokens: 50,
+      response_format: { type: 'json_object' },
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() ?? '';
+    const parsed = JSON.parse(raw);
+    const g = parsed.gender;
+    if (g === 'male' || g === 'female') return g;
+    return null;
+  } catch (err) {
+    log.warn({ err }, 'Gender detection failed — returning null');
+    return null;
   }
 }
