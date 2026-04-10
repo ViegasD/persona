@@ -679,9 +679,32 @@ async function applyExtractedData(
   if (Object.keys(prefUpdates).length > 0) {
     const session = await prisma.leadSession.findUnique({ where: { id: sessionId } });
     const current = (session?.preferences as Record<string, unknown>) ?? {};
+    const merged = { ...current, ...prefUpdates };
+
+    // ── Clean stale data when occasion changes ──
+    if (typeof prefUpdates.occasion === 'string' && current.occasion && prefUpdates.occasion !== current.occasion) {
+      const OCCASION_FIELDS = ['ageAtBirthday', 'profession', 'graduationCourse', 'occasionDetails'];
+      for (const field of OCCASION_FIELDS) {
+        delete merged[field];
+      }
+      log.info(
+        { oldOccasion: current.occasion, newOccasion: prefUpdates.occasion },
+        '[DATA:CLEANUP] Occasion changed — cleared stale occasion fields',
+      );
+    }
+
+    // ── Clear priceOverride when package changes (prevents wrong charge) ──
+    if (typeof prefUpdates.packageId === 'string' && current.packageId && prefUpdates.packageId !== current.packageId) {
+      delete merged.priceOverride;
+      log.info(
+        { oldPkg: current.packageId, newPkg: prefUpdates.packageId },
+        '[DATA:CLEANUP] Package changed — cleared priceOverride',
+      );
+    }
+
     await prisma.leadSession.update({
       where: { id: sessionId },
-      data: { preferences: { ...current, ...prefUpdates } as any },
+      data: { preferences: merged as any },
     });
   }
 }
