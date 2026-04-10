@@ -144,6 +144,10 @@ export function buildLeadContext(lead: {
   if (prefs.occasion) parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
   if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
   parts.push(`  <fotos_enviadas>${session.photoCount}</fotos_enviadas>`);
+  const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
+  const minReached = session.photoCount >= minPhotos;
+  parts.push(`  <minimo_fotos>${minPhotos}</minimo_fotos>`);
+  parts.push(`  <minimo_atingido>${minReached ? 'sim' : 'nao'}</minimo_atingido>`);
   if (session.styleRefCount !== undefined) {
     parts.push(`  <fotos_inspiracao_enviadas>${session.styleRefCount}</fotos_inspiracao_enviadas>`);
   }
