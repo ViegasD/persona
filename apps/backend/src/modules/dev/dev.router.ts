@@ -154,7 +154,7 @@ export async function devRouter(app: FastifyInstance) {
     const generationJobs = session
       ? await prisma.generationJob.findMany({
           where: { leadSessionId: session.id },
-          select: { id: true, status: true, prompt: true, errorMessage: true, kieTaskIds: true, createdAt: true, completedAt: true },
+          select: { id: true, status: true, prompt: true, errorMessage: true, kieJobId: true, createdAt: true, completedAt: true },
           orderBy: { createdAt: 'desc' },
         })
       : [];
@@ -162,7 +162,7 @@ export async function devRouter(app: FastifyInstance) {
     const generatedImages = session
       ? await prisma.generatedImage.findMany({
           where: { generationJob: { leadSessionId: session.id } },
-          select: { id: true, s3Key: true, originalUrl: true, isApproved: true, sequence: true, createdAt: true },
+          select: { id: true, s3Key: true, s3Url: true, isApproved: true, sequence: true, createdAt: true },
           orderBy: { sequence: 'asc' },
         })
       : [];
