@@ -2,6 +2,9 @@
 # Start both backend and web admin panel
 # Backend on :3000, Web on :3001
 
+# Apply any pending Prisma migrations
+cd apps/backend && npx prisma migrate deploy && cd /app
+
 node apps/backend/dist/server.js &
 BACKEND_PID=$!
 

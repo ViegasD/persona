@@ -25,11 +25,17 @@ export async function getSetting(key: string): Promise<string> {
     return cached.value;
   }
 
-  const row = await prisma.setting.findUnique({ where: { key } });
-  const value = row?.value ?? DEFAULTS[key] ?? '';
-
-  cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
-  return value;
+  try {
+    const row = await prisma.setting.findUnique({ where: { key } });
+    const value = row?.value ?? DEFAULTS[key] ?? '';
+    cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+    return value;
+  } catch (err) {
+    log.warn({ err, key }, 'Failed to read setting from DB — using default');
+    const fallback = DEFAULTS[key] ?? '';
+    cache.set(key, { value: fallback, expiresAt: Date.now() + CACHE_TTL_MS });
+    return fallback;
+  }
 }
 
 /**
@@ -57,10 +63,15 @@ export async function setSetting(key: string, value: string): Promise<void> {
  * Get all settings (for admin display).
  */
 export async function getAllSettings(): Promise<Record<string, string>> {
-  const rows = await prisma.setting.findMany();
-  const result: Record<string, string> = { ...DEFAULTS };
-  for (const row of rows) {
-    result[row.key] = row.value;
+  try {
+    const rows = await prisma.setting.findMany();
+    const result: Record<string, string> = { ...DEFAULTS };
+    for (const row of rows) {
+      result[row.key] = row.value;
+    }
+    return result;
+  } catch (err) {
+    log.warn({ err }, 'Failed to read settings from DB — returning defaults');
+    return { ...DEFAULTS };
   }
-  return result;
 }
