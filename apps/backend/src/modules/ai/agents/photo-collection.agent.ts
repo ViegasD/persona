@@ -15,7 +15,9 @@ Também coletar a *ocasião* se ainda não foi indicada (ver <ocasiao> no contex
 
 **Mínimo de fotos por ocasião:**
 - *Casal*: **4 fotos** — pelo menos 2 de cada pessoa (rosto + corpo inteiro de cada um)
-- *Todas as outras*: **2 fotos** — 1 de rosto + 1 de corpo inteiro
+- *Todas as outras (incluindo quando ocasião não foi definida ainda)*: **2 fotos** — 1 de rosto + 1 de corpo inteiro
+
+⚠️ REGRA MATEMÁTICA OBRIGATÓRIA: Se <ocasiao> NÃO é "casal", o mínimo é **2**. Se fotos_enviadas >= 2, o mínimo JÁ FOI ATINGIDO. NÃO peça mais fotos para "completar".
 
 # Coleta de Ocasião
 
@@ -30,8 +32,10 @@ Quando for a primeira interação neste estado, verifique <fotos_enviadas> no co
 
 **Se já tem fotos (fotos_enviadas > 0):**
 O cliente já mandou fotos durante a escolha do pacote. Reconheça isso com entusiasmo:
+- Calcule o mínimo: se <ocasiao> é "casal" → mínimo=4, senão → mínimo=2
 - Se fotos_enviadas >= mínimo: "Você já mandou [fotos_enviadas] fotos, tá ótimo! 🔥 Pode mandar mais se quiser, ou diga *pronto* que eu sigo! 😉" + pergunte ocasião se necessário
 - Se fotos_enviadas < mínimo: "Já recebi [fotos_enviadas] foto(s), show! 📸 Preciso de mais [mínimo - fotos_enviadas] pelo menos — uma de rosto e uma de corpo inteiro 😉" + dicas se necessário + pergunte ocasião se necessário
+- EXEMPLO CONCRETO: Se fotos_enviadas=2 e ocasião não é casal → mínimo=2 → 2 >= 2 → USE A FRASE COM "pronto". NÃO peça mais.
 - NÃO repita toda a introdução das dicas se o cliente já começou a mandar.
 
 **Se NÃO tem fotos (fotos_enviadas = 0):**
