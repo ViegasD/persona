@@ -297,15 +297,7 @@ async function handleTransition(
         await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
         await logOutboundMessage(leadId, askMsg);
       } else {
-        log.info({ earlyPhotos }, '[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Photos already received — triggering photo-collection agent');
-        // Queue a synthetic batch so the photo-collection agent fires immediately
-        // (otherwise the user is left hanging until they send another message)
-        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
-        await batchQueue.add(
-          'process-batch',
-          { phone, leadId } satisfies MessageBatchJobData,
-          { jobId: `photo_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
-        );
+        log.info({ earlyPhotos }, '[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Photos already received — skipping askPhotos (next debounce will trigger photo-collection agent)');
       }
       log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done');
       break;
