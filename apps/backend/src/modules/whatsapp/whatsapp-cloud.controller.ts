@@ -9,6 +9,7 @@ import { env } from '../../shared/config/env.js';
 import { getCloudApi } from './whatsapp-cloud-api.client.js';
 import { uploadFile, buildS3Key } from '../../shared/storage/s3.client.js';
 import { detectGenderFromPhoto } from '../image-gen/vision.service.js';
+import { getRedisConnection } from '../../shared/queue/queue.config.js';
 
 const log = createChildLogger('whatsapp-cloud-controller');
 
@@ -206,6 +207,8 @@ export async function handleCloudWebhook(
           getCloudApi().showTypingIndicator(messageId).catch((err) => {
             log.warn(err, 'Failed to show typing indicator');
           });
+          // Cache messageId so outbound messages can re-fire typing
+          getRedisConnection().set(`lastMsgId:${phone}`, messageId, 'EX', 300).catch(() => {});
         }
 
         // Route through funnel debounce

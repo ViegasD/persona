@@ -143,7 +143,7 @@ export async function handlePaymentApproved(
 /**
  * Enfileira job de geração de imagens (SOMENTE após pagamento aprovado).
  */
-async function triggerImageGeneration(sessionId: string): Promise<void> {
+export async function triggerImageGeneration(sessionId: string): Promise<void> {
   // Criar job de geração no banco
   const session = await prisma.leadSession.findUnique({
     where: { id: sessionId },

@@ -4,6 +4,7 @@ import { getQueue, QUEUE_NAMES, type WhatsAppSendJobData } from '../../shared/qu
 import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { env } from '../../shared/config/env.js';
+import { getRedisConnection } from '../../shared/queue/queue.config.js';
 import type { Job } from 'bullmq';
 
 const log = createChildLogger('whatsapp-service');
@@ -123,6 +124,14 @@ async function processCloudSend(
   payload: Record<string, unknown>,
 ): Promise<void> {
   const api = getCloudApi();
+
+  // Re-fire typing indicator before every outbound message
+  try {
+    const lastMsgId = await getRedisConnection().get(`lastMsgId:${phone}`);
+    if (lastMsgId) {
+      await api.showTypingIndicator(lastMsgId).catch(() => {});
+    }
+  } catch { /* fire-and-forget */ }
 
   // Simulate typing delay for Cloud API (Evolution API handles this natively)
   const delay = (payload as { delay?: number }).delay;

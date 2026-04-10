@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../shared/database/prisma.js';
 import { handleFunnelBatch } from '../funnel/funnel.service.js';
-import { handlePaymentApproved } from '../payment/payment.service.js';
+import { handlePaymentApproved, triggerImageGeneration } from '../payment/payment.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { env } from '../../shared/config/env.js';
 
@@ -151,6 +151,22 @@ export async function devRouter(app: FastifyInstance) {
         })
       : [];
 
+    const generationJobs = session
+      ? await prisma.generationJob.findMany({
+          where: { leadSessionId: session.id },
+          select: { id: true, status: true, prompt: true, errorMessage: true, kieTaskIds: true, createdAt: true, completedAt: true },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [];
+
+    const generatedImages = session
+      ? await prisma.generatedImage.findMany({
+          where: { generationJob: { leadSessionId: session.id } },
+          select: { id: true, s3Key: true, originalUrl: true, isApproved: true, sequence: true, createdAt: true },
+          orderBy: { sequence: 'asc' },
+        })
+      : [];
+
     return {
       lead: { id: lead.id, name: lead.name, phone: lead.phone, status: lead.status },
       session: session
@@ -159,6 +175,8 @@ export async function devRouter(app: FastifyInstance) {
       photoCount,
       photos,
       payments,
+      generationJobs,
+      generatedImages,
       messages: messages.map((m) => ({
         direction: m.direction,
         type: m.messageType,
@@ -217,6 +235,48 @@ export async function devRouter(app: FastifyInstance) {
       paymentId: payment.id,
       sessionId: session.id,
       message: 'Payment confirmed → PAID → generation triggered',
+    };
+  });
+
+  // ─── Dev: retry failed generation (after topping up Kie.ai credits) ──
+  app.post<{
+    Params: { phone: string };
+  }>('/retry-generation/:phone', async (request, reply) => {
+    const { phone } = request.params;
+    const lead = await prisma.lead.findUnique({ where: { phone } });
+    if (!lead) {
+      return reply.status(404).send({ error: 'Lead not found' });
+    }
+
+    const session = await prisma.leadSession.findFirst({
+      where: { leadId: lead.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!session || session.funnelState !== 'PAID') {
+      return reply.status(400).send({
+        error: 'Session not in PAID state (generation retry only works after failed generation)',
+        currentState: session?.funnelState ?? 'no session',
+      });
+    }
+
+    // Verify there's an approved payment
+    const payment = await prisma.payment.findFirst({
+      where: { leadSessionId: session.id, status: 'APPROVED' },
+    });
+    if (!payment) {
+      return reply.status(400).send({ error: 'No approved payment found' });
+    }
+
+    await triggerImageGeneration(session.id);
+
+    log.info({ phone, sessionId: session.id }, 'Dev: generation retried');
+
+    return {
+      ok: true,
+      phone,
+      sessionId: session.id,
+      message: 'Generation job re-queued',
     };
   });
 }

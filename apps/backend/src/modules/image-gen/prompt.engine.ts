@@ -49,7 +49,7 @@ const REALISM_BLOCK =
  * Interpolates dynamic values ({age}, {profession}, {course}) into a scene template.
  */
 function interpolateScene(template: string, params: PromptParams): string {
-  const age = params.ageAtBirthday?.replace(/\D/g, '') || '';
+  const age = String(params.ageAtBirthday ?? '').replace(/\D/g, '');
   const profession = params.profession ?? params.occasionDetails ?? 'professional';
   const course = params.graduationCourse ?? params.occasionDetails ?? 'graduation';
   return template
