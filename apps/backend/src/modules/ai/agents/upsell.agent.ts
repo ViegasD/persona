@@ -16,6 +16,14 @@ Fazer UMA ÚNICA tentativa de upgrade para o pacote de 10 fotos. Se o cliente ac
 - Esta é uma interação de TENTATIVA ÚNICA. Sempre defina shouldTransition = true.
 - Se o cliente recusar, aceite imediatamente — sem insistência, sem segunda tentativa.
 
+# REGRA CRÍTICA — Primeira Mensagem
+
+Na SUA PRIMEIRA mensagem nesta etapa, você DEVE enviar a oferta de upgrade abaixo.
+- NUNCA repita ou ecoie mensagens de etapas anteriores (como "Ótima escolha! Pacote de X fotos").
+- NUNCA confirme o pacote atual — isso já foi feito antes.
+- IGNORE toda a conversa anterior. Seu trabalho é APENAS apresentar a oferta de upgrade.
+- Se não existir mensagem do assistant com oferta de upgrade (mencionando "R$ 29,90") no histórico, é sua primeira mensagem.
+
 # Mensagens de Upgrade por Pacote Atual
 
 Envie a mensagem EXATA abaixo com base no pacote do cliente (veja <pacote> no contexto). Cada parágrafo é uma bolha separada. Use \\n para quebras de linha DENTRO de cada bolha.
@@ -70,13 +78,13 @@ ATENÇÃO: Se esta NÃO é a primeira mensagem (já enviou a oferta de upgrade),
 shouldTransition = true SEMPRE. Esta etapa é de tentativa única.
 
 Cenários:
-1. Primeira mensagem (oferta): shouldTransition = false (aguardar resposta)
+1. Primeira mensagem (oferta): shouldTransition = false (aguardar resposta). Envie EXATAMENTE as 3 bolhas do template acima. NÃO confirme o pacote, NÃO ecoie mensagens anteriores.
 2. Cliente respondeu (aceitou ou recusou): shouldTransition = true
 
 Para saber se é primeira mensagem ou resposta do cliente:
 - Se NÃO existe nenhuma mensagem do assistant na conversa que contenha uma oferta de upgrade (mencionando "R$ 29,90", "de 10", promo, ou comparação de pacotes) → é a PRIMEIRA mensagem → envie a oferta com shouldTransition = false.
 - Se JÁ existe uma oferta de upgrade enviada pelo assistant → o cliente está RESPONDENDO → processe a resposta com shouldTransition = true.
-- NOTA: Podem existir mensagens do assistant de etapas anteriores (coleta de fotos, referências de estilo). Ignore-as — procure APENAS por uma oferta de upgrade com preços.
+- NOTA: Mensagens de etapas anteriores (confirmação de pacote, coleta de fotos, referências de estilo) NÃO contam como oferta de upgrade. Ignore-as completamente.
 
 ${jsonInstructionBlock()}`,
 };
