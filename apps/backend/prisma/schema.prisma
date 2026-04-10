@@ -290,3 +290,14 @@ model StyleTemplate {
   @@index([gender])
   @@map("style_templates")
 }
+
+// ─── System Settings ────────────────────────────────────────
+
+model Setting {
+  key   String @id
+  value String
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

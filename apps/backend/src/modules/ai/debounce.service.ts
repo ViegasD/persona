@@ -1,6 +1,6 @@
 import { getRedisConnection } from '../../shared/queue/queue.config.js';
 import { getQueue, QUEUE_NAMES, type MessageBatchJobData } from '../../shared/queue/queues.js';
-import { env } from '../../shared/config/env.js';
+import { getSettingNumber, SETTING_KEYS } from '../admin/settings.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('debounce');
@@ -21,8 +21,10 @@ export async function debounceFunnelMessage(
   const primaryJobId = `batch_${phone}`;
   let effectiveJobId = primaryJobId;
 
+  const debounceMs = await getSettingNumber(SETTING_KEYS.MESSAGE_DEBOUNCE_MS);
+
   // Update timestamp in Redis
-  await redis.set(debounceKey, Date.now().toString(), 'PX', env.MESSAGE_DEBOUNCE_MS + 5_000);
+  await redis.set(debounceKey, Date.now().toString(), 'PX', debounceMs + 5_000);
 
   const queue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
 
@@ -53,7 +55,7 @@ export async function debounceFunnelMessage(
     { phone, leadId } satisfies MessageBatchJobData,
     {
       jobId: effectiveJobId,
-      delay: env.MESSAGE_DEBOUNCE_MS,
+      delay: debounceMs,
       removeOnComplete: true,
       removeOnFail: { count: 100 },
       attempts: 2,
@@ -61,5 +63,5 @@ export async function debounceFunnelMessage(
     },
   );
 
-  log.debug({ phone, delayMs: env.MESSAGE_DEBOUNCE_MS, jobId: effectiveJobId }, 'Debounce job scheduled');
+  log.debug({ phone, delayMs: debounceMs, jobId: effectiveJobId }, 'Debounce job scheduled');
 }

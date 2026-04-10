@@ -23,6 +23,13 @@ import { supportAgent } from '../ai/agents/support.agent.js';
 import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 import { upsellAgent } from '../ai/agents/upsell.agent.js';
+import { PACKAGES } from './packages.config.js';
+
+const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
+const VALID_OCCASIONS = new Set([
+  'aniversario', 'profissional', 'fim_de_curso', 'formatura',
+  'casal', 'gravidez', 'casual', 'infantil', 'pet', 'corporativo',
+]);
 
 const log = createChildLogger('funnel-service');
 
@@ -151,11 +158,27 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
     );
     agentResponse = data;
 
+    // ── Validate LLM response structure ──
+    if (!Array.isArray(agentResponse.messages)) {
+      log.warn({ agentName, raw: agentResponse }, '[BATCH:VALIDATE] messages is not an array — using fallback');
+      agentResponse.messages = [];
+    }
+    const validMessages = agentResponse.messages.filter((m) => typeof m === 'string' && m.trim());
+    if (validMessages.length === 0) {
+      log.warn({ agentName, shouldTransition: agentResponse.shouldTransition }, '[BATCH:VALIDATE] No valid messages from LLM — sending fallback');
+      await handleFallback(phone, lead.id, state);
+      // Still apply extracted data if present, but do NOT transition on empty response
+      if (agentResponse.extractedData && Object.keys(agentResponse.extractedData).length > 0) {
+        await applyExtractedData(session.id, lead.id, agentResponse.extractedData);
+      }
+      return;
+    }
+
     log.info(
       {
         agentName,
         shouldTransition: agentResponse.shouldTransition,
-        messages: agentResponse.messages?.length,
+        messages: validMessages.length,
         extractedData: agentResponse.extractedData,
         reasoning: agentResponse.reasoning,
       },
@@ -170,7 +193,7 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
 
     // Send messages with staggered delays to preserve ordering
     let stagger = 0;
-    for (const msg of agentResponse.messages) {
+    for (const msg of validMessages) {
       if (msg.trim()) {
         await queueTextMessage(phone, msg, stagger > 0 ? { jobDelay: stagger } : undefined);
         // 1.5–3.5s between bubbles to mimic human typing
@@ -179,7 +202,7 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
     }
 
     // Save all bubbles as ONE assistant message so the LLM sees its own history
-    const fullReply = agentResponse.messages.filter((m) => m.trim()).join('\n\n');
+    const fullReply = validMessages.join('\n\n');
     if (fullReply) {
       await logOutboundMessage(lead.id, fullReply);
     }
@@ -243,6 +266,17 @@ async function handleTransition(
       // (COLLECTING_STYLE_REFS only enters if the user explicitly asks for a custom style we don't have)
       const photoSession = await prisma.leadSession.findUnique({ where: { id: sessionId } });
       const photoPkg = (photoSession?.preferences as Record<string, unknown>)?.packageId as string | undefined;
+
+      if (!photoPkg || !VALID_PACKAGE_IDS.has(photoPkg)) {
+        log.error({ photoPkg, sessionId }, '[TRANSITION:COLLECTING_PHOTOS] Missing or invalid packageId — cannot proceed');
+        const fallbackMsg = 'Antes de continuar, me fala qual pacote você quer? 😊\n\n🎁 *10 fotos* — R$ 34,90 (mais popular)\n📦 5 fotos — R$ 18,90\n📦 3 fotos — R$ 13,90\n📦 2 fotos — R$ 9,90';
+        await queueTextMessage(phone, fallbackMsg);
+        await logOutboundMessage(leadId, fallbackMsg);
+        // Revert to ENGAGING so the engagement agent can collect the package
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.ENGAGING);
+        return;
+      }
+
       const photoIsTop = photoPkg === 'pkg_10';
 
       if (photoIsTop) {
@@ -255,7 +289,7 @@ async function handleTransition(
         await batchQueue.add(
           'process-batch',
           { phone, leadId } satisfies MessageBatchJobData,
-          { jobId: `upsell_trigger_${phone}`, delay: 2000, removeOnComplete: true },
+          { jobId: `upsell_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
         );
         log.info('[TRANSITION:COLLECTING_PHOTOS→UPSELLING] Upsell batch job queued with 2s delay');
       }
@@ -280,7 +314,7 @@ async function handleTransition(
         await batchQueue.add(
           'process-batch',
           { phone, leadId } satisfies MessageBatchJobData,
-          { jobId: `upsell_trigger_${phone}`, delay: 2000, removeOnComplete: true },
+          { jobId: `upsell_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
         );
         log.info('[TRANSITION:COLLECTING_STYLE_REFS→UPSELLING] Upsell batch job queued with 2s delay');
       }
@@ -306,12 +340,40 @@ async function handleTransition(
       if (extractedData.changePackage) {
         log.info('[TRANSITION:AWAITING_PAYMENT→ENGAGING] Package change requested');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.ENGAGING);
+      } else if (extractedData.regenerateQr) {
+        log.info('[AWAITING_PAYMENT] Regenerating Pix QR Code');
+        try {
+          const { qrImageUrl, pixCopyPaste, amount } = await initiatePixPayment(sessionId, leadId);
+          const caption = MESSAGES.pixPayment(amount);
+          await queueMediaMessage(phone, qrImageUrl, {
+            mediatype: 'image',
+            mimetype: 'image/png',
+            caption,
+          });
+          await logOutboundMessage(leadId, `[QR Code Pix Regenerado] ${caption}`, 'image');
+          const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
+          await queueTextMessage(phone, copyPasteMsg, { jobDelay: 1500 });
+          await logOutboundMessage(leadId, copyPasteMsg);
+          await trackEvent(leadId, 'PIX_QR_REGENERATED');
+        } catch (err) {
+          log.error({ err, sessionId }, '[AWAITING_PAYMENT] Failed to regenerate Pix');
+          await queueTextMessage(phone, 'Ops, tive um probleminha pra gerar o novo QR. Tenta de novo em alguns segundos? 🙏');
+        }
       }
       break;
     }
 
     case FUNNEL_STATES.DELIVERED: {
       // Reengagement agent collected occasion+package — jump straight to COLLECTING_PHOTOS
+      const retPkg = extractedData.packageId as string | undefined;
+      if (!retPkg || !VALID_PACKAGE_IDS.has(retPkg)) {
+        log.error({ extractedData, sessionId }, '[TRANSITION:DELIVERED] Missing or invalid packageId from reengagement — aborting');
+        const msg = 'Antes de continuar, me fala qual pacote você quer? 😊\n\n🎁 *10 fotos* — R$ 34,90 (mais popular)\n📦 5 fotos — R$ 18,90\n📦 3 fotos — R$ 13,90\n📦 2 fotos — R$ 9,90';
+        await queueTextMessage(phone, msg);
+        await logOutboundMessage(leadId, msg);
+        return; // Stay in DELIVERED — reengagement agent will collect package
+      }
+
       log.info('[TRANSITION:DELIVERED→COLLECTING_PHOTOS] Returning customer new session');
       const retPrefs: Record<string, unknown> = {};
       for (const key of ['packageId', 'occasion', 'occasionDetails']) {
@@ -425,6 +487,25 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
       await logOutboundMessage(leadId, msg);
       break;
     }
+    case FUNNEL_STATES.GALLERY_SENT:
+    case FUNNEL_STATES.APPROVING: {
+      const msg = MESSAGES.galleryFallback();
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
+    case FUNNEL_STATES.DELIVERING: {
+      const msg = MESSAGES.deliveringFallback();
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
+    case FUNNEL_STATES.DELIVERED: {
+      const msg = MESSAGES.deliveredFallback();
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
     default: {
       const msg = MESSAGES.errorOccurred();
       await queueTextMessage(phone, msg);
@@ -453,6 +534,15 @@ async function applyExtractedData(
   const prefUpdates: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
     if (key !== 'name' && key !== 'newSession' && key !== 'changePackage' && value !== null && value !== undefined) {
+      // Validate packageId and occasion before storing
+      if (key === 'packageId' && (typeof value !== 'string' || !VALID_PACKAGE_IDS.has(value))) {
+        log.warn({ key, value }, '[DATA:VALIDATE] Invalid packageId — discarded');
+        continue;
+      }
+      if (key === 'occasion' && (typeof value !== 'string' || !VALID_OCCASIONS.has(value))) {
+        log.warn({ key, value }, '[DATA:VALIDATE] Unknown occasion — storing anyway');
+        // Still store — it might be a niche occasion the LLM normalized differently
+      }
       prefUpdates[key] = value;
     }
   }

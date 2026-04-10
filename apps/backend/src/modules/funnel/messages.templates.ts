@@ -98,4 +98,17 @@ export const MESSAGES = {
 
   errorOccurred: () =>
     `Ops, houve um probleminha aqui do meu lado 😅 Tente novamente em alguns instantes!`,
+
+  // ─── Fallbacks por Estado ────────────────────────────────────
+  galleryFallback: () =>
+    `O link da galeria foi enviado ali em cima 👆 Abre ele e aprova as fotos que mais gostar! 😍`,
+
+  approvingFallback: () =>
+    `Tô aqui se precisar! Pode aprovar as fotos no link que enviei 😊`,
+
+  deliveringFallback: () =>
+    `Suas fotos estão sendo enviadas em alta qualidade! 📦 Já já chega tudo!`,
+
+  deliveredFallback: () =>
+    `Olá! 😊 Se quiser fazer um novo ensaio, é só me dizer! 🌟`,
 } as const;

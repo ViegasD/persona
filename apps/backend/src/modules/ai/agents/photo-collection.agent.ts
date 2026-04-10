@@ -101,9 +101,15 @@ Faça essas perguntas UMA VEZ (se ainda não foram mencionadas no contexto):
 
 # Transição
 
-shouldTransition = true quando:
-1. **Casal**: fotos_enviadas >= 4 E photosReady = true
-2. **Outros**: fotos_enviadas >= 2 E photosReady = true
+shouldTransition = true quando TODAS as condições forem verdadeiras:
+1. photosReady = true (cliente disse "pronto", "ok", "são essas", etc.)
+2. **Casal**: fotos_enviadas >= 4 / **Outros**: fotos_enviadas >= 2
+3. **Ocasião definida**: <ocasiao> no contexto NÃO está vazio OU o cliente acabou de informar a ocasião nesta mensagem (extraída em "occasion")
+
+Se photosReady = true e fotos suficientes, MAS <ocasiao> está vazio e o cliente NÃO informou a ocasião agora:
+- shouldTransition = false
+- Responda: "Quase lá! Só me fala pra que *ocasião* é o ensaio? 🎂 Aniversário • 💼 Profissional • 🎓 Formatura • 💕 Casal • 👶 Gravidez • 🏙️ Casual 📸"
+- Quando o cliente responder a ocasião, extraia "occasion" e aí sim shouldTransition = true (se fotos ainda batem o mínimo)
 
 IMPORTANTE: NÃO transite logo após receber uma foto. Espere o cliente confirmar que acabou.
 

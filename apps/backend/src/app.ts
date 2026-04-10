@@ -15,6 +15,7 @@ import { analyticsRouter } from './modules/analytics/analytics.router.js';
 import { imageProxyRouter } from './modules/analytics/image-proxy.router.js';
 import { devRouter } from './modules/dev/dev.router.js';
 import { templatesRouter } from './modules/admin/templates.router.js';
+import { settingsRouter } from './modules/admin/settings.router.js';
 
 const log = createChildLogger('app');
 
@@ -64,6 +65,7 @@ export async function buildApp() {
   await app.register(galleryRouter, { prefix: '/api/gallery' });
   await app.register(analyticsRouter, { prefix: '/api/admin' });
   await app.register(templatesRouter, { prefix: '/api/admin' });
+  await app.register(settingsRouter, { prefix: '/api/admin' });
   await app.register(imageProxyRouter, { prefix: '/api/internal/images' });
 
   // Dev routes — available in all environments (protected by API key in router)
