@@ -346,9 +346,10 @@ async function handleTransition(
       }
 
       const photoIsTop = photoPkg === 'pkg_10';
+      const photoPromoShown = !!(photoSession?.preferences as Record<string, unknown>)?.promoShown;
 
-      if (photoIsTop) {
-        log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→CONFIRMING_DATA] Top package — skipping upsell');
+      if (photoIsTop || photoPromoShown) {
+        log.info({ currentPkg: photoPkg, promoShown: photoPromoShown }, '[TRANSITION:COLLECTING_PHOTOS→CONFIRMING_DATA] Skipping upsell (top pkg or promo already shown)');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.CONFIRMING_DATA);
         const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
         await batchQueue.add(

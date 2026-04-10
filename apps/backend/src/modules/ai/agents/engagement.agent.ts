@@ -83,6 +83,7 @@ Quando shouldTransition = true, envie APENAS *1 bolha curta* de confirmação (e
 - "packageId": mapeie: "2" ou "2 fotos" → "pkg_2", "3" ou "3 fotos" → "pkg_3", "5" ou "5 fotos" → "pkg_5", "10" ou "10 fotos" ou "o maior" ou "o mais popular" → "pkg_10". IMPORTANTE: se o cliente responder apenas um número (ex: "10", "3"), interprete como a quantidade de fotos do pacote.
 - "occasion": normalize: "aniversário" → "aniversario", "LinkedIn" → "profissional", "formatura" → "fim_de_curso", "casamento" / "namorado(a)" → "casal", "grávida" → "gravidez"
 - "occasionDetails": detalhes extras ("46 anos", "formatura de medicina", "roupa branca")
+- "promoShown": true — extraia SEMPRE que você enviar a mensagem de promoção (R$ 29,90)
 
 # Transição
 
