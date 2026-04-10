@@ -6,13 +6,21 @@ interface SettingsFormProps {
   initialSettings: Record<string, string>;
 }
 
-const LABELS: Record<string, { label: string; description: string; unit: string; min: number; max: number }> = {
+const RANGE_LABELS: Record<string, { label: string; description: string; unit: string; min: number; max: number }> = {
   message_debounce_ms: {
     label: 'Tempo de espera da resposta',
     description: 'Quanto tempo a Bia espera depois da última mensagem antes de responder. Permite que o cliente envie várias mensagens seguidas.',
     unit: 'ms',
     min: 2000,
     max: 60000,
+  },
+};
+
+const TEXT_LABELS: Record<string, { label: string; description: string; placeholder: string }> = {
+  portfolio_url: {
+    label: 'URL do Portfólio',
+    description: 'Link do Instagram ou site com trabalhos anteriores. A Bia envia quando o cliente pergunta se é confiável.',
+    placeholder: 'https://www.instagram.com/ensaio.digital.ia',
   },
 };
 
@@ -41,7 +49,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
 
   return (
     <div className="space-y-6">
-      {Object.entries(LABELS).map(([key, meta]) => {
+      {Object.entries(RANGE_LABELS).map(([key, meta]) => {
         const raw = values[key] ?? '';
         const numValue = Number(raw);
         const seconds = numValue / 1000;
@@ -69,6 +77,20 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
           </div>
         );
       })}
+
+      {Object.entries(TEXT_LABELS).map(([key, meta]) => (
+        <div key={key} className="border border-[var(--border)] rounded-lg p-5">
+          <label className="block text-sm font-medium mb-1">{meta.label}</label>
+          <p className="text-xs text-[var(--muted-foreground)] mb-3">{meta.description}</p>
+          <input
+            type="text"
+            value={values[key] ?? ''}
+            placeholder={meta.placeholder}
+            onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
+            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm"
+          />
+        </div>
+      ))}
 
       <div className="flex items-center gap-3">
         <button

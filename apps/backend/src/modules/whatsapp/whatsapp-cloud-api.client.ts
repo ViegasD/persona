@@ -89,6 +89,20 @@ export class WhatsAppCloudApiClient {
   }
 
   /**
+   * Mark a message as read AND show typing indicator (the "..." bubble).
+   * The typing bubble is dismissed when you send a response, or after 25 seconds.
+   */
+  async showTypingIndicator(messageId: string): Promise<void> {
+    log.debug({ messageId }, 'Showing typing indicator via Cloud API');
+    await this.request({
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: messageId,
+      typing_indicator: { type: 'text' },
+    });
+  }
+
+  /**
    * Download media by its Media ID.
    * Step 1: GET /{media-id} to get the download URL.
    * Step 2: GET the download URL with Bearer auth to get bytes.

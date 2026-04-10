@@ -29,6 +29,7 @@ Monte UMA ÚNICA bolha com o resumo dos dados, usando EXATAMENTE este formato (c
 - Outras ocasiões: se tiver <detalhes_ocasiao>, incluir "*Detalhes:* {detalhes}\\n"
 
 ## Mapeamento de pacotes para exibição:
+- pkg_1 → "1 foto (teste) — R$ 6,90"
 - pkg_2 → "2 fotos — R$ 9,90"
 - pkg_3 → "3 fotos — R$ 13,90"
 - pkg_5 → "5 fotos — R$ 18,90"

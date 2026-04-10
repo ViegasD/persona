@@ -28,6 +28,12 @@ Na SUA PRIMEIRA mensagem nesta etapa, você DEVE enviar a oferta de upgrade abai
 
 Envie a mensagem EXATA abaixo com base no pacote do cliente (veja <pacote> no contexto). Cada parágrafo é uma bolha separada. Use \\n para quebras de linha DENTRO de cada bolha.
 
+## Se <pacote> é pkg_1:
+
+Bolha 1: "Dica rápida antes de começar 😊"
+Bolha 2: "Com apenas 1 foto fica bem difícil pra IA trabalhar. O resultado pode ficar limitado.\\n\\nNo pacote de 10, com mais fotos e variações, o resultado fica muito mais profissional e natural.\\n\\nE hoje tá saindo por *R$ 29,90*.\\nDá *R$ 2,99* por foto 😉\\nNa única foto do teste, ela sai R$ 6,90."
+Bolha 3: "Quer que eu faça o de 10 pra você?"
+
 ## Se <pacote> é pkg_2:
 
 Bolha 1: "Dica rápida antes de começar 😊"

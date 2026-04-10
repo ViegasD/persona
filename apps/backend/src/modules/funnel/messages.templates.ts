@@ -51,6 +51,9 @@ export const MESSAGES = {
 
   pixCopyPaste: (code: string) => code,
 
+  pixCopyPasteHint: () =>
+    `👆 Essa é a chave *copia e cola*. Abra o app do seu banco, vá em *Pix Copia e Cola* e cole o código acima.\n\nSe não conseguir pelo código, escaneie o *QR Code* que enviei antes 📱`,
+
   paymentConfirmed: (name: string) =>
     `✅ Pagamento confirmado, ${name}!\n\n` +
     `A IA já está trabalhando na sua sessão 🎨\n\n` +

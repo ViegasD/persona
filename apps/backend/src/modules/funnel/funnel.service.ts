@@ -18,13 +18,14 @@ import { buildConversationContext, getUnprocessedInboundMessages } from '../ai/c
 import type { AgentResponse, AgentConfig } from '../ai/agents/base.js';
 import { buildLeadContext } from '../ai/agents/base.js';
 import { engagementAgent } from '../ai/agents/engagement.agent.js';
-import { photoCollectionAgent } from '../ai/agents/photo-collection.agent.js';
+import { photoCollectionAgent, getPhotoCollectionAgent } from '../ai/agents/photo-collection.agent.js';
 import { paymentAgent } from '../ai/agents/payment.agent.js';
 import { supportAgent } from '../ai/agents/support.agent.js';
 import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 import { upsellAgent } from '../ai/agents/upsell.agent.js';
 import { confirmationAgent } from '../ai/agents/confirmation.agent.js';
+import { getSetting, SETTING_KEYS } from '../admin/settings.service.js';
 import { PACKAGES } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
@@ -148,7 +149,12 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
   try {
     // Select agent
     agentName = getAgentForState(state);
-    const agent = AGENTS[agentName];
+    // For photo-collection, use dynamic prompt based on whether min photos reached
+    const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
+    const minReached = photoCount >= minPhotos;
+    const agent = agentName === 'photo-collection'
+      ? getPhotoCollectionAgent(minReached)
+      : AGENTS[agentName];
     if (!agent) {
       log.error({ agentName, state }, '[BATCH:AGENT] Agent not found');
       await queueTextMessage(phone, MESSAGES.errorOccurred());
@@ -169,9 +175,11 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
       '[BATCH:HISTORY] Conversation history loaded',
     );
 
+    const portfolioUrl = await getSetting(SETTING_KEYS.PORTFOLIO_URL);
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
       { preferences: prefs, photoCount, styleRefCount },
+      portfolioUrl || undefined,
     );
 
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
@@ -538,6 +546,11 @@ async function createPixAndTransition(
   const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
   await queueTextMessage(phone, copyPasteMsg, { jobDelay: 1500 });
   await logOutboundMessage(leadId, copyPasteMsg);
+
+  // 3. Hint on how to use the PIX code
+  const hintMsg = MESSAGES.pixCopyPasteHint();
+  await queueTextMessage(phone, hintMsg, { jobDelay: 2500 });
+  await logOutboundMessage(leadId, hintMsg);
 
   await trackEvent(leadId, 'PIX_QR_SENT');
   log.info({ fromState }, '[PIX] Done — Pix QR sent');

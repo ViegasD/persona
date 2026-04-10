@@ -201,10 +201,10 @@ export async function handleCloudWebhook(
           }
         }
 
-        // Mark as read (fire-and-forget)
+        // Mark as read + show typing indicator (fire-and-forget)
         if (env.WA_CLOUD_API_TOKEN && env.WA_PHONE_NUMBER_ID) {
-          getCloudApi().markRead(messageId).catch((err) => {
-            log.warn(err, 'Failed to mark message as read');
+          getCloudApi().showTypingIndicator(messageId).catch((err) => {
+            log.warn(err, 'Failed to show typing indicator');
           });
         }
 

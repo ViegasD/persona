@@ -6,8 +6,13 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 const log = createChildLogger('settings-router');
 
 /** Allowed settings and their validation rules */
-const SETTING_RULES: Record<string, { min: number; max: number; label: string }> = {
-  [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: { min: 2000, max: 60000, label: 'Tempo de espera (ms)' },
+type NumericRule = { type: 'number'; min: number; max: number; label: string };
+type TextRule = { type: 'text'; maxLength: number; label: string };
+type SettingRule = NumericRule | TextRule;
+
+const SETTING_RULES: Record<string, SettingRule> = {
+  [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: { type: 'number', min: 2000, max: 60000, label: 'Tempo de espera (ms)' },
+  [SETTING_KEYS.PORTFOLIO_URL]: { type: 'text', maxLength: 500, label: 'URL do Portfólio' },
 };
 
 export async function settingsRouter(app: FastifyInstance): Promise<void> {
@@ -37,13 +42,21 @@ export async function settingsRouter(app: FastifyInstance): Promise<void> {
         continue;
       }
 
-      const num = Number(value);
-      if (isNaN(num) || num < rule.min || num > rule.max) {
-        errors.push(`${rule.label}: must be between ${rule.min} and ${rule.max}`);
-        continue;
+      if (rule.type === 'text') {
+        const str = String(value ?? '').trim();
+        if (str.length > rule.maxLength) {
+          errors.push(`${rule.label}: máximo ${rule.maxLength} caracteres`);
+          continue;
+        }
+        updates[key] = str;
+      } else {
+        const num = Number(value);
+        if (isNaN(num) || num < rule.min || num > rule.max) {
+          errors.push(`${rule.label}: must be between ${rule.min} and ${rule.max}`);
+          continue;
+        }
+        updates[key] = String(Math.round(num));
       }
-
-      updates[key] = String(Math.round(num));
     }
 
     if (errors.length > 0) {

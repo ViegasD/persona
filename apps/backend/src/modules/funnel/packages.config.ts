@@ -11,6 +11,7 @@ export interface Package {
 }
 
 export const PACKAGES: Package[] = [
+  { id: 'pkg_1',  photos: 1,  price: 6.90,   label: '1 foto — R$ 6,90',    popular: false },
   { id: 'pkg_2',  photos: 2,  price: 9.90,   label: '2 fotos — R$ 9,90',   popular: false },
   { id: 'pkg_3',  photos: 3,  price: 13.90,  label: '3 fotos — R$ 13,90',  popular: false },
   { id: 'pkg_5',  photos: 5,  price: 18.90,  label: '5 fotos — R$ 18,90',  popular: false },
@@ -29,9 +30,11 @@ export function getPackageByPhotos(photos: number): Package | undefined {
  * Formats the packages list for display in system prompts.
  */
 export function formatPackagesForPrompt(): string {
-  return PACKAGES.map((p) =>
-    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
-  ).join('\n');
+  return PACKAGES
+    .filter((p) => p.id !== 'pkg_1') // pkg_1 is hidden — only offered when client asks to test
+    .map((p) =>
+      `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
+    ).join('\n');
 }
 
 /**

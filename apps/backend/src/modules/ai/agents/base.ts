@@ -132,7 +132,7 @@ export function buildLeadContext(lead: {
   preferences: Record<string, unknown>;
   photoCount: number;
   styleRefCount?: number;
-}): string {
+}, portfolioUrl?: string): string {
   const prefs = session.preferences;
   const parts: string[] = [
     '<lead_context>',
@@ -156,6 +156,10 @@ export function buildLeadContext(lead: {
   }
 
   parts.push('</lead_context>');
+
+  if (portfolioUrl) {
+    parts.push(`\n<portfolio_url>${portfolioUrl}</portfolio_url>`);
+  }
 
   if (minReached) {
     parts.push('\n⚠️ ATENÇÃO: O cliente JÁ enviou fotos suficientes. NÃO peça mais fotos.');
