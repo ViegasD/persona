@@ -237,7 +237,12 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
     let stagger = 0;
     for (const msg of dedupedMessages) {
       if (msg.trim()) {
-        await queueTextMessage(phone, msg, stagger > 0 ? { jobDelay: stagger } : undefined);
+        // Typing delay: ~30ms per character, clamped between 800ms and 3000ms
+        const typingDelay = Math.min(3000, Math.max(800, msg.length * 30));
+        await queueTextMessage(phone, msg, {
+          typingDelay,
+          ...(stagger > 0 ? { jobDelay: stagger } : {}),
+        });
         // 1.5–3.5s between bubbles to mimic human typing
         stagger += 1500 + Math.floor(Math.random() * 2000);
       }

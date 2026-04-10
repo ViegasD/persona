@@ -124,6 +124,12 @@ async function processCloudSend(
 ): Promise<void> {
   const api = getCloudApi();
 
+  // Simulate typing delay for Cloud API (Evolution API handles this natively)
+  const delay = (payload as { delay?: number }).delay;
+  if (delay && delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
   switch (type) {
     case 'text': {
       const { text } = payload as { text: string };
