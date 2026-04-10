@@ -25,7 +25,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
     setMessage(null);
     startTransition(async () => {
       try {
-        const res = await fetch('/api/settings', {
+        const res = await fetch('/manager/api/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values),

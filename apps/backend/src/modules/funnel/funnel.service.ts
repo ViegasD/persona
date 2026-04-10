@@ -24,6 +24,7 @@ import { supportAgent } from '../ai/agents/support.agent.js';
 import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 import { upsellAgent } from '../ai/agents/upsell.agent.js';
+import { confirmationAgent } from '../ai/agents/confirmation.agent.js';
 import { PACKAGES } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
@@ -39,6 +40,7 @@ const AGENTS: Record<string, AgentConfig> = {
   'photo-collection': photoCollectionAgent,
   'style-collection': styleCollectionAgent,
   upsell: upsellAgent,
+  confirmation: confirmationAgent,
   payment: paymentAgent,
   support: supportAgent,
   reengagement: reengagementAgent,
@@ -330,8 +332,15 @@ async function handleTransition(
       const photoIsTop = photoPkg === 'pkg_10';
 
       if (photoIsTop) {
-        log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→AWAITING_PAYMENT] Top package — skipping upsell');
-        await createPixAndTransition(sessionId, leadId, phone, currentState);
+        log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→CONFIRMING_DATA] Top package — skipping upsell');
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.CONFIRMING_DATA);
+        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId } satisfies MessageBatchJobData,
+          { jobId: `confirm_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
+        );
+        log.info('[TRANSITION:COLLECTING_PHOTOS→CONFIRMING_DATA] Confirmation batch job queued with 2s delay');
       } else {
         log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→UPSELLING] Transitioning to upsell');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.UPSELLING);
@@ -353,8 +362,15 @@ async function handleTransition(
       const isTopPackage = currentPkg === 'pkg_10';
 
       if (isTopPackage) {
-        log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Top package — skipping upsell');
-        await createPixAndTransition(sessionId, leadId, phone, currentState);
+        log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→CONFIRMING_DATA] Top package — skipping upsell');
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.CONFIRMING_DATA);
+        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId } satisfies MessageBatchJobData,
+          { jobId: `confirm_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
+        );
+        log.info('[TRANSITION:COLLECTING_STYLE_REFS→CONFIRMING_DATA] Confirmation batch job queued with 2s delay');
       } else {
         log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→UPSELLING] Transitioning to upsell');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.UPSELLING);
@@ -375,12 +391,12 @@ async function handleTransition(
       // Apply package upgrade if accepted
       if (extractedData.upgradeAccepted && typeof extractedData.newPackageId === 'string') {
         log.info({ newPackageId: extractedData.newPackageId }, '[TRANSITION:UPSELLING] Upgrade accepted — updating packageId');
-        // Update the session packageId so the Pix payment uses the new price
+        // Update the session packageId + store upsell promo price so the Pix payment uses it
         const upsellSession = await prisma.leadSession.findUnique({ where: { id: sessionId } });
         const upsellPrefs = (upsellSession?.preferences as Record<string, unknown>) ?? {};
         await prisma.leadSession.update({
           where: { id: sessionId },
-          data: { preferences: { ...upsellPrefs, packageId: extractedData.newPackageId } as any },
+          data: { preferences: { ...upsellPrefs, packageId: extractedData.newPackageId, priceOverride: 29.90 } as any },
         });
         await trackEvent(leadId, 'UPSELL_ACCEPTED', { newPackageId: extractedData.newPackageId });
       } else {
@@ -388,8 +404,27 @@ async function handleTransition(
         await trackEvent(leadId, 'UPSELL_DECLINED');
       }
 
-      // Create Pix payment (with whatever package is now in preferences) and transition
-      await createPixAndTransition(sessionId, leadId, phone, currentState);
+      // Transition to data confirmation step before payment
+      log.info('[TRANSITION:UPSELLING→CONFIRMING_DATA] Transitioning to confirmation');
+      await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.CONFIRMING_DATA);
+      const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+      await batchQueue.add(
+        'process-batch',
+        { phone, leadId } satisfies MessageBatchJobData,
+        { jobId: `confirm_trigger_${phone}_${Date.now()}`, delay: 2000, removeOnComplete: true, removeOnFail: true },
+      );
+      log.info('[TRANSITION:UPSELLING→CONFIRMING_DATA] Confirmation batch job queued with 2s delay');
+      break;
+    }
+
+    case FUNNEL_STATES.CONFIRMING_DATA: {
+      if (extractedData.changePackage) {
+        log.info('[TRANSITION:CONFIRMING_DATA→ENGAGING] Package change requested');
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.ENGAGING);
+      } else {
+        // Client confirmed — create Pix payment and transition
+        await createPixAndTransition(sessionId, leadId, phone, currentState);
+      }
       break;
     }
 
@@ -526,7 +561,14 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
       break;
     }
     case FUNNEL_STATES.UPSELLING: {
-      // Upsell fallback — just skip to payment
+      // Upsell fallback — just skip to confirmation
+      const msg = 'Vamos confirmar seus dados antes do pagamento! 😊';
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
+    case FUNNEL_STATES.CONFIRMING_DATA: {
+      // Confirmation fallback — just skip to payment
       const msg = 'Vamos seguir pro pagamento! 😊';
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);

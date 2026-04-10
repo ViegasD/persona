@@ -29,13 +29,17 @@ export async function initiatePixPayment(
   const prefs = (session.preferences as Record<string, string>) ?? {};
   const pkg = getPackageById(prefs.packageId) ?? PACKAGES[PACKAGES.length - 1]; // default to most popular
 
-  log.info({ packageId: prefs.packageId ?? 'DEFAULT', pkgId: pkg.id, price: pkg.price, photos: pkg.photos }, '[PAYMENT] Package resolved');
+  // Use priceOverride if set (e.g. upsell promo), otherwise use package base price
+  const priceOverride = (prefs as Record<string, unknown>).priceOverride as number | undefined;
+  const finalPrice = typeof priceOverride === 'number' && priceOverride > 0 ? priceOverride : pkg.price;
+
+  log.info({ packageId: prefs.packageId ?? 'DEFAULT', pkgId: pkg.id, price: finalPrice, photos: pkg.photos, priceOverride: priceOverride ?? null }, '[PAYMENT] Package resolved');
 
   const externalReference = `ensaio_${sessionId}`;
 
-  log.info({ externalReference, amount: pkg.price }, '[PAYMENT] Calling Mercado Pago createPixPayment...');
+  log.info({ externalReference, amount: finalPrice }, '[PAYMENT] Calling Mercado Pago createPixPayment...');
   const { paymentId: mpPaymentId, qrCode, qrCodeBase64 } = await createPixPayment({
-    amount: pkg.price,
+    amount: finalPrice,
     description: `Ensaio fotográfico digital com ${pkg.photos} imagens profissionais`,
     externalReference,
     notificationUrl: `${env.API_BASE_URL}/api/webhooks/mercadopago`,
@@ -55,7 +59,7 @@ export async function initiatePixPayment(
     data: {
       leadSessionId: sessionId,
       mercadopagoPaymentId: mpPaymentId,
-      amount: pkg.price,
+      amount: finalPrice,
       currency: 'BRL',
       status: 'PENDING',
     },
@@ -63,7 +67,7 @@ export async function initiatePixPayment(
 
   log.info({ paymentId: payment.id, mpPaymentId, sessionId }, '[PAYMENT] ✅ Payment record saved to DB');
 
-  return { qrImageUrl, pixCopyPaste: qrCode, paymentId: payment.id, amount: pkg.price };
+  return { qrImageUrl, pixCopyPaste: qrCode, paymentId: payment.id, amount: finalPrice };
 }
 
 /**

@@ -2,7 +2,7 @@
  * Máquina de estados do funil de vendas (v2 — LLM-powered).
  *
  * Fluxo simplificado:
- *   ENGAGING → COLLECTING_PHOTOS → COLLECTING_STYLE_REFS → AWAITING_PAYMENT → PAID
+ *   ENGAGING → COLLECTING_PHOTOS → COLLECTING_STYLE_REFS → UPSELLING → CONFIRMING_DATA → AWAITING_PAYMENT → PAID
  *   → GENERATING → GALLERY_SENT → APPROVING → DELIVERING → DELIVERED
  *
  * ENGAGING agrupa: boas-vindas, qualificação, oferta, coleta de preferências (nome, pacote, ocasião).
@@ -18,6 +18,7 @@ export const FUNNEL_STATES = {
   COLLECTING_PHOTOS: 'COLLECTING_PHOTOS',
   COLLECTING_STYLE_REFS: 'COLLECTING_STYLE_REFS',
   UPSELLING: 'UPSELLING',
+  CONFIRMING_DATA: 'CONFIRMING_DATA',
   AWAITING_PAYMENT: 'AWAITING_PAYMENT',
   PAID: 'PAID',
   GENERATING: 'GENERATING',
@@ -35,9 +36,10 @@ export type FunnelState = (typeof FUNNEL_STATES)[keyof typeof FUNNEL_STATES];
  */
 export const TRANSITIONS: Record<FunnelState, FunnelState[]> = {
   ENGAGING: ['COLLECTING_PHOTOS', 'CHURNED'],
-  COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'UPSELLING', 'AWAITING_PAYMENT', 'ENGAGING', 'CHURNED'],
-  COLLECTING_STYLE_REFS: ['UPSELLING', 'AWAITING_PAYMENT', 'CHURNED'],  // style refs ok → upsell (or skip if top pkg)
-  UPSELLING: ['AWAITING_PAYMENT', 'CHURNED'],                           // upsell attempt → pagamento
+  COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'UPSELLING', 'CONFIRMING_DATA', 'AWAITING_PAYMENT', 'ENGAGING', 'CHURNED'],
+  COLLECTING_STYLE_REFS: ['UPSELLING', 'CONFIRMING_DATA', 'AWAITING_PAYMENT', 'CHURNED'],  // style refs ok → upsell (or skip if top pkg)
+  UPSELLING: ['CONFIRMING_DATA', 'AWAITING_PAYMENT', 'CHURNED'],                           // upsell attempt → confirmation
+  CONFIRMING_DATA: ['AWAITING_PAYMENT', 'CHURNED'],               // confirmed → payment
   AWAITING_PAYMENT: ['PAID', 'ENGAGING', 'CHURNED'],                   // pode mudar pacote
   PAID: ['GENERATING'],
   GENERATING: ['GALLERY_SENT'],
@@ -68,6 +70,8 @@ export function getAgentForState(state: FunnelState): string {
       return 'style-collection';
     case FUNNEL_STATES.UPSELLING:
       return 'upsell';
+    case FUNNEL_STATES.CONFIRMING_DATA:
+      return 'confirmation';
     case FUNNEL_STATES.AWAITING_PAYMENT:
       return 'payment';
     case FUNNEL_STATES.PAID:

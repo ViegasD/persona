@@ -33,7 +33,7 @@ export const MESSAGES = {
 
   photoReceived: (count: number, _max: number) =>
     count >= 2
-      ? `📸 Foto ${count} recebida! Já tenho o suficiente — pode enviar mais ou dizer *pronto* quando terminar 😉`
+      ? `📸 Foto ${count} recebida! Já tenho o suficiente — pode enviar mais, e quando tiver enviado todas me avisa que eu prossigo 😉`
       : `📸 Foto ${count} recebida! Envie mais ${2 - count} pelo menos 🙏`,
 
   // ─── Referências de Estilo ───────────────────────────────
@@ -41,7 +41,7 @@ export const MESSAGES = {
     `Agora uma etapa especial! ✨\n\n` +
     `Se tiver fotos de *inspiração* — tipo uma foto do Pinterest, Instagram ou de uma sessão que gostou do estilo — pode enviar aqui! 📸\n\n` +
     `A IA vai usar como referência de *iluminação, cenário e vibe* para a sua sessão.\n\n` +
-    `Envie as fotos que quiser, ou diga *saltar* se quiser seguir sem referência de estilo 😊`,
+    `Envie as fotos que quiser, ou diga *pular* se quiser seguir sem referência de estilo 😊`,
 
   // ─── Pagamento ───────────────────────────────────────────
   pixPayment: (amount: number) =>

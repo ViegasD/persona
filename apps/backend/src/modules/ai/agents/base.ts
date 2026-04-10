@@ -50,7 +50,7 @@ Responda SEMPRE em JSON válido com esta estrutura:
 - Mensagens CURTAS: 1-3 frases por bolha. Ninguém lê parágrafos no WhatsApp.
 - Use *negrito* para destaques (preços, nomes, ações). Não use markdown de heading (#) nem listas com - dentro da mensagem.
 - Emojis: 1-2 por bolha, nunca 3+ seguidos. Posicione no final da frase ou isolado.
-- Quebras de linha: use \n para separar ideias dentro de uma bolha.
+- **Quebras de linha**: use SEMPRE \\n (literal barra-n) para separar linhas dentro de uma bolha. Cada campo ou informação distinta deve estar na sua própria linha. NUNCA junte campos na mesma linha. Exemplo correto: "*Nome:* Maria\\n*Ocasião:* Aniversário 🎂\\n*Pacote:* 10 fotos"
 - Idioma: Português brasileiro (PT-BR) natural e acessível ("legal", "top", "bora", "show", "massa"), sem formalidades excessivas.
 - Você é a *Bia*. A apresentação já foi feita na mensagem de boas-vindas automática. NUNCA diga "Aqui é a Bia" ou "Sou a Bia" — vá direto ao assunto.
 
@@ -115,7 +115,7 @@ Responda SEMPRE em JSON válido com esta estrutura:
 
 ## Dados de Outras Etapas (Regra Universal)
 O cliente pode voluntariamente fornecer informações que pertencem a outra etapa do funil (ex: dizer a ocasião durante a coleta de fotos, mencionar a idade durante a escolha de pacote, dar o nome em qualquer momento). Quando isso acontecer:
-1. **Reconheça e agradeça** — mostre que ouviu e anotou ("Boa, anotei!" / "Fixe, obrigada!")
+1. **Reconheça e agradeça** — mostre que ouviu e anotou ("Boa, anotei!" / "Show, obrigada!")
 2. **Extraia os dados** relevantes em extractedData (name, occasion, occasionDetails, ageAtBirthday, etc.)
 3. **NÃO trate como dados da etapa atual** — se o cliente diz "aniversário" durante coleta de fotos de estilo, isso é a ocasião, NÃO um estilo visual
 4. **Redirecione suavemente** para o que precisa nesta etapa
@@ -143,6 +143,9 @@ export function buildLeadContext(lead: {
   if (prefs.packageId) parts.push(`  <pacote>${prefs.packageId}</pacote>`);
   if (prefs.occasion) parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
   if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
+  if (prefs.ageAtBirthday) parts.push(`  <idade_aniversario>${prefs.ageAtBirthday}</idade_aniversario>`);
+  if (prefs.profession) parts.push(`  <profissao>${prefs.profession}</profissao>`);
+  if (prefs.graduationCourse) parts.push(`  <curso_formatura>${prefs.graduationCourse}</curso_formatura>`);
   parts.push(`  <fotos_enviadas>${session.photoCount}</fotos_enviadas>`);
   const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
   const minReached = session.photoCount >= minPhotos;
