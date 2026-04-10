@@ -239,13 +239,26 @@ async function handleTransition(
     }
 
     case FUNNEL_STATES.COLLECTING_PHOTOS: {
-      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Starting...');
-      await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_STYLE_REFS);
-      // Send style-ref prompt so the user knows what to do next
-      const styleMsg = MESSAGES.askStyleRefs();
-      await queueTextMessage(phone, styleMsg, { jobDelay: 2000 });
-      await logOutboundMessage(leadId, styleMsg);
-      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Done — askStyleRefs sent');
+      // Skip style-refs step by default — go straight to upsell/payment
+      // (COLLECTING_STYLE_REFS only enters if the user explicitly asks for a custom style we don't have)
+      const photoSession = await prisma.leadSession.findUnique({ where: { id: sessionId } });
+      const photoPkg = (photoSession?.preferences as Record<string, unknown>)?.packageId as string | undefined;
+      const photoIsTop = photoPkg === 'pkg_10';
+
+      if (photoIsTop) {
+        log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→AWAITING_PAYMENT] Top package — skipping upsell');
+        await createPixAndTransition(sessionId, leadId, phone, currentState);
+      } else {
+        log.info({ currentPkg: photoPkg }, '[TRANSITION:COLLECTING_PHOTOS→UPSELLING] Transitioning to upsell');
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.UPSELLING);
+        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId } satisfies MessageBatchJobData,
+          { jobId: `upsell_trigger_${phone}`, delay: 2000, removeOnComplete: true },
+        );
+        log.info('[TRANSITION:COLLECTING_PHOTOS→UPSELLING] Upsell batch job queued with 2s delay');
+      }
       break;
     }
 
@@ -253,7 +266,7 @@ async function handleTransition(
       // Check if client already has the top package — skip upsell
       const session = await prisma.leadSession.findUnique({ where: { id: sessionId } });
       const currentPkg = (session?.preferences as Record<string, unknown>)?.packageId as string | undefined;
-      const isTopPackage = currentPkg === 'pkg_10' || currentPkg === 'pkg_ret_10';
+      const isTopPackage = currentPkg === 'pkg_10';
 
       if (isTopPackage) {
         log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Top package — skipping upsell');

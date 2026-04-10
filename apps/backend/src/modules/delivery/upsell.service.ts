@@ -8,8 +8,6 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('upsell-service');
 
-const DISCOUNT_SCHEDULE = [10, 15, 20]; // desconto por tentativa
-
 /**
  * Worker BullMQ que processa jobs de upsell / reengajamento.
  */
@@ -29,10 +27,9 @@ export async function processUpsell(job: Job<UpsellJobData>): Promise<void> {
     await trackEvent(leadId, 'UPSELL_SENT', { type, attempt });
     log.info({ leadId, type }, 'Upsell follow-up enviado');
   } else if (type === 'reengagement') {
-    const discount = DISCOUNT_SCHEDULE[Math.min(attempt - 1, DISCOUNT_SCHEDULE.length - 1)];
-    await queueTextMessage(lead.phone, MESSAGES.reengagement(name, discount));
-    await trackEvent(leadId, 'REENGAGEMENT_SENT', { type, attempt, discount });
-    log.info({ leadId, type, attempt, discount }, 'Reengagement enviado');
+    await queueTextMessage(lead.phone, MESSAGES.reengagement(name, 0));
+    await trackEvent(leadId, 'REENGAGEMENT_SENT', { type, attempt });
+    log.info({ leadId, type, attempt }, 'Reengagement enviado');
   }
 }
 

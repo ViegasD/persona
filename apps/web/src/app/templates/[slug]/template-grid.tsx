@@ -15,11 +15,13 @@ interface Props {
   occasionLabel: string;
 }
 
+const EMPTY_QUEUE: QueueItem[] = [];
+
 function useUploadQueue(slug: string) {
   const snapshot = useSyncExternalStore(
     subscribe,
     () => getQueue(slug),
-    () => [] as QueueItem[],
+    () => EMPTY_QUEUE,
   );
   return snapshot;
 }

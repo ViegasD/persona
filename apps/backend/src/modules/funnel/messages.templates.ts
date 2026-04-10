@@ -1,37 +1,35 @@
 /**
- * Templates de mensagem da Bia em Português (PT-PT).
+ * Templates de mensagem da Bia em Português (PT-BR).
  * Usados como FALLBACK quando o LLM não está disponível.
  * Em operação normal, as mensagens são geradas pelo LLM.
  */
 export const MESSAGES = {
   // ─── Boas-vindas / Engajamento (fallback para ENGAGING) ──
   welcome: (_name: string | null) =>
-    `Olá! Sim, é verdade! Sessão fotográfica profissional sem sair de casa, feita com IA 😊\n\n` +
-    `Funciona assim: envia as suas fotos e a nossa IA transforma-as numa sessão profissional. O resultado é natural, sem aspeto artificial.\n` +
-    `Veja alguns resultados reais acima 👆\n\n` +
-    `🔥 PROMOÇÃO DE MARÇO 🔥\n` +
-    `🎁 10 fotos — 16,90 € (mais pedido)\n` +
-    `📦 5 fotos — 9,90 €\n` +
-    `📦 3 fotos — 6,90 €\n` +
-    `📦 2 fotos — 4,90 €\n\n` +
-    `✅ Mais de 3000 clientes atendidos\n` +
-    `✅ Entrega até 48h\n` +
-    `✅ Ideal para: LinkedIn, Instagram, Tinder, presentes, fim de curso...\n\n` +
-    `🎂 Aniversário • 💼 Profissional • 🎓 Fim de curso • 💕 Casal • 👶 Gravidez • 🏙️ Casual • e mais!\n\n` +
-    `Para agilizar: diga-me qual é o pacote que pretende para que eu lhe explique o passo seguinte! 😉`,
+    `Olá, tudo bem?\n\n` +
+    `Antes dos valores, deixa eu te explicar rapidinho como funciona 👇\n` +
+    `Você nos envia suas fotos, aplicamos IA personalizada com ajustes finos para um resultado natural e profissional. Nada de aparência artificial ❌\n\n` +
+    `🔥 PROMOÇÕES MARÇO 🔥\n` +
+    `🎁 10 fotos — R$ 34,90 (mais popular)\n` +
+    `📦 2 fotos — R$ 9,90\n` +
+    `📦 3 fotos — R$ 13,90\n` +
+    `📦 5 fotos — R$ 18,90\n\n` +
+    `🎂 Aniversário • 💼 Profissional • 🎓 Formatura • 💕 Casal • 👶 Gravidez • 🏙️ Casual • e mais!\n\n\n` +
+    `Qual pacote você quer?\n\n` +
+    `Ah, e já pode ir mandando suas fotos aqui enquanto isso! 📸 Uma de rosto e uma de corpo inteiro já ajuda demais 😉`,
 
   // Fallback for follow-up messages (no re-introduction)
   engagementFollowUp: () =>
-    `Desculpe, tive um probleminha aqui! 😅 Pode repetir o que disse?`,
+    `Desculpa, tive um probleminha aqui! 😅 Pode repetir o que disse?`,
 
   // ─── Coleta de Fotos (fallback para COLLECTING_PHOTOS) ──
   askPhotos: () =>
-    `Agora vem a parte divertida! Preciso de pelo menos *2 fotos suas* para referência — uma de rosto e outra de corpo inteiro 📷\n\n` +
+    `Agora vem a parte divertida! Preciso de pelo menos *2 fotos suas* pra referência — uma de rosto e outra de corpo inteiro 📷\n\n` +
     `Dicas rápidas:\n` +
     `✅ Nítidas, sem filtro\n` +
     `✅ Rosto bem visível\n` +
-    `✅ Se quiser a sorrir, envie a sorrir 😄\n\n` +
-    `Pode enviar aqui mesmo! 🚀`,
+    `✅ Se quiser sorrindo, mande sorrindo 😄\n\n` +
+    `Pode mandar aqui mesmo! 🚀`,
 
   photoReceived: (count: number, _max: number) =>
     count >= 2
@@ -48,56 +46,55 @@ export const MESSAGES = {
   // ─── Pagamento ───────────────────────────────────────────
   pixPayment: (amount: number) =>
     `💰 *Pagamento via Pix*\n\n` +
-    `Valor: *€ ${amount.toFixed(2).replace('.', ',')}*\n\n` +
-    `Escaneie o QR Code acima na app do seu banco 📱`,
+    `Valor: *R$ ${amount.toFixed(2).replace('.', ',')}*\n\n` +
+    `Escaneie o QR Code acima no app do seu banco 📱`,
 
   pixCopyPaste: (code: string) => code,
 
   paymentConfirmed: (name: string) =>
     `✅ Pagamento confirmado, ${name}!\n\n` +
-    `A IA já está a trabalhar na sua sessão 🎨\n\n` +
-    `Aviso assim que estiver pronto! ⏳`,
+    `A IA já está trabalhando na sua sessão 🎨\n\n` +
+    `Aviso assim que ficar pronto! ⏳`,
 
   paymentReminder: () =>
     `O QR Code Pix foi enviado ali em cima 👆\n\n` +
-    `Ele vale por *30 minutos* ⏰ Se expirar, avise-me que gero outro!\n\n` +
-    `Qualquer dúvida, estou aqui 😊`,
+    `Ele vale por *30 minutos* ⏰ Se expirar, me avisa que gero outro!\n\n` +
+    `Qualquer dúvida, tô aqui 😊`,
 
   // ─── Geração ─────────────────────────────────────────────
   generationProgress: () =>
-    `🎨 As suas fotos estão a ser criadas... A magia está a acontecer! ✨`,
+    `🎨 Suas fotos estão sendo criadas... A magia está acontecendo! ✨`,
 
   generationComplete: () =>
-    `✨ As suas fotos ficaram prontas!\n\n` +
-    `Estamos a fazer uma revisão de qualidade antes de enviar 🔍\n\n` +
-    `Já já envio tudo aqui mesmo! 😊`,
+    `✨ Suas fotos ficaram prontas!\n\n` +
+    `Estamos fazendo uma revisão de qualidade antes de enviar 🔍\n\n` +
+    `Já já mando tudo aqui mesmo! 😊`,
 
   // ─── Entrega ─────────────────────────────────────────────
   deliveryStart: () =>
-    `📦 A enviar as suas fotos em alta qualidade...`,
+    `📦 Enviando suas fotos em alta qualidade...`,
 
   deliveryComplete: (count: number) =>
     `✅ *${count} fotos* enviadas com sucesso!\n\n` +
     `Espero que tenha adorado! 😍\n\n` +
-    `Sabia que clientes que já fizeram sessão têm *desconto especial* na próxima? Se quiser outra, é só dizer! 🌟`,
+    `Se quiser fazer outro ensaio com um estilo diferente, é só me chamar! 🌟`,
 
   // ─── Upsell ──────────────────────────────────────────────
   upsellFollowUp: (name: string) =>
     `Olá, ${name}! 😊 Tudo bem?\n\n` +
-    `Que tal uma nova sessão com estilo diferente? Tem *desconto especial* para quem já é cliente! 🌟\n\n` +
+    `Que tal uma nova sessão com estilo diferente? 🌟\n\n` +
     `Responda *QUERO* para saber mais.`,
 
-  reengagement: (name: string, discount: number) =>
-    `${name}, a sua sessão digital está à espera! 📸\n\n` +
-    `Reservei um *desconto de ${discount}%* especial para si.\n\n` +
-    `Responda *SIM* para aproveitar!`,
+  reengagement: (name: string, _discount: number) =>
+    `${name}, bora fazer mais um ensaio? 📸\n\n` +
+    `Responda *SIM* pra começar!`,
 
-  // ─── Erros / Fallback ───────────────────────────────────
+  // ─── Erros / Fallback ─────────────────────────────────────────
   invalidOption: () =>
-    `Hmm, não percebi 🤔 Pode repetir de outra forma?`,
+    `Hmm, não entendi 🤔 Pode repetir de outra forma?`,
 
   sessionExpired: () =>
-    `A sua sessão expirou. Envie qualquer mensagem para recomeçar! 😊`,
+    `Sua sessão expirou. Mande qualquer mensagem pra começar de novo! 😊`,
 
   errorOccurred: () =>
     `Ops, houve um probleminha aqui do meu lado 😅 Tente novamente em alguns instantes!`,

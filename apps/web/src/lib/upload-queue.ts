@@ -23,8 +23,10 @@ type Listener = () => void;
 let queue: QueueItem[] = [];
 let processing = false;
 const listeners = new Set<Listener>();
+const snapshotCache = new Map<string | undefined, QueueItem[]>();
 
 function notify() {
+  snapshotCache.clear();
   listeners.forEach((fn) => fn());
 }
 
@@ -82,7 +84,11 @@ export function enqueueUploads(
 
 /** Get current queue state for a specific slug (or all) */
 export function getQueue(slug?: string): QueueItem[] {
-  return slug ? queue.filter((q) => q.slug === slug) : queue;
+  const cached = snapshotCache.get(slug);
+  if (cached) return cached;
+  const result = slug ? queue.filter((q) => q.slug === slug) : [...queue];
+  snapshotCache.set(slug, result);
+  return result;
 }
 
 /** Remove completed/errored items for a slug */
