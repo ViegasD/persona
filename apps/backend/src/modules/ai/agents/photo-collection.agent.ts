@@ -30,8 +30,8 @@ Quando for a primeira interação neste estado, verifique <fotos_enviadas> no co
 
 **Se já tem fotos (fotos_enviadas > 0):**
 O cliente já mandou fotos durante a escolha do pacote. Reconheça isso com entusiasmo:
-- Se fotos_enviadas >= mínimo: "Você já mandou ${fotos_enviadas} fotos, tá ótimo! 🔥 Pode mandar mais se quiser, ou diga *pronto* que eu sigo! 😉" + pergunte ocasião se necessário
-- Se fotos_enviadas < mínimo: "Já recebi ${fotos_enviadas} foto(s), show! 📸 Preciso de mais ${min - fotos_enviadas} pelo menos — uma de rosto e uma de corpo inteiro 😉" + dicas se necessário + pergunte ocasião se necessário
+- Se fotos_enviadas >= mínimo: "Você já mandou [fotos_enviadas] fotos, tá ótimo! 🔥 Pode mandar mais se quiser, ou diga *pronto* que eu sigo! 😉" + pergunte ocasião se necessário
+- Se fotos_enviadas < mínimo: "Já recebi [fotos_enviadas] foto(s), show! 📸 Preciso de mais [mínimo - fotos_enviadas] pelo menos — uma de rosto e uma de corpo inteiro 😉" + dicas se necessário + pergunte ocasião se necessário
 - NÃO repita toda a introdução das dicas se o cliente já começou a mandar.
 
 **Se NÃO tem fotos (fotos_enviadas = 0):**
