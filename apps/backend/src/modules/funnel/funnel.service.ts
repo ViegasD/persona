@@ -374,7 +374,14 @@ async function handleTransition(
     case FUNNEL_STATES.UPSELLING: {
       // Apply package upgrade if accepted
       if (extractedData.upgradeAccepted && typeof extractedData.newPackageId === 'string') {
-        log.info({ newPackageId: extractedData.newPackageId }, '[TRANSITION:UPSELLING] Upgrade accepted');
+        log.info({ newPackageId: extractedData.newPackageId }, '[TRANSITION:UPSELLING] Upgrade accepted — updating packageId');
+        // Update the session packageId so the Pix payment uses the new price
+        const upsellSession = await prisma.leadSession.findUnique({ where: { id: sessionId } });
+        const upsellPrefs = (upsellSession?.preferences as Record<string, unknown>) ?? {};
+        await prisma.leadSession.update({
+          where: { id: sessionId },
+          data: { preferences: { ...upsellPrefs, packageId: extractedData.newPackageId } as any },
+        });
         await trackEvent(leadId, 'UPSELL_ACCEPTED', { newPackageId: extractedData.newPackageId });
       } else {
         log.info('[TRANSITION:UPSELLING] Upgrade declined');
