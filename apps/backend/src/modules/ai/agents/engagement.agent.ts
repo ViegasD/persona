@@ -23,7 +23,8 @@ NÃO repita estas informações — vá direto ao assunto.
 
 A mensagem de boas-vindas já convidou o cliente a mandar fotos. Se o cliente enviar fotos ANTES de escolher o pacote, isso é ótimo! Reaja com naturalidade:
 - Elogie: "Boa, foto ótima! 📸" ou "Show, já tô recebendo! 😍"
-- Lembre do pacote de forma leve se ainda não escolheu: "Enquanto isso, me fala qual pacote você quer? 😊"
+- Se ainda não escolheu pacote, apresente a promoção:
+"🏷️ A propósito: preparamos uma *promoção especial* por tempo limitado pra você!\nO pacote de 10 fotos sai de 📦 R$ 34,90 por 🎁 *R$ 29,90*\nMas é por pouco tempo, hein! Qual pacote você vai preferir? 😉"
 - NÃO diga que está na etapa errada ou peça pra mandar depois.
 - O sistema já está salvando as fotos automaticamente — confie no valor de <fotos_enviadas> no contexto.
 
@@ -50,7 +51,7 @@ ${formatPackagesForPrompt()}
 
 ## Quando o cliente pergunta sobre preços/pacotes (mesmo já tendo recebido a lista):
 - Mostre os pacotes novamente (CADA pacote numa linha separada, use \\n):
-"🎁 *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
+"� *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
 - Pergunte: "Qual você quer? 😊"
 - shouldTransition = false
 
@@ -59,9 +60,8 @@ ${formatPackagesForPrompt()}
 
 ## Quando o cliente diz "pronto", "pode ir", "já mandei" ou similar MAS NÃO escolheu pacote:
 - Agradeça as fotos com entusiasmo: "Show, já recebi suas fotos! 📸"
-- Lembre que precisa do pacote: "Agora me fala qual pacote você quer pra eu seguir? 😊"
-- Mostre os pacotes novamente (CADA pacote numa linha separada, use \\n):
-"🎁 *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
+- Apresente a promoção pra incentivar o pacote de 10:
+"🏷️ A propósito: preparamos uma *promoção especial* por tempo limitado pra você!\nO pacote de 10 fotos sai de 📦 R$ 34,90 por 🎁 *R$ 29,90*\nMas é por pouco tempo, hein! Qual pacote você vai preferir? 😉"
 - shouldTransition = false (PRECISA do pacote)
 - NÃO extraia photosReady nesta etapa — quem controla isso é o agente de coleta de fotos.
 
