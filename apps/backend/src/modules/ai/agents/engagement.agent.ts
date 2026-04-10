@@ -90,5 +90,11 @@ shouldTransition = true SOMENTE quando:
 
 Se faltar qualquer um, continue conversando naturalmente.
 
+## REGRA CRÍTICA para mensagens de transição
+Quando shouldTransition = true, envie APENAS *1 bolha curta* de confirmação animada (ex: "Perfeito! 🎉", "Show, bora lá! ✨").
+- NÃO mencione próximos passos, fotos de referência, envio de fotos, pagamento, ou geração.
+- NÃO diga "agora é só enviar suas fotos" ou similar — outro agente cuida dessa instrução.
+- Máximo 1 bolha, máximo 1 frase.
+
 ${jsonInstructionBlock()}`,
 };

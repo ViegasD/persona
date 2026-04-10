@@ -214,17 +214,22 @@ async function handleTransition(
       log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Starting...');
       await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_PHOTOS);
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'COLLECTING' } });
+      // Send askPhotos with delay so it arrives AFTER the engagement agent's LLM confirmation bubble
       const askMsg = MESSAGES.askPhotos();
-      await queueTextMessage(phone, askMsg);
+      await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
       await logOutboundMessage(leadId, askMsg);
-      log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done — askPhotos sent');
+      log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done — askPhotos queued with delay');
       break;
     }
 
     case FUNNEL_STATES.COLLECTING_PHOTOS: {
       log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Starting...');
       await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_STYLE_REFS);
-      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Done — style-collection agent takes over');
+      // Send style-ref prompt so the user knows what to do next
+      const styleMsg = MESSAGES.askStyleRefs();
+      await queueTextMessage(phone, styleMsg, { jobDelay: 2000 });
+      await logOutboundMessage(leadId, styleMsg);
+      log.info('[TRANSITION:COLLECTING_PHOTOS→COLLECTING_STYLE_REFS] Done — askStyleRefs sent');
       break;
     }
 
@@ -358,7 +363,7 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
       break;
     }
     case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
-      const msg = 'Se tiver fotos de inspiração (Pinterest, Instagram, algum ensaio que curtiu), manda aqui! Ou diga *pular* pra seguir sem 😊';
+      const msg = MESSAGES.askStyleRefs();
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);
       break;

@@ -28,6 +28,13 @@ export const MESSAGES = {
       ? `📸 Foto ${count} recebida! Já tenho o suficiente — pode mandar mais ou enviar *pronto* quando terminar 😉`
       : `📸 Foto ${count} recebida! Manda mais ${2 - count} pelo menos 🙏`,
 
+  // ─── Referências de Estilo ───────────────────────────────
+  askStyleRefs: () =>
+    `Agora uma etapa especial! ✨\n\n` +
+    `Se você tiver fotos de *inspiração* — tipo uma foto do Pinterest, Instagram ou de um ensaio que curtiu o estilo — pode mandar aqui! 📸\n\n` +
+    `A IA vai usar como referência de *iluminação, cenário e vibe* pro seu ensaio.\n\n` +
+    `Só manda as fotos que curtir, ou diga *pular* se quiser seguir sem referência de estilo 😊`,
+
   // ─── Pagamento ───────────────────────────────────────────
   pixPayment: (amount: number) =>
     `💰 *Pagamento via Pix*\n\n` +
