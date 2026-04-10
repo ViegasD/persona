@@ -21,6 +21,7 @@ import { paymentAgent } from '../ai/agents/payment.agent.js';
 import { supportAgent } from '../ai/agents/support.agent.js';
 import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
+import { upsellAgent } from '../ai/agents/upsell.agent.js';
 
 const log = createChildLogger('funnel-service');
 
@@ -28,6 +29,7 @@ const AGENTS: Record<string, AgentConfig> = {
   engagement: engagementAgent,
   'photo-collection': photoCollectionAgent,
   'style-collection': styleCollectionAgent,
+  upsell: upsellAgent,
   payment: paymentAgent,
   support: supportAgent,
   reengagement: reengagementAgent,
@@ -227,31 +229,33 @@ async function handleTransition(
     }
 
     case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
-      log.info({ sessionId }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Creating Pix payment...');
-      await prisma.lead.update({ where: { id: leadId }, data: { status: 'PAYING' } });
+      // Check if client already has the top package — skip upsell
+      const session = await prisma.leadSession.findUnique({ where: { id: sessionId } });
+      const currentPkg = (session?.preferences as Record<string, unknown>)?.packageId as string | undefined;
+      const isTopPackage = currentPkg === 'pkg_6' || currentPkg === 'pkg_ret_6';
 
-      log.info('[TRANSITION:PAYMENT] Calling initiatePixPayment...');
-      const { qrImageUrl, pixCopyPaste, amount } = await initiatePixPayment(sessionId, leadId);
-      log.info({ qrImageUrl: qrImageUrl.substring(0, 80) }, '[TRANSITION:PAYMENT] Pix payment created');
+      if (isTopPackage) {
+        log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Top package — skipping upsell');
+        await createPixAndTransition(sessionId, leadId, phone, currentState);
+      } else {
+        log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→UPSELLING] Transitioning to upsell');
+        await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.UPSELLING);
+      }
+      break;
+    }
 
-      await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.AWAITING_PAYMENT);
+    case FUNNEL_STATES.UPSELLING: {
+      // Apply package upgrade if accepted
+      if (extractedData.upgradeAccepted && typeof extractedData.newPackageId === 'string') {
+        log.info({ newPackageId: extractedData.newPackageId }, '[TRANSITION:UPSELLING] Upgrade accepted');
+        await trackEvent(leadId, 'UPSELL_ACCEPTED', { newPackageId: extractedData.newPackageId });
+      } else {
+        log.info('[TRANSITION:UPSELLING] Upgrade declined');
+        await trackEvent(leadId, 'UPSELL_DECLINED');
+      }
 
-      // 1. QR code image with caption
-      const caption = MESSAGES.pixPayment(amount);
-      await queueMediaMessage(phone, qrImageUrl, {
-        mediatype: 'image',
-        mimetype: 'image/png',
-        caption,
-      });
-      await logOutboundMessage(leadId, `[QR Code Pix] ${caption}`, 'image');
-
-      // 2. Raw PIX code alone — user can long-press to copy
-      const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-      await queueTextMessage(phone, copyPasteMsg, { jobDelay: 1500 });
-      await logOutboundMessage(leadId, copyPasteMsg);
-
-      await trackEvent(leadId, 'PIX_QR_SENT');
-      log.info('[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Done — Pix QR sent');
+      // Create Pix payment (with whatever package is now in preferences) and transition
+      await createPixAndTransition(sessionId, leadId, phone, currentState);
       break;
     }
 
@@ -291,6 +295,40 @@ async function handleTransition(
   }
 }
 
+// ─── Shared: Create Pix payment and transition to AWAITING_PAYMENT ──
+
+async function createPixAndTransition(
+  sessionId: string,
+  leadId: string,
+  phone: string,
+  fromState: FunnelState,
+): Promise<void> {
+  log.info({ sessionId, fromState }, '[PIX] Creating Pix payment...');
+  await prisma.lead.update({ where: { id: leadId }, data: { status: 'PAYING' } });
+
+  const { qrImageUrl, pixCopyPaste, amount } = await initiatePixPayment(sessionId, leadId);
+  log.info({ qrImageUrl: qrImageUrl.substring(0, 80) }, '[PIX] Pix payment created');
+
+  await transitionState(sessionId, leadId, fromState, FUNNEL_STATES.AWAITING_PAYMENT);
+
+  // 1. QR code image with caption
+  const caption = MESSAGES.pixPayment(amount);
+  await queueMediaMessage(phone, qrImageUrl, {
+    mediatype: 'image',
+    mimetype: 'image/png',
+    caption,
+  });
+  await logOutboundMessage(leadId, `[QR Code Pix] ${caption}`, 'image');
+
+  // 2. Raw PIX code alone — user can long-press to copy
+  const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
+  await queueTextMessage(phone, copyPasteMsg, { jobDelay: 1500 });
+  await logOutboundMessage(leadId, copyPasteMsg);
+
+  await trackEvent(leadId, 'PIX_QR_SENT');
+  log.info({ fromState }, '[PIX] Done — Pix QR sent');
+}
+
 // ─── Fallback (when LLM fails) ─────────────────────────────
 
 async function handleFallback(phone: string, leadId: string, state: FunnelState): Promise<void> {
@@ -321,6 +359,13 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
     }
     case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
       const msg = 'Se tiver fotos de inspiração (Pinterest, Instagram, algum ensaio que curtiu), manda aqui! Ou diga *pular* pra seguir sem 😊';
+      await queueTextMessage(phone, msg);
+      await logOutboundMessage(leadId, msg);
+      break;
+    }
+    case FUNNEL_STATES.UPSELLING: {
+      // Upsell fallback — just skip to payment
+      const msg = 'Vamos seguir pro pagamento! 😊';
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);
       break;

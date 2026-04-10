@@ -17,6 +17,7 @@ export const FUNNEL_STATES = {
   ENGAGING: 'ENGAGING',
   COLLECTING_PHOTOS: 'COLLECTING_PHOTOS',
   COLLECTING_STYLE_REFS: 'COLLECTING_STYLE_REFS',
+  UPSELLING: 'UPSELLING',
   AWAITING_PAYMENT: 'AWAITING_PAYMENT',
   PAID: 'PAID',
   GENERATING: 'GENERATING',
@@ -35,7 +36,8 @@ export type FunnelState = (typeof FUNNEL_STATES)[keyof typeof FUNNEL_STATES];
 export const TRANSITIONS: Record<FunnelState, FunnelState[]> = {
   ENGAGING: ['COLLECTING_PHOTOS', 'CHURNED'],
   COLLECTING_PHOTOS: ['COLLECTING_STYLE_REFS', 'ENGAGING', 'CHURNED'], // fotos ok → style refs
-  COLLECTING_STYLE_REFS: ['AWAITING_PAYMENT', 'CHURNED'],              // style refs ok ou skip → pagamento
+  COLLECTING_STYLE_REFS: ['UPSELLING', 'AWAITING_PAYMENT', 'CHURNED'],  // style refs ok → upsell (or skip if top pkg)
+  UPSELLING: ['AWAITING_PAYMENT', 'CHURNED'],                           // upsell attempt → pagamento
   AWAITING_PAYMENT: ['PAID', 'ENGAGING', 'CHURNED'],                   // pode mudar pacote
   PAID: ['GENERATING'],
   GENERATING: ['GALLERY_SENT'],
@@ -64,6 +66,8 @@ export function getAgentForState(state: FunnelState): string {
       return 'photo-collection';
     case FUNNEL_STATES.COLLECTING_STYLE_REFS:
       return 'style-collection';
+    case FUNNEL_STATES.UPSELLING:
+      return 'upsell';
     case FUNNEL_STATES.AWAITING_PAYMENT:
       return 'payment';
     case FUNNEL_STATES.PAID:
