@@ -88,6 +88,21 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
     '[BATCH:CONTEXT] Loaded lead context',
   );
 
+  // ─── Step 0: Static welcome for brand-new sessions ──────
+  if (state === FUNNEL_STATES.ENGAGING) {
+    const outboundCount = await prisma.conversationMessage.count({
+      where: { leadId: lead.id, direction: 'OUTBOUND' },
+    });
+    if (outboundCount === 0) {
+      log.info('[BATCH:WELCOME] First contact — sending static welcome');
+      const welcomeMsg = MESSAGES.welcome(lead.name);
+      await queueTextMessage(phone, welcomeMsg);
+      await logOutboundMessage(lead.id, welcomeMsg);
+      log.info('[BATCH:WELCOME] Welcome sent — skipping LLM');
+      return;
+    }
+  }
+
   // ─── Step 1: LLM Agent Call ──────────────────────────────
   let agentResponse: AgentResponse;
   let agentName: string;
@@ -237,7 +252,7 @@ async function handleTransition(
       // Check if client already has the top package — skip upsell
       const session = await prisma.leadSession.findUnique({ where: { id: sessionId } });
       const currentPkg = (session?.preferences as Record<string, unknown>)?.packageId as string | undefined;
-      const isTopPackage = currentPkg === 'pkg_6' || currentPkg === 'pkg_ret_6';
+      const isTopPackage = currentPkg === 'pkg_10' || currentPkg === 'pkg_ret_10';
 
       if (isTopPackage) {
         log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→AWAITING_PAYMENT] Top package — skipping upsell');

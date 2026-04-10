@@ -1,21 +1,20 @@
 /**
  * Package definitions for the AI photo shoot service.
- * Replaces the old single-price model (MAX_GENERATED_IMAGES + IMAGE_GENERATION_COST_BRL).
  */
 
 export interface Package {
   id: string;
   photos: number;
-  price: number;    // BRL
+  price: number;    // EUR
   label: string;    // Human-readable, used in prompts
   popular: boolean; // Highlighted in the offer
 }
 
 export const PACKAGES: Package[] = [
-  { id: 'pkg_2', photos: 2, price: 11.90, label: '2 fotos — R$ 11,90', popular: false },
-  { id: 'pkg_3', photos: 3, price: 16.90, label: '3 fotos — R$ 16,90', popular: false },
-  { id: 'pkg_5', photos: 5, price: 27.90, label: '5 fotos — R$ 27,90', popular: false },
-  { id: 'pkg_6', photos: 6, price: 34.90, label: '6 fotos — R$ 34,90', popular: true },
+  { id: 'pkg_2',  photos: 2,  price: 4.90,  label: '2 fotos — € 4,90',  popular: false },
+  { id: 'pkg_3',  photos: 3,  price: 6.90,  label: '3 fotos — € 6,90',  popular: false },
+  { id: 'pkg_5',  photos: 5,  price: 9.90,  label: '5 fotos — € 9,90',  popular: false },
+  { id: 'pkg_10', photos: 10, price: 16.90, label: '10 fotos — € 16,90', popular: true },
 ];
 
 /**
@@ -23,10 +22,10 @@ export const PACKAGES: Package[] = [
  * IDs follow the pattern `pkg_ret_N` so payment service resolves correct price.
  */
 export const RETURNING_PACKAGES: Package[] = [
-  { id: 'pkg_ret_2', photos: 2, price: 9.90,  label: '2 fotos — R$ 9,90',  popular: false },
-  { id: 'pkg_ret_3', photos: 3, price: 13.90, label: '3 fotos — R$ 13,90', popular: false },
-  { id: 'pkg_ret_5', photos: 5, price: 22.90, label: '5 fotos — R$ 22,90', popular: false },
-  { id: 'pkg_ret_6', photos: 6, price: 27.90, label: '6 fotos — R$ 27,90', popular: true },
+  { id: 'pkg_ret_2',  photos: 2,  price: 3.90,  label: '2 fotos — € 3,90',  popular: false },
+  { id: 'pkg_ret_3',  photos: 3,  price: 5.50,  label: '3 fotos — € 5,50',  popular: false },
+  { id: 'pkg_ret_5',  photos: 5,  price: 7.90,  label: '5 fotos — € 7,90',  popular: false },
+  { id: 'pkg_ret_10', photos: 10, price: 13.90, label: '10 fotos — € 13,90', popular: true },
 ];
 
 export function getPackageById(id: string): Package | undefined {
@@ -38,7 +37,7 @@ export function getPackageById(id: string): Package | undefined {
  */
 export function formatReturningPackagesForPrompt(): string {
   return RETURNING_PACKAGES.map((p) =>
-    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
+    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — € ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais pedido)' : ''}`,
   ).join('\n');
 }
 
@@ -51,7 +50,7 @@ export function getPackageByPhotos(photos: number): Package | undefined {
  */
 export function formatPackagesForPrompt(): string {
   return PACKAGES.map((p) =>
-    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
+    `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — € ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais pedido)' : ''}`,
   ).join('\n');
 }
 
@@ -61,7 +60,7 @@ export function formatPackagesForPrompt(): string {
 export const OCCASIONS: Record<string, { label: string; promptHint: string }> = {
   aniversario:   { label: 'Aniversário',   promptHint: 'birthday celebration, party decorations, balloons, birthday cake' },
   profissional:  { label: 'Profissional',  promptHint: 'professional corporate headshot, business attire, clean background' },
-  formatura:     { label: 'Formatura',     promptHint: 'graduation ceremony, academic cap and gown, diploma' },
+  fim_de_curso:  { label: 'Fim de Curso',  promptHint: 'graduation ceremony, academic cap and gown, diploma' },
   casal:         { label: 'Casal',         promptHint: 'romantic couple portrait, warm intimate mood, soft lighting' },
   gravidez:      { label: 'Gravidez',      promptHint: 'maternity photography, gentle pose, flowing dress, baby bump' },
   casual:        { label: 'Casual',        promptHint: 'casual lifestyle photography, relaxed pose, natural setting' },
@@ -69,7 +68,6 @@ export const OCCASIONS: Record<string, { label: string; promptHint: string }> = 
   infantil:      { label: 'Infantil',      promptHint: 'children photography, playful, colorful, fun setting' },
   fitness:       { label: 'Fitness',       promptHint: 'fitness photography, athletic pose, gym or outdoor workout setting' },
   natalino:      { label: 'Natal',         promptHint: 'Christmas themed portrait, festive decorations, red and green colors' },
-  debutante:     { label: 'Debutante',     promptHint: 'quinceañera / debutante ball, elegant dress, glamorous setting' },
   pet:           { label: 'Com Pet',       promptHint: 'portrait with pet, pet and owner, heartwarming' },
 };
 
