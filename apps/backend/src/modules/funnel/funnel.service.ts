@@ -297,7 +297,15 @@ async function handleTransition(
         await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
         await logOutboundMessage(leadId, askMsg);
       } else {
-        log.info({ earlyPhotos }, '[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Photos already received — skipping askPhotos (next debounce will trigger photo-collection agent)');
+        // Photos already received — trigger photo-collection agent after a delay
+        // (long enough for the current batch's Redis lock to be released)
+        log.info({ earlyPhotos }, '[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Photos already received — scheduling photo-collection trigger');
+        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId } satisfies MessageBatchJobData,
+          { jobId: `photo_trigger_${phone}_${Date.now()}`, delay: 8000, removeOnComplete: true, removeOnFail: true },
+        );
       }
       log.info('[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done');
       break;
