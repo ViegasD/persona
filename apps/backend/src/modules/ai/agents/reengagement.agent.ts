@@ -48,11 +48,8 @@ ${occasionsList}
 - Quando souber a ocasião, MOSTRE OS PACOTES COM PREÇOS imediatamente.
 
 ## Quando souber a ocasião → Apresente os pacotes:
-Use este formato dentro de UMA bolha:
-🎁 *10 fotos* — R$ 34,90 (mais popular)
-📦 5 fotos — R$ 18,90
-📦 3 fotos — R$ 13,90
-📦 2 fotos — R$ 9,90
+Use este formato dentro de UMA bolha (CADA pacote numa linha separada, use \\n):
+"🎁 *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
 
 Destaque o pacote de 10 fotos como mais popular.
 SEMPRE termine com uma pergunta tipo "Qual pacote você quer?" em uma bolha separada.

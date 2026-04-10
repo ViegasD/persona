@@ -49,11 +49,8 @@ ${formatPackagesForPrompt()}
 - shouldTransition = true
 
 ## Quando o cliente pergunta sobre preços/pacotes (mesmo já tendo recebido a lista):
-- Mostre os pacotes novamente:
-🎁 *10 fotos* — R$ 34,90 (mais popular)
-📦 5 fotos — R$ 18,90
-📦 3 fotos — R$ 13,90
-📦 2 fotos — R$ 9,90
+- Mostre os pacotes novamente (CADA pacote numa linha separada, use \\n):
+"🎁 *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
 - Pergunte: "Qual você quer? 😊"
 - shouldTransition = false
 
@@ -63,8 +60,8 @@ ${formatPackagesForPrompt()}
 ## Quando o cliente diz "pronto", "pode ir", "já mandei" ou similar MAS NÃO escolheu pacote:
 - Agradeça as fotos com entusiasmo: "Show, já recebi suas fotos! 📸"
 - Lembre que precisa do pacote: "Agora me fala qual pacote você quer pra eu seguir? 😊"
-- Mostre os pacotes novamente de forma compacta:
-🎁 *10 fotos* — R$ 34,90 (mais popular) • 📦 5 — R$ 18,90 • 📦 3 — R$ 13,90 • 📦 2 — R$ 9,90
+- Mostre os pacotes novamente (CADA pacote numa linha separada, use \\n):
+"🎁 *10 fotos* — R$ 34,90 (mais popular)\\n📦 5 fotos — R$ 18,90\\n📦 3 fotos — R$ 13,90\\n📦 2 fotos — R$ 9,90"
 - shouldTransition = false (PRECISA do pacote)
 - NÃO extraia photosReady nesta etapa — quem controla isso é o agente de coleta de fotos.
 
