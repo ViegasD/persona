@@ -195,7 +195,17 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
       agentResponse.messages = [];
     }
     const validMessages = agentResponse.messages.filter((m) => typeof m === 'string' && m.trim());
-    if (validMessages.length === 0) {
+
+    // Deduplicate messages — LLM sometimes echoes the same bubble twice
+    const seen = new Set<string>();
+    const dedupedMessages = validMessages.filter((m) => {
+      const key = m.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    if (dedupedMessages.length === 0) {
       log.warn({ agentName, shouldTransition: agentResponse.shouldTransition }, '[BATCH:VALIDATE] No valid messages from LLM — sending fallback');
       await handleFallback(phone, lead.id, state);
       // Still apply extracted data if present, but do NOT transition on empty response
@@ -209,7 +219,8 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
       {
         agentName,
         shouldTransition: agentResponse.shouldTransition,
-        messages: validMessages.length,
+        messages: dedupedMessages.length,
+        deduped: validMessages.length - dedupedMessages.length,
         extractedData: agentResponse.extractedData,
         reasoning: agentResponse.reasoning,
       },
@@ -224,7 +235,7 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
 
     // Send messages with staggered delays to preserve ordering
     let stagger = 0;
-    for (const msg of validMessages) {
+    for (const msg of dedupedMessages) {
       if (msg.trim()) {
         await queueTextMessage(phone, msg, stagger > 0 ? { jobDelay: stagger } : undefined);
         // 1.5–3.5s between bubbles to mimic human typing
@@ -233,13 +244,13 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
     }
 
     // Save all bubbles as ONE assistant message so the LLM sees its own history
-    const fullReply = validMessages.join('\n\n');
+    const fullReply = dedupedMessages.join('\n\n');
     if (fullReply) {
       await logOutboundMessage(lead.id, fullReply);
     }
 
     log.info(
-      { messageBubbles: agentResponse.messages.filter((m) => m.trim()).length },
+      { messageBubbles: dedupedMessages.length },
       '[BATCH:SEND] Messages sent and logged',
     );
   } catch (error) {
