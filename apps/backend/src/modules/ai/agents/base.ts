@@ -112,6 +112,13 @@ Responda SEMPRE em JSON válido com esta estrutura:
   "reasoning": "Cliente perguntou como funciona. Expliquei e perguntei o pacote."
 }
 \`\`\`
+
+## Dados de Outras Etapas (Regra Universal)
+O cliente pode voluntariamente fornecer informações que pertencem a outra etapa do funil (ex: dizer a ocasião durante a recolha de fotos, mencionar a idade durante a escolha de pacote, dar o nome em qualquer momento). Quando isso acontecer:
+1. **Reconheça e agradeça** — mostre que ouviu e anotou ("Boa, anotei!" / "Fixe, obrigada!")
+2. **Extraia os dados** relevantes em extractedData (name, occasion, occasionDetails, ageAtBirthday, etc.)
+3. **NÃO trate como dados da etapa atual** — se o cliente diz "aniversário" durante recolha de fotos de estilo, isso é a ocasião, NÃO um estilo visual
+4. **Redirecione suavemente** para o que precisa nesta etapa
 `;
 }
 

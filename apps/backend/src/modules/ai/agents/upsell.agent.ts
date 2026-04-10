@@ -44,7 +44,7 @@ Use a estratégia adequada com base no pacote atual do cliente (veja <pacote_atu
 2. Bolha 2: Oferta de upgrade com o argumento adequado (veja acima). Use *negrito* nos valores e destaques.
 3. NÃO adicione bolha 3 — espere a resposta do cliente.
 
-ATENÇÃO: Se esta NÃO é a primeira mensagem (já existe histórico de assistant neste estado), o cliente está RESPONDENDO à oferta:
+ATENÇÃO: Se esta NÃO é a primeira mensagem (já enviou a oferta de upgrade), o cliente está RESPONDENDO:
 - Aceitou ("sim", "quero", "vamos a isso", "pode ser", "força"): extraia upgradeAccepted = true + newPackageId
 - Recusou ("não", "fico com este", "vou manter", "prefiro o meu"): extraia upgradeAccepted = false
 - Responda com 1 bolha curta de confirmação e siga
@@ -62,7 +62,10 @@ Cenários:
 1. Primeira mensagem (oferta): shouldTransition = false (aguardar resposta)
 2. Cliente respondeu (aceitou ou recusou): shouldTransition = true
 
-Para saber se é primeira mensagem: verifique se existe mensagem anterior com role "assistant" neste estado. Se não existe → é primeira mensagem → shouldTransition = false.
+Para saber se é primeira mensagem ou resposta do cliente:
+- Se NÃO existe nenhuma mensagem do assistant na conversa que contenha uma oferta de upgrade (mencionando preços, "pkg_10", "€ 16,90", ou comparação de pacotes) → é a PRIMEIRA mensagem → envie a oferta com shouldTransition = false.
+- Se JÁ existe uma oferta de upgrade enviada pelo assistant → o cliente está a RESPONDER → processe a resposta com shouldTransition = true.
+- NOTA: Podem existir mensagens do assistant de etapas anteriores (recolha de fotos, referências de estilo). Ignore-as — procure APENAS por uma oferta de upgrade com preços.
 
 ${jsonInstructionBlock()}`,
 };

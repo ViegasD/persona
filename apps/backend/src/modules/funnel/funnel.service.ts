@@ -3,6 +3,7 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 import { queueTextMessage, queueMediaMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { initiatePixPayment } from '../payment/payment.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
+import { getQueue, QUEUE_NAMES, type MessageBatchJobData } from '../../shared/queue/queues.js';
 import {
   FUNNEL_STATES,
   canTransition,
@@ -260,6 +261,15 @@ async function handleTransition(
       } else {
         log.info({ currentPkg }, '[TRANSITION:COLLECTING_STYLE_REFS→UPSELLING] Transitioning to upsell');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.UPSELLING);
+        // Queue a synthetic batch job so the upsell agent fires proactively
+        // (no user message will arrive — the agent must initiate the offer)
+        const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId } satisfies MessageBatchJobData,
+          { jobId: `upsell_trigger_${phone}`, delay: 2000, removeOnComplete: true },
+        );
+        log.info('[TRANSITION:COLLECTING_STYLE_REFS→UPSELLING] Upsell batch job queued with 2s delay');
       }
       break;
     }
