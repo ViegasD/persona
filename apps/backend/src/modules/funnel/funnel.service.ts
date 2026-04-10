@@ -4,6 +4,7 @@ import { queueTextMessage, queueMediaMessage, logOutboundMessage } from '../what
 import { initiatePixPayment } from '../payment/payment.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { getQueue, QUEUE_NAMES, type MessageBatchJobData } from '../../shared/queue/queues.js';
+import { getRedisConnection } from '../../shared/queue/queue.config.js';
 import {
   FUNNEL_STATES,
   canTransition,
@@ -51,6 +52,34 @@ const AGENTS: Record<string, AgentConfig> = {
 export async function handleFunnelBatch(phone: string, leadId: string): Promise<void> {
   log.info({ phone, leadId }, '[BATCH:START] Processing funnel batch');
 
+  // Acquire a per-phone lock to prevent concurrent batches from sending duplicate messages
+  const redis = getRedisConnection();
+  const lockKey = `funnel_lock:${phone}`;
+  const lockValue = `${Date.now()}_${Math.random()}`;
+  const acquired = await redis.set(lockKey, lockValue, 'PX', 60_000, 'NX');
+  if (!acquired) {
+    log.info({ phone }, '[BATCH:LOCKED] Another batch is processing — re-queuing with delay');
+    const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+    await batchQueue.add(
+      'process-batch',
+      { phone, leadId } satisfies MessageBatchJobData,
+      { jobId: `batch_retry_${phone}_${Date.now()}`, delay: 5000, removeOnComplete: true, removeOnFail: true },
+    );
+    return;
+  }
+
+  try {
+    await _handleFunnelBatchInner(phone, leadId);
+  } finally {
+    // Release lock only if we still own it
+    const current = await redis.get(lockKey);
+    if (current === lockValue) {
+      await redis.del(lockKey);
+    }
+  }
+}
+
+async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<void> {
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) {
     log.warn({ leadId }, '[BATCH] Lead não encontrado');
@@ -221,9 +250,16 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
   // ─── Step 2: State Transition (separate try/catch) ───────
   if (agentResponse.shouldTransition) {
     try {
-      log.info({ from: state, sessionId: session.id }, '[BATCH:TRANSITION] Starting transition...');
-      await handleTransition(session.id, lead.id, phone, state, agentResponse.extractedData ?? {});
-      log.info({ from: state }, '[BATCH:TRANSITION] Transition completed successfully');
+      // Re-read session state to prevent duplicate transitions from concurrent batches
+      const freshSession = await prisma.leadSession.findUnique({ where: { id: session.id } });
+      const freshState = freshSession?.funnelState as FunnelState | undefined;
+      if (freshState && freshState !== state) {
+        log.warn({ expectedState: state, actualState: freshState }, '[BATCH:TRANSITION] State already changed by another batch — skipping transition');
+      } else {
+        log.info({ from: state, sessionId: session.id }, '[BATCH:TRANSITION] Starting transition...');
+        await handleTransition(session.id, lead.id, phone, state, agentResponse.extractedData ?? {});
+        log.info({ from: state }, '[BATCH:TRANSITION] Transition completed successfully');
+      }
     } catch (error) {
       log.error(error, '[BATCH:TRANSITION:ERROR] Transition failed (messages already sent)');
       // Messages were already sent — do NOT re-send fallback templates.
