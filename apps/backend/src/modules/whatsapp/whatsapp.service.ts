@@ -141,16 +141,15 @@ async function processCloudSend(
 ): Promise<void> {
   const api = getCloudApi();
 
-  // Re-fire typing indicator before every outbound message
+  // Show typing indicator for a natural feel before sending
   try {
     const lastMsgId = await getRedisConnection().get(`lastMsgId:${phone}`);
     if (lastMsgId) {
       await api.showTypingIndicator(lastMsgId).catch(() => {});
+      // Brief typing pause (max 3s) so the user sees "typing..." before the bubble
+      await new Promise((r) => setTimeout(r, 2000));
     }
   } catch { /* fire-and-forget */ }
-
-  // Cloud API: typing indicator is already shown above — no need to sleep.
-  // The indicator stays visible until the message arrives, giving a natural feel.
 
   switch (type) {
     case 'text': {

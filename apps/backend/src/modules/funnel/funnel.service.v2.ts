@@ -204,7 +204,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
       });
       await logOutboundMessage(leadId, `[QR Code Pix Regenerado] ${caption}`, 'image');
       const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-      await queueTextMessage(phone, copyPasteMsg);
+      await queueTextMessage(phone, copyPasteMsg, { jobDelay: 3000 });
       await logOutboundMessage(leadId, copyPasteMsg);
       await trackEvent(leadId, 'PIX_QR_REGENERATED');
     } catch (err) {
@@ -267,9 +267,13 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
       '[LLM] Response received',
     );
 
-    // Send messages
-    for (const msg of messages) {
-      await queueTextMessage(phone, msg);
+    // Send messages with staggered delays for natural feel
+    for (let i = 0; i < messages.length; i++) {
+      const delay = i === 0 ? 0 : i * 2000; // 2s between each bubble
+      await queueTextMessage(phone, messages[i], {
+        jobDelay: delay,
+        typingDelay: i > 0 ? 2000 : undefined, // Evolution API: typing indicator between bubbles
+      });
     }
     const fullReply = messages.join('\n\n');
     await logOutboundMessage(lead.id, fullReply);
@@ -398,7 +402,7 @@ async function applyExtractedData(
   }
 
   // Build preference updates (exclude one-time signals)
-  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'reclassifyLastImageAsStyle']);
+  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'reclassifyLastImageAsStyle', 'upgradeAccepted']);
   const prefUpdates: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(data)) {
@@ -413,6 +417,12 @@ async function applyExtractedData(
     }
 
     prefUpdates[key] = value;
+  }
+
+  // Handle upgrade acceptance → force packageId to pkg_10
+  if (data.upgradeAccepted === true && !prefUpdates.packageId) {
+    prefUpdates.packageId = 'pkg_10';
+    log.info('[DATA:UPGRADE] Customer accepted upsell → pkg_10');
   }
 
   if (Object.keys(prefUpdates).length === 0) return;
@@ -499,14 +509,14 @@ async function createPixAndTransition(
   });
   await logOutboundMessage(leadId, `[QR Code Pix] ${caption}`, 'image');
 
-  // Send copy-paste code
+  // Send copy-paste code (delay so it arrives AFTER the QR image)
   const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-  await queueTextMessage(phone, copyPasteMsg);
+  await queueTextMessage(phone, copyPasteMsg, { jobDelay: 3000 });
   await logOutboundMessage(leadId, copyPasteMsg);
 
-  // Send hint
+  // Send hint (delay further so it arrives last)
   const hintMsg = MESSAGES.pixCopyPasteHint();
-  await queueTextMessage(phone, hintMsg);
+  await queueTextMessage(phone, hintMsg, { jobDelay: 5000 });
   await logOutboundMessage(leadId, hintMsg);
 
   await trackEvent(leadId, 'PIX_QR_SENT');

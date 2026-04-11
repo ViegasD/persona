@@ -15,6 +15,8 @@ export interface ExtractionResult {
   photosReady?: boolean;
   styleRefsReady?: boolean;
   styleDescription?: string;
+  promoShown?: boolean;
+  upgradeAccepted?: boolean;
   dataConfirmed?: boolean;
   changePackage?: boolean;
   regenerateQr?: boolean;
@@ -59,6 +61,7 @@ Detalhes extras da ocasião: "46 anos", "formatura de medicina", "roupa branca",
 
 ## ageAtBirthday (string)
 Idade para ensaios de aniversário. "vou fazer 30" → "30", "completando 46" → "46"
+Se o cliente se RECUSA a informar a idade ("não quero dizer", "prefiro não falar", "não vou contar"): → "sem_idade"
 
 ## profession (string)
 Para ensaios profissionais. "sou advogada" → "advogada", "trabalho como médico" → "médico"
@@ -71,11 +74,22 @@ true quando o cliente diz que terminou de enviar fotos: "pronto", "são essas", 
 "pode seguir", "já mandei todas", "terminei", "é isso", "só essas", "pode ir"
 
 ## styleRefsReady (boolean)
-true quando o cliente diz que terminou com referências de estilo ou quer pular:
-"pular", "sem referência", "pode seguir", "não tenho", "segue sem"
+true quando o cliente indica que não tem ou não quer enviar referências de estilo:
+"sem referência", "não tenho inspiração", "não tenho", "pode seguir sem"
+Também true se o cliente simplesmente não mencionou estilo e está avançando na conversa.
 
 ## styleDescription (string)
 Palavras-chave de estilo visual: "boho", "ar livre", "luz natural", "fundo escuro", "estúdio"
+
+## promoShown (boolean)
+true quando o ASSISTENTE acabou de apresentar a promoção de R$ 29,90 ao cliente na mensagem mais recente.
+Extraia do contexto do assistente, NÃO do usuário. Serve para evitar repetir a promoção.
+
+## upgradeAccepted (boolean)
+true quando o cliente ACEITA a oferta de upgrade para o pacote de 10 fotos após o upsell.
+"quero sim", "bora", "aceito", "pode trocar", "vamos de 10"
+false se recusou: "não", "fico com esse", "tá bom assim"
+Só extraia se o assistente acabou de fazer uma oferta de upsell.
 
 ## dataConfirmed (boolean)
 true SOMENTE quando o cliente confirma EXPLICITAMENTE o resumo dos dados:

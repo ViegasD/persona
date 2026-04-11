@@ -165,6 +165,7 @@ export function buildLeadContext(lead: {
   if (session.styleRefCount !== undefined) {
     parts.push(`  <fotos_inspiracao_enviadas>${session.styleRefCount}</fotos_inspiracao_enviadas>`);
   }
+  if (prefs.promoShown) parts.push(`  <promo_mostrada>sim</promo_mostrada>`);
 
   parts.push('</lead_context>');
 
