@@ -224,7 +224,7 @@ export function ChatView({ lead, initialMessages, aiEnabled: initialAi }: ChatVi
   const initial = (lead.name ?? lead.phone).charAt(0).toUpperCase();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] max-w-3xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-49px)] max-w-3xl mx-auto overflow-hidden">
       {/* ── Header ── */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] flex-shrink-0 bg-[var(--background)]">
         <div className="flex items-center gap-3">

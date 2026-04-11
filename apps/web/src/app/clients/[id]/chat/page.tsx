@@ -17,11 +17,13 @@ export default async function ChatPage({ params }: ChatPageProps) {
     const session = lead.sessions[0];
 
     return (
-      <ChatView
-        lead={lead}
-        initialMessages={messages}
-        aiEnabled={session?.aiEnabled ?? true}
-      />
+      <div className="-mx-4 -my-6">
+        <ChatView
+          lead={lead}
+          initialMessages={messages}
+          aiEnabled={session?.aiEnabled ?? true}
+        />
+      </div>
     );
   } catch {
     return (

@@ -132,15 +132,14 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
       return;
     }
     if (followUpTier === 1) {
-      const lastBotText = (lastMsg?.content ?? '').trim();
-      if (lastBotText.includes('?')) {
-        log.info({ phone }, '[FOLLOWUP:T1] Static nudge');
-        const nudge = 'Oi! Podemos continuar? 😊';
-        await queueTextMessage(phone, nudge);
-        await logOutboundMessage(leadId, nudge);
-        return;
-      }
-      log.info({ phone }, '[FOLLOWUP:T1] No question — re-running funnel');
+      log.info({ phone }, '[FOLLOWUP:T1] Static nudge');
+      const nudge = 'Oi! Podemos continuar? 😊';
+      await queueTextMessage(phone, nudge);
+      await logOutboundMessage(leadId, nudge);
+      scheduleFollowUps(phone, leadId, 1).catch((err) =>
+        log.warn({ err }, '[FOLLOWUP] Failed to schedule t2+ — non-critical'),
+      );
+      return;
     } else {
       log.info({ phone, tier: followUpTier }, '[FOLLOWUP] Running stale follow-up');
     }
@@ -537,7 +536,7 @@ async function createPixAndTransition(
 // ─── Follow-up Context ──────────────────────────────────────
 
 function buildFollowUpContext(isFollowUp: boolean, followUpTier?: number): string {
-  if (!isFollowUp || followUpTier === 1) return '';
+  if (!isFollowUp) return '';
 
   const tierContent = followUpTier === 2
     ? '- Já faz algumas HORAS que o cliente não responde.\n' +
