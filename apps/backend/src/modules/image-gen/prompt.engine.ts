@@ -34,7 +34,7 @@ export interface PromptParams {
 const REALISM_BLOCK =
   'Skin: visible pores on forehead and nose, subtle unevenness in skin tone, faint under-eye shadows, ' +
   'natural micro-texture — not smoothed or airbrushed. ' +
-  'Eyes: slight moisture reflection, fine red capillaries in the sclera, natural catchlight from the environment, ' +
+  'Eyes: natural catchlight and subtle sheen — not wet or glistening, fine red capillaries in the sclera, natural catchlight from the environment, ' +
   'iris has organic color variation — not uniformly saturated. ' +
   'Hair: a few flyaway strands, natural frizz at the hairline, individual hairs catching light differently — ' +
   'not uniformly smooth or perfectly styled. ' +
@@ -121,14 +121,21 @@ export function buildPrompt(params: PromptParams, sceneDescription?: string): st
     parts.push(params.additionalNotes);
   }
 
-  // 4. Realism hierarchy
-  parts.push(REALISM_BLOCK);
+  // 4. Realism hierarchy (temporarily disabled — triggers crying/wet-eye artefacts)
+  // parts.push(REALISM_BLOCK);
 
   // 5. No-age constraint (client declined to provide age for birthday)
   const rawAge = String(params.ageAtBirthday ?? '');
   const noAge = !rawAge.replace(/\D/g, '') || rawAge === 'sem_idade';
   if (noAge && params.occasion.toLowerCase().trim() === 'aniversario') {
     parts.push('Do NOT include any age numbers, numbered candles, numbered balloons, or any text or decoration showing the person\'s age in the image.');
+  } else if (!noAge && params.occasion.toLowerCase().trim() === 'aniversario') {
+    const ageNum = rawAge.replace(/\D/g, '');
+    parts.push(
+      `The number ${ageNum} must appear on birthday props — show it as numeric digits on candles, a balloon, or cake topper. ` +
+      `Ignore any numbers or ages visible in the reference photos — do NOT copy them. ` +
+      `Replicate the arrangement, position, and style of birthday decorations (balloons, cake, candles) from the reference photos, but replace every number shown with ${ageNum}.`
+    );
   }
 
   // 6. Exclusion constraint
@@ -170,7 +177,7 @@ const SCENE_PACKS: Record<string, string[]> = {
   ],
   formatura: [
     'The moment of cap toss — arm fully extended upward, black academic cap mid-air against a blue campus sky, wide joyful grin, other {course} graduates as blurred figures behind, bright outdoor daylight',
-    'Both hands gripping a rolled diploma, looking down at it with an emotional half-smile, eyes slightly glistening, graduation gown draped properly, outdoor campus lawn with trees and brick buildings behind, afternoon sun from the left',
+    'Both hands gripping a rolled diploma, looking down at it with an emotional half-smile, eyes bright with pride, graduation gown draped properly, outdoor campus lawn with trees and brick buildings behind, afternoon sun from the left',
     'Close-up portrait in academic cap, tassel hanging across the forehead, wide genuine toothy grin, one small strand of hair escaping the cap, campus greenery out of focus behind, warm outdoor light, proud {course} graduate',
     'Full-body shot standing on campus stone steps, graduation gown flowing with a slight breeze, one hand in pocket beneath the gown, relaxed proud posture, ornate campus building entrance visible behind, late-afternoon directional light',
     'Candid mid-laugh with head tilted back, cap pushed back on head, holding diploma loosely in one hand, campus walkway lined with trees, dappled sunlight through leaves, other gowns blurred in the background',
