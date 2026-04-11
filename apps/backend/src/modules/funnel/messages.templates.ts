@@ -15,8 +15,7 @@ export const MESSAGES = {
     `📦 3 fotos — R$ 13,90\n` +
     `📦 5 fotos — R$ 18,90\n\n` +
     `🎂 Aniversário • 💼 Profissional • 🎓 Formatura • 💕 Casal • 👶 Gravidez • 🏙️ Casual • e mais!\n\n\n` +
-    `Qual pacote você quer?\n\n` +
-    `Ah, e já pode ir mandando suas fotos aqui enquanto isso! 📸 Uma de rosto e uma de corpo inteiro já ajuda demais 😉`,
+    `Pra começar, me manda suas melhores fotos — uma de rosto e uma de corpo inteiro! 📸😉`,
 
   // Fallback for follow-up messages (no re-introduction)
   engagementFollowUp: () =>

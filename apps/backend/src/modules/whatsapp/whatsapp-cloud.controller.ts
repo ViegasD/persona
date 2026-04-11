@@ -9,6 +9,7 @@ import { env } from '../../shared/config/env.js';
 import { getCloudApi } from './whatsapp-cloud-api.client.js';
 import { uploadFile, buildS3Key } from '../../shared/storage/s3.client.js';
 import { detectGenderFromPhoto } from '../image-gen/vision.service.js';
+import { transcribeAudio } from '../ai/llm.client.js';
 import { getRedisConnection } from '../../shared/queue/queue.config.js';
 
 const log = createChildLogger('whatsapp-cloud-controller');
@@ -131,18 +132,44 @@ export async function handleCloudWebhook(
 
         log.info({ leadId: lead.id, phone }, '[CLOUD WEBHOOK] Lead upserted');
 
-        // Log inbound message
+        // ── Audio: transcribe and treat as text ──
+        let transcribedText: string | null = null;
+        if (mediaType === 'audio' && msg.audio?.id) {
+          log.info({ phone, mediaId: msg.audio.id, messageId }, '[CLOUD WEBHOOK:AUDIO] Audio detected — transcribing...');
+          try {
+            const api = getCloudApi();
+            const { buffer, mimeType } = await api.downloadMedia(msg.audio.id);
+            transcribedText = await transcribeAudio(buffer, mimeType);
+            log.info({ phone, textLength: transcribedText.length, text: transcribedText.substring(0, 100) }, '[CLOUD WEBHOOK:AUDIO] ✅ Transcription complete');
+          } catch (err) {
+            log.error(err, '[CLOUD WEBHOOK:AUDIO] ❌ Transcription failed');
+          }
+        }
+
+        const effectiveText = transcribedText ?? text;
+
+        // Log inbound message (use transcribed text for audio)
         await logInboundMessage(
           lead.id,
-          text ?? `[${mediaType}]`,
-          mediaType,
+          effectiveText ?? `[${mediaType}]`,
+          mediaType === 'audio' && transcribedText ? 'text' : mediaType,
           messageId,
         );
 
-        // Handle media uploads — download from Meta and store as reference
-        const mediaId = msg.image?.id ?? msg.audio?.id ?? msg.video?.id ?? msg.document?.id ?? null;
-        if (['image', 'audio', 'video', 'document'].includes(mediaType) && mediaId) {
-          log.info({ phone, mediaId, messageId, mediaType }, '[CLOUD WEBHOOK:MEDIA] Media detected — downloading...');
+        // ── Skip funnel for non-actionable media (video, document, etc.) ──
+        if (mediaType !== 'text' && mediaType !== 'image' && mediaType !== 'audio') {
+          log.info({ phone, mediaType }, '[CLOUD WEBHOOK] Non-actionable media — skipping funnel');
+          continue;
+        }
+        // Audio that failed transcription — nothing useful for the funnel
+        if (mediaType === 'audio' && !transcribedText) {
+          log.info({ phone }, '[CLOUD WEBHOOK] Audio transcription failed — skipping funnel');
+          continue;
+        }
+
+        // Handle image uploads — download from Meta and store as reference
+        if (mediaType === 'image' && msg.image?.id) {
+          log.info({ phone, mediaId: msg.image.id, messageId }, '[CLOUD WEBHOOK:IMAGE] Image detected — downloading...');
           const session = await prisma.leadSession.findFirst({
             where: { leadId: lead.id },
             orderBy: { createdAt: 'desc' },
@@ -150,14 +177,11 @@ export async function handleCloudWebhook(
           if (session) {
             try {
               const api = getCloudApi();
-              const { buffer, mimeType } = await api.downloadMedia(mediaId);
+              const { buffer, mimeType } = await api.downloadMedia(msg.image.id);
               const extMap: Record<string, string> = {
                 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
-                'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a',
-                'audio/aac': 'aac', 'video/mp4': 'mp4', 'video/3gpp': '3gp',
-                'application/pdf': 'pdf',
               };
-              const ext = extMap[mimeType] ?? 'bin';
+              const ext = extMap[mimeType] ?? 'jpg';
               const filename = `${randomUUID()}.${ext}`;
               const isStyleRef = session.funnelState === 'COLLECTING_STYLE_REFS';
               const folder = isStyleRef ? 'style-refs' as const : 'references' as const;
@@ -174,10 +198,10 @@ export async function handleCloudWebhook(
                   type: imageType,
                 },
               });
-              log.info({ s3Key, fileSize: buffer.length, mimeType, imageType, mediaType }, '[CLOUD WEBHOOK:MEDIA] ✅ Media stored');
+              log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
 
-              // Fire-and-forget: detect gender from face images only (skip audio/video/couples)
-              if (imageType === 'face' && mediaType === 'image') {
+              // Fire-and-forget: detect gender from face photos (first photo only, skip couples)
+              if (imageType === 'face') {
                 const prefs = (session.preferences as Record<string, unknown>) ?? {};
                 const occasion = (prefs.occasion as string) ?? '';
                 if (!prefs.detectedGender && occasion !== 'casal') {
@@ -191,18 +215,18 @@ export async function handleCloudWebhook(
                             where: { id: session.id },
                             data: { preferences: { ...curPrefs, detectedGender: gender } as any },
                           });
-                          log.info({ gender, sessionId: session.id }, '[CLOUD WEBHOOK:MEDIA] Gender detected from selfie');
+                          log.info({ gender, sessionId: session.id }, '[CLOUD WEBHOOK:IMAGE] Gender detected from selfie');
                         }
                       }
                     })
-                    .catch((err) => log.warn({ err }, '[CLOUD WEBHOOK:MEDIA] Gender detection failed'));
+                    .catch((err) => log.warn({ err }, '[CLOUD WEBHOOK:IMAGE] Gender detection failed'));
                 }
               }
             } catch (err) {
-              log.error(err, '[CLOUD WEBHOOK:MEDIA] ❌ Failed to download/store media');
+              log.error(err, '[CLOUD WEBHOOK:IMAGE] ❌ Failed to download/store image');
             }
           } else {
-            log.warn({ leadId: lead.id }, '[CLOUD WEBHOOK:MEDIA] ⚠️ No session found — media NOT stored');
+            log.warn({ leadId: lead.id }, '[CLOUD WEBHOOK:IMAGE] ⚠️ No session found — image NOT stored');
           }
         }
 

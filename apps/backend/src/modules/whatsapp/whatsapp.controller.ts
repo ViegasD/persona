@@ -6,6 +6,7 @@ import { logInboundMessage } from './whatsapp.service.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { downloadAndStoreMedia } from './media.handler.js';
 import { debounceFunnelMessage } from '../ai/debounce.service.js';
+import { transcribeAudio } from '../ai/llm.client.js';
 import { env } from '../../shared/config/env.js';
 
 const log = createChildLogger('whatsapp-controller');
@@ -94,33 +95,62 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
 
   log.info({ leadId: lead.id, phone }, '[WEBHOOK] Lead upserted');
 
-  // Log da mensagem
+  // ── Audio: transcribe and treat as text ──
+  let transcribedText: string | null = null;
+  if (mediaType === 'audio') {
+    log.info({ phone, messageId: key.id }, '[WEBHOOK:AUDIO] Audio detected — transcribing...');
+    try {
+      const { evolutionApi } = await import('./evolution-api.client.js');
+      const media = await evolutionApi.getMediaBase64(jid, key.id, key.fromMe);
+      const base64Data = media.base64.replace(/^data:[^;]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      transcribedText = await transcribeAudio(buffer, media.mimetype);
+      log.info({ phone, textLength: transcribedText.length, text: transcribedText.substring(0, 100) }, '[WEBHOOK:AUDIO] ✅ Transcription complete');
+    } catch (err) {
+      log.error(err, '[WEBHOOK:AUDIO] ❌ Transcription failed');
+    }
+  }
+
+  const effectiveText = transcribedText ?? text;
+
+  // Log da mensagem (use transcribed text for audio)
   await logInboundMessage(
     lead.id,
-    text ?? `[${mediaType ?? 'unknown'}]`,
-    mediaType ?? 'text',
+    effectiveText ?? `[${mediaType ?? 'unknown'}]`,
+    mediaType === 'audio' && transcribedText ? 'text' : (mediaType ?? 'text'),
     key.id,
   );
 
   log.info({ leadId: lead.id, direction: 'INBOUND', messageType: mediaType ?? 'text' }, '[WEBHOOK] Inbound message logged');
 
-  // If any media received, download and store it immediately (before debounce)
-  if (mediaType !== null) {
-    log.info({ phone, messageId: key.id, mediaType }, '[WEBHOOK:MEDIA] Media detected — looking for session...');
+  // ── Skip funnel for non-actionable media (video, document, etc.) ──
+  if (mediaType && mediaType !== 'image' && mediaType !== 'audio') {
+    log.info({ phone, mediaType }, '[WEBHOOK] Non-actionable media — skipping funnel');
+    return;
+  }
+  // Audio that failed transcription — nothing useful for the funnel
+  if (mediaType === 'audio' && !transcribedText) {
+    log.info({ phone }, '[WEBHOOK] Audio transcription failed — skipping funnel');
+    return;
+  }
+
+  // If image received, download and store it immediately (before debounce)
+  if (mediaType === 'image') {
+    log.info({ phone, messageId: key.id }, '[WEBHOOK:IMAGE] Image detected — looking for session...');
     const session = await prisma.leadSession.findFirst({
       where: { leadId: lead.id },
       orderBy: { createdAt: 'desc' },
     });
     if (session) {
-      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:MEDIA] Session found — downloading media...');
+      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:IMAGE] Session found — downloading media...');
       try {
         const result = await downloadAndStoreMedia(jid, key.id, key.fromMe, session.id);
-        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:MEDIA] ✅ Media downloaded and stored');
+        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:IMAGE] ✅ Image downloaded and stored');
       } catch (err) {
-        log.error(err, '[WEBHOOK:MEDIA] ❌ Falha ao baixar mídia');
+        log.error(err, '[WEBHOOK:IMAGE] ❌ Falha ao baixar mídia');
       }
     } else {
-      log.warn({ leadId: lead.id }, '[WEBHOOK:MEDIA] ⚠️ No session found — media will NOT be stored!');
+      log.warn({ leadId: lead.id }, '[WEBHOOK:IMAGE] ⚠️ No session found — image will NOT be stored!');
     }
   }
 

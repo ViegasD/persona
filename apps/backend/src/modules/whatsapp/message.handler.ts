@@ -25,14 +25,15 @@ export const messageUpsertSchema = z.object({
         url: z.string().optional(),
         mimetype: z.string().optional(),
       }).optional(),
-      audioMessage: z.object({
-        url: z.string().optional(),
-        mimetype: z.string().optional(),
-      }).optional(),
       documentMessage: z.object({
         url: z.string().optional(),
         mimetype: z.string().optional(),
         fileName: z.string().optional(),
+      }).optional(),
+      audioMessage: z.object({
+        url: z.string().optional(),
+        mimetype: z.string().optional(),
+        seconds: z.number().optional(),
       }).optional(),
       extendedTextMessage: z.object({
         text: z.string().optional(),
@@ -72,11 +73,11 @@ export function extractMessageText(message: MessageUpsertPayload['data']['messag
 /**
  * Identifica o tipo de mídia da mensagem.
  */
-export function getMediaType(message: MessageUpsertPayload['data']['message']): 'image' | 'video' | 'audio' | 'document' | null {
+export function getMediaType(message: MessageUpsertPayload['data']['message']): 'image' | 'video' | 'document' | 'audio' | null {
   if (!message) return null;
   if (message.imageMessage) return 'image';
-  if (message.videoMessage) return 'video';
   if (message.audioMessage) return 'audio';
+  if (message.videoMessage) return 'video';
   if (message.documentMessage) return 'document';
   return null;
 }

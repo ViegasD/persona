@@ -163,3 +163,40 @@ export async function callLlmJson<T>(
   // Should never reach here, but TypeScript needs it
   throw new Error('LLM retries exhausted');
 }
+
+/**
+ * Transcribes an audio buffer using OpenAI Whisper.
+ * WhatsApp voice notes arrive as audio/ogg; codecs=opus — Whisper supports this natively.
+ */
+export async function transcribeAudio(
+  buffer: Buffer,
+  mimeType: string,
+): Promise<string> {
+  const startMs = Date.now();
+
+  // Whisper accepts: mp3, mp4, mpeg, mpga, m4a, wav, webm, ogg
+  const extMap: Record<string, string> = {
+    'audio/ogg': 'ogg',
+    'audio/ogg; codecs=opus': 'ogg',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/wav': 'wav',
+    'audio/webm': 'webm',
+    'audio/amr': 'amr',
+  };
+  const baseMime = mimeType.split(';')[0].trim();
+  const ext = extMap[mimeType] ?? extMap[baseMime] ?? 'ogg';
+
+  const file = new File([buffer], `audio.${ext}`, { type: baseMime });
+
+  const transcription = await getClient().audio.transcriptions.create({
+    model: 'whisper-1',
+    file,
+    language: 'pt',
+  });
+
+  const durationMs = Date.now() - startMs;
+  log.info({ durationMs, textLength: transcription.text.length }, '[WHISPER] Audio transcribed');
+
+  return transcription.text;
+}

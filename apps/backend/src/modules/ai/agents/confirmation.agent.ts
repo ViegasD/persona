@@ -35,6 +35,10 @@ Monte UMA ÚNICA bolha com o resumo dos dados, usando EXATAMENTE este formato (c
 - pkg_5 → "5 fotos — R$ 18,90"
 - pkg_10 → "10 fotos — R$ 34,90"
 
+## Preço com desconto:
+Se <preco_final> existir no contexto, use esse valor no lugar do preço padrão do pacote.
+Exemplo: pkg_10 com <preco_final>R$ 29,90</preco_final> → "10 fotos — ~~R$ 34,90~~ *R$ 29,90* 🎁"
+
 ## Mapeamento de ocasiões para exibição:
 - aniversario → "Aniversário 🎂"
 - profissional → "Profissional 💼"

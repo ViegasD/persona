@@ -142,6 +142,7 @@ export function buildLeadContext(lead: {
   ];
 
   if (prefs.packageId) parts.push(`  <pacote>${prefs.packageId}</pacote>`);
+  if (prefs.priceOverride) parts.push(`  <preco_final>R$ ${Number(prefs.priceOverride).toFixed(2).replace('.', ',')}</preco_final>`);
   if (prefs.occasion) parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
   if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
   if (prefs.ageAtBirthday) parts.push(`  <idade_aniversario>${prefs.ageAtBirthday}</idade_aniversario>`);

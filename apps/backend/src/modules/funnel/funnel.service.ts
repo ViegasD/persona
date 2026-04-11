@@ -499,6 +499,17 @@ async function handleTransition(
       const photoPromoShown = !!(photoSession?.preferences as Record<string, unknown>)?.promoShown;
 
       if (photoIsTop || photoPromoShown) {
+        // If the promo was shown during engagement and user chose pkg_10, apply the promo price
+        if (photoPromoShown && photoPkg === 'pkg_10') {
+          const curPrefs = (photoSession?.preferences as Record<string, unknown>) ?? {};
+          if (!curPrefs.priceOverride) {
+            await prisma.leadSession.update({
+              where: { id: sessionId },
+              data: { preferences: { ...curPrefs, priceOverride: 29.90 } as any },
+            });
+            log.info({ sessionId }, '[TRANSITION:COLLECTING_PHOTOS] Applied promo priceOverride 29.90 for pkg_10');
+          }
+        }
         log.info({ currentPkg: photoPkg, promoShown: photoPromoShown }, '[TRANSITION:COLLECTING_PHOTOS→CONFIRMING_DATA] Skipping upsell (top pkg or promo already shown)');
         await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.CONFIRMING_DATA);
         const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
