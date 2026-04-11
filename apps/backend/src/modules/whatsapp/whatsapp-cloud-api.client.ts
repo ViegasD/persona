@@ -77,6 +77,23 @@ export class WhatsAppCloudApiClient {
   }
 
   /**
+   * Send a document via document.link (preserves original quality — no WhatsApp compression).
+   */
+  async sendDocument(to: string, documentUrl: string, caption?: string, fileName?: string): Promise<void> {
+    log.debug({ to, documentUrl, caption, fileName }, 'Sending document via Cloud API');
+    await this.request({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'document',
+      document: {
+        link: documentUrl,
+        ...(caption ? { caption } : {}),
+        ...(fileName ? { filename: fileName } : {}),
+      },
+    });
+  }
+
+  /**
    * Mark a message as read.
    */
   async markRead(messageId: string): Promise<void> {

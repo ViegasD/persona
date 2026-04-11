@@ -58,9 +58,10 @@ export async function deliverApprovedImages(
         ? image.s3Url
         : await getPresignedUrl(image.s3Key, 3600);
       await queueMediaMessage(session.lead.phone, url, {
-        mediatype: 'image',
+        mediatype: 'document',
         mimetype: 'image/jpeg',
         caption: `📸 Foto ${image.sequence}`,
+        fileName: `ensaio-foto-${image.sequence}.jpg`,
       });
       delivered++;
 
