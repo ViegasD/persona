@@ -36,7 +36,6 @@ export async function callLlm(
   const completion = await getClient().chat.completions.create({
     model: env.OPENAI_MODEL,
     messages,
-    temperature: 0.7,
     max_completion_tokens: 500,
   });
 
@@ -88,7 +87,6 @@ export async function callLlmJson<T>(
       completion = await getClient().chat.completions.create({
         model: env.OPENAI_MODEL,
         messages,
-        temperature: 0.7,
         max_completion_tokens: 1200,
         response_format: { type: 'json_object' },
       });
