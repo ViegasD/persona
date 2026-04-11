@@ -272,7 +272,9 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
       log.warn({ agentName, raw: agentResponse }, '[BATCH:VALIDATE] messages is not an array — using fallback');
       agentResponse.messages = [];
     }
-    const validMessages = agentResponse.messages.filter((m) => typeof m === 'string' && m.trim());
+    const validMessages = agentResponse.messages
+      .filter((m) => typeof m === 'string' && m.trim())
+      .map((m) => m.replace(/\\n/g, '\n'));
 
     // Deduplicate messages — LLM sometimes echoes the same bubble twice
     const seen = new Set<string>();
