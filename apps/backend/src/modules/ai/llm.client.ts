@@ -37,7 +37,7 @@ export async function callLlm(
     model: env.OPENAI_MODEL,
     messages,
     temperature: 0.7,
-    max_tokens: 500,
+    max_completion_tokens: 500,
   });
 
   const choice = completion.choices[0];
@@ -89,7 +89,7 @@ export async function callLlmJson<T>(
         model: env.OPENAI_MODEL,
         messages,
         temperature: 0.7,
-        max_tokens: 1200,
+        max_completion_tokens: 1200,
         response_format: { type: 'json_object' },
       });
     } catch (apiErr) {
