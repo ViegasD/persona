@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import type { MessageBatchJobData } from '../../shared/queue/queues.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
-import { handleFunnelBatch } from '../funnel/funnel.service.js';
+import { handleFunnelBatch } from '../funnel/funnel.service.v2.js';
 
 const log = createChildLogger('batch-worker');
 

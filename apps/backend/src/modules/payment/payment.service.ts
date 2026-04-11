@@ -7,7 +7,7 @@ import { getQueue, QUEUE_NAMES, type ImageGenerationJobData } from '../../shared
 import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
 import QRCode from 'qrcode';
 

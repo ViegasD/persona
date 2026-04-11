@@ -183,9 +183,8 @@ export async function handleCloudWebhook(
               };
               const ext = extMap[mimeType] ?? 'jpg';
               const filename = `${randomUUID()}.${ext}`;
-              const isStyleRef = session.funnelState === 'COLLECTING_STYLE_REFS';
-              const folder = isStyleRef ? 'style-refs' as const : 'references' as const;
-              const imageType = isStyleRef ? 'style' : 'face';
+              const folder = 'references' as const;
+              const imageType = 'face';
               const s3Key = buildS3Key(session.id, folder, filename);
               await uploadFile(s3Key, buffer, mimeType);
               await prisma.referenceImage.create({

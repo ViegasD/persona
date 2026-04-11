@@ -54,7 +54,7 @@ export async function downloadAndStoreMedia(
   const session = await prisma.leadSession.findUnique({ where: { id: leadSessionId } });
   const prefs = (session?.preferences as Record<string, unknown>) ?? {};
   const occasion = (prefs.occasion as string) ?? '';
-  if (!prefs.detectedGender && occasion !== 'casal' && session?.funnelState !== 'COLLECTING_STYLE_REFS') {
+  if (!prefs.detectedGender && occasion !== 'casal') {
     detectGenderFromPhoto(base64Data, media.mimetype)
       .then(async (gender) => {
         if (gender) {

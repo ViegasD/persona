@@ -1,7 +1,7 @@
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { queueMediaMessage, queueTextMessage } from '../whatsapp/whatsapp.service.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';

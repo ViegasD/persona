@@ -16,6 +16,7 @@ import { Lightbox } from '@/components/lightbox';
 import Link from 'next/link';
 
 const STATE_LABELS: Record<string, string> = {
+  CONVERSATION: 'Em conversa',
   ENGAGING: 'Engajando',
   COLLECTING_PHOTOS: 'Coletando fotos',
   AWAITING_PAYMENT: 'Aguardando pagamento',

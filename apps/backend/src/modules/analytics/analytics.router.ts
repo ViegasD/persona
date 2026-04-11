@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { verifyAdminAuth } from '../../shared/middleware/auth.js';
 import { getFunnelMetrics, getCostMetrics } from './analytics.service.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { trackEvent } from './analytics.service.js';
 import { getQueue, QUEUE_NAMES, type DeliveryJobData, type ImageGenerationJobData } from '../../shared/queue/queues.js';
 import { buildPrompt } from '../image-gen/prompt.engine.js';

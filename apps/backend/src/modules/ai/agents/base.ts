@@ -1,4 +1,5 @@
 import type { LlmMessage } from '../llm.client.js';
+import { getPackageById, OCCASIONS } from '../../funnel/packages.config.js';
 
 /**
  * Structured output that every agent must return (JSON mode).
@@ -141,9 +142,17 @@ export function buildLeadContext(lead: {
     `  <telefone>${lead.phone}</telefone>`,
   ];
 
-  if (prefs.packageId) parts.push(`  <pacote>${prefs.packageId}</pacote>`);
+  if (prefs.packageId) {
+    const pkg = getPackageById(prefs.packageId as string);
+    parts.push(`  <pacote>${prefs.packageId}</pacote>`);
+    if (pkg) parts.push(`  <pacote_label>${pkg.label}</pacote_label>`);
+  }
   if (prefs.priceOverride) parts.push(`  <preco_final>R$ ${Number(prefs.priceOverride).toFixed(2).replace('.', ',')}</preco_final>`);
-  if (prefs.occasion) parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
+  if (prefs.occasion) {
+    parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
+    const occ = OCCASIONS[prefs.occasion as string];
+    if (occ) parts.push(`  <ocasiao_label>${occ.label}</ocasiao_label>`);
+  }
   if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
   if (prefs.ageAtBirthday) parts.push(`  <idade_aniversario>${prefs.ageAtBirthday}</idade_aniversario>`);
   if (prefs.profession) parts.push(`  <profissao>${prefs.profession}</profissao>`);

@@ -13,7 +13,7 @@ import { processGeneratedImages } from './result.processor.js';
 import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';const log = createChildLogger('image-gen-worker');
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';const log = createChildLogger('image-gen-worker');
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_ATTEMPTS = 120; // 10 minutos máximo
 

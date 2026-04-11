@@ -1,7 +1,7 @@
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { getQueue, QUEUE_NAMES, type DeliveryJobData } from '../../shared/queue/queues.js';
 
