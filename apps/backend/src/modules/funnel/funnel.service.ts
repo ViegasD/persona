@@ -1,6 +1,6 @@
 import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
-import { queueTextMessage, queueMediaMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
+import { queueTextMessage, queueMediaMessage, logOutboundMessage, showTypingForLead } from '../whatsapp/whatsapp.service.js';
 import { initiatePixPayment } from '../payment/payment.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { getQueue, QUEUE_NAMES, type MessageBatchJobData } from '../../shared/queue/queues.js';
@@ -270,6 +270,9 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
 
     const systemMessage = agent.systemPrompt + '\n\n' + leadContext + stateContext + followUpContext;
 
+    // Show typing indicator while LLM generates the response
+    await showTypingForLead(phone);
+
     // Call LLM
     log.info({ agentName }, '[BATCH:LLM] Calling LLM...');
     const agentModel = await getAgentModel(agentName);
@@ -343,18 +346,10 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
       }
     }
 
-    // Send messages with staggered delays to preserve ordering
-    let stagger = 0;
+    // Send messages immediately — typing was already shown during LLM generation
     for (const msg of dedupedMessages) {
       if (msg.trim()) {
-        // Typing delay: ~30ms per character, clamped between 800ms and 3000ms
-        const typingDelay = Math.min(3000, Math.max(800, msg.length * 30));
-        await queueTextMessage(phone, msg, {
-          typingDelay,
-          ...(stagger > 0 ? { jobDelay: stagger } : {}),
-        });
-        // 1.5–3.5s between bubbles to mimic human typing
-        stagger += 1500 + Math.floor(Math.random() * 2000);
+        await queueTextMessage(phone, msg);
       }
     }
 

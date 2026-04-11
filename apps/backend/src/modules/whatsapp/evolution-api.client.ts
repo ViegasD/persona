@@ -62,7 +62,7 @@ export class EvolutionApiClient {
     return this.request('POST', `/message/sendText/${this.instanceName}`, {
       number,
       text,
-      delay: options?.delay ?? 1200,
+      delay: options?.delay ?? 0,
       linkPreview: options?.linkPreview ?? false,
     });
   }
@@ -88,7 +88,7 @@ export class EvolutionApiClient {
       mimetype: options.mimetype,
       caption: options.caption,
       fileName: options.fileName,
-      delay: options.delay ?? 1200,
+      delay: options.delay ?? 0,
     });
   }
 

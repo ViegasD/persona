@@ -93,6 +93,22 @@ export async function logInboundMessage(
 }
 
 /**
+ * Fire "typing..." indicator for a lead (Cloud API only — Evolution uses delay param).
+ * Call this before long operations (e.g. LLM call) so the client sees activity.
+ */
+export async function showTypingForLead(phone: string): Promise<void> {
+  try {
+    if (!env.WA_CLOUD_API_TOKEN || !env.WA_PHONE_NUMBER_ID) return;
+    const lead = await prisma.lead.findFirst({ where: { phone }, select: { source: true } });
+    if (lead?.source !== 'whatsapp-cloud') return;
+    const lastMsgId = await getRedisConnection().get(`lastMsgId:${phone}`);
+    if (lastMsgId) {
+      await getCloudApi().showTypingIndicator(lastMsgId);
+    }
+  } catch { /* fire-and-forget */ }
+}
+
+/**
  * Worker processor para fila de envio WhatsApp.
  */
 export async function processWhatsAppSend(job: Job<WhatsAppSendJobData>): Promise<void> {
@@ -133,11 +149,8 @@ async function processCloudSend(
     }
   } catch { /* fire-and-forget */ }
 
-  // Simulate typing delay for Cloud API (Evolution API handles this natively)
-  const delay = (payload as { delay?: number }).delay;
-  if (delay && delay > 0) {
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  }
+  // Cloud API: typing indicator is already shown above — no need to sleep.
+  // The indicator stays visible until the message arrives, giving a natural feel.
 
   switch (type) {
     case 'text': {
