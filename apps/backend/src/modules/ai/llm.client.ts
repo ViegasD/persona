@@ -29,12 +29,13 @@ export interface LlmResponse {
  */
 export async function callLlm(
   messages: LlmMessage[],
-  options?: { leadId?: string; agentName?: string },
+  options?: { leadId?: string; agentName?: string; model?: string },
 ): Promise<LlmResponse> {
   const startMs = Date.now();
+  const model = options?.model ?? env.OPENAI_MODEL;
 
   const completion = await getClient().chat.completions.create({
-    model: env.OPENAI_MODEL,
+    model,
     messages,
     max_completion_tokens: 500,
   });
@@ -50,14 +51,14 @@ export async function callLlm(
   const durationMs = Date.now() - startMs;
 
   log.debug(
-    { model: env.OPENAI_MODEL, tokens: usage.totalTokens, durationMs, agent: options?.agentName },
+    { model, tokens: usage.totalTokens, durationMs, agent: options?.agentName },
     'LLM call completed',
   );
 
   // Track usage for cost monitoring
   if (options?.leadId) {
     trackEvent(options.leadId, 'LLM_CALL', {
-      model: env.OPENAI_MODEL,
+      model,
       agent: options.agentName,
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
@@ -74,10 +75,11 @@ export async function callLlm(
  */
 export async function callLlmJson<T>(
   messages: LlmMessage[],
-  options?: { leadId?: string; agentName?: string },
+  options?: { leadId?: string; agentName?: string; model?: string },
 ): Promise<{ data: T; usage: LlmResponse['usage'] }> {
   const MAX_ATTEMPTS = 3;
   let lastError: unknown;
+  const model = options?.model ?? env.OPENAI_MODEL;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const startMs = Date.now();
@@ -85,7 +87,7 @@ export async function callLlmJson<T>(
     let completion;
     try {
       completion = await getClient().chat.completions.create({
-        model: env.OPENAI_MODEL,
+        model,
         messages,
         max_completion_tokens: 1200,
         response_format: { type: 'json_object' },
@@ -114,14 +116,14 @@ export async function callLlmJson<T>(
     const durationMs = Date.now() - startMs;
 
     log.info(
-      { model: env.OPENAI_MODEL, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, durationMs, agent: options?.agentName, attempt, finishReason, refusal },
+      { model, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, durationMs, agent: options?.agentName, attempt, finishReason, refusal },
       '[LLM:JSON] Call completed',
     );
     log.info({ rawResponse: raw.substring(0, 500) }, '[LLM:JSON] Raw response');
 
     if (options?.leadId) {
       trackEvent(options.leadId, 'LLM_CALL', {
-        model: env.OPENAI_MODEL,
+        model,
         agent: options.agentName,
         promptTokens: usage.promptTokens,
         completionTokens: usage.completionTokens,

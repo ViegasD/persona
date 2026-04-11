@@ -25,7 +25,7 @@ import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 import { upsellAgent } from '../ai/agents/upsell.agent.js';
 import { confirmationAgent } from '../ai/agents/confirmation.agent.js';
-import { getSetting, getSettingNumber, SETTING_KEYS } from '../admin/settings.service.js';
+import { getSetting, getSettingNumber, getAgentModel, SETTING_KEYS } from '../admin/settings.service.js';
 import { PACKAGES } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
@@ -241,12 +241,13 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
 
     // Call LLM
     log.info({ agentName }, '[BATCH:LLM] Calling LLM...');
+    const agentModel = await getAgentModel(agentName);
     const { data } = await callLlmJson<AgentResponse>(
       [
         { role: 'system', content: systemMessage },
         ...conversationHistory,
       ],
-      { leadId: lead.id, agentName },
+      { leadId: lead.id, agentName, model: agentModel },
     );
     agentResponse = data;
 

@@ -8,11 +8,22 @@ const log = createChildLogger('settings-router');
 /** Allowed settings and their validation rules */
 type NumericRule = { type: 'number'; min: number; max: number; label: string };
 type TextRule = { type: 'text'; maxLength: number; label: string };
-type SettingRule = NumericRule | TextRule;
+type EnumRule = { type: 'enum'; values: string[]; label: string };
+type SettingRule = NumericRule | TextRule | EnumRule;
+
+const VALID_OPENAI_MODELS = ['gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1'];
 
 const SETTING_RULES: Record<string, SettingRule> = {
   [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: { type: 'number', min: 2000, max: 60000, label: 'Tempo de espera (ms)' },
   [SETTING_KEYS.PORTFOLIO_URL]: { type: 'text', maxLength: 500, label: 'URL do Portfólio' },
+  [SETTING_KEYS.MODEL_AGENT_ENGAGEMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Engajamento' },
+  [SETTING_KEYS.MODEL_AGENT_PHOTO_COLLECTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Coleta de Fotos' },
+  [SETTING_KEYS.MODEL_AGENT_STYLE_COLLECTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Estilo' },
+  [SETTING_KEYS.MODEL_AGENT_UPSELL]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Upsell' },
+  [SETTING_KEYS.MODEL_AGENT_CONFIRMATION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Confirmação' },
+  [SETTING_KEYS.MODEL_AGENT_PAYMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Pagamento' },
+  [SETTING_KEYS.MODEL_AGENT_SUPPORT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Suporte' },
+  [SETTING_KEYS.MODEL_AGENT_REENGAGEMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Reengajamento' },
 };
 
 export async function settingsRouter(app: FastifyInstance): Promise<void> {
@@ -46,6 +57,13 @@ export async function settingsRouter(app: FastifyInstance): Promise<void> {
         const str = String(value ?? '').trim();
         if (str.length > rule.maxLength) {
           errors.push(`${rule.label}: máximo ${rule.maxLength} caracteres`);
+          continue;
+        }
+        updates[key] = str;
+      } else if (rule.type === 'enum') {
+        const str = String(value ?? '').trim();
+        if (!rule.values.includes(str)) {
+          errors.push(`${rule.label}: valor inválido. Opções: ${rule.values.join(', ')}`);
           continue;
         }
         updates[key] = str;
