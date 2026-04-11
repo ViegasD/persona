@@ -8,8 +8,8 @@ export const MESSAGES = {
   welcome: (_name: string | null) =>
     `Olá, tudo bem?\n\n` +
     `Antes dos valores, deixa eu te explicar rapidinho como funciona 👇\n` +
-    `Você nos envia suas fotos, aplicamos IA personalizada com ajustes finos para um resultado natural e profissional. Nada de aparência artificial ❌\n\n` +
-    `🔥 PROMOÇÕES MARÇO 🔥\n` +
+    `Você nos envia suas fotos e a gente cria um ensaio profissional personalizado pra você. Resultado natural e incrível ✨\n\n` +
+    `🔥 PROMOÇÕES ABRIL 🔥\n` +
     `🎁 10 fotos — R$ 34,90 (mais popular)\n` +
     `📦 2 fotos — R$ 9,90\n` +
     `📦 3 fotos — R$ 13,90\n` +
