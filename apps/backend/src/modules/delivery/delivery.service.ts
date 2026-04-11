@@ -1,6 +1,6 @@
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
-import { queueMediaMessage, queueTextMessage } from '../whatsapp/whatsapp.service.js';
+import { queueMediaMessage, queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { trackEvent } from '../analytics/analytics.service.js';
@@ -45,7 +45,9 @@ export async function deliverApprovedImages(
     data: { funnelState: FUNNEL_STATES.DELIVERING },
   });
 
-  await queueTextMessage(session.lead.phone, MESSAGES.deliveryStart());
+  const startMsg = MESSAGES.deliveryStart();
+  await queueTextMessage(session.lead.phone, startMsg);
+  await logOutboundMessage(session.leadId, startMsg);
 
   let delivered = 0;
 
@@ -99,7 +101,9 @@ export async function deliverApprovedImages(
     data: { status: 'DELIVERED' },
   });
 
-  await queueTextMessage(session.lead.phone, MESSAGES.deliveryComplete(delivered));
+  const doneMsg = MESSAGES.deliveryComplete(delivered);
+  await queueTextMessage(session.lead.phone, doneMsg);
+  await logOutboundMessage(session.leadId, doneMsg);
 
   await trackEvent(session.leadId, 'DELIVERY_COMPLETED', {
     delivered,

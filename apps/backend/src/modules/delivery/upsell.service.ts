@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 import type { UpsellJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
+import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
@@ -23,11 +23,15 @@ export async function processUpsell(job: Job<UpsellJobData>): Promise<void> {
   const name = lead.name ?? 'cliente';
 
   if (type === 'follow_up') {
-    await queueTextMessage(lead.phone, MESSAGES.upsellFollowUp(name));
+    const msg = MESSAGES.upsellFollowUp(name);
+    await queueTextMessage(lead.phone, msg);
+    await logOutboundMessage(leadId, msg);
     await trackEvent(leadId, 'UPSELL_SENT', { type, attempt });
     log.info({ leadId, type }, 'Upsell follow-up enviado');
   } else if (type === 'reengagement') {
-    await queueTextMessage(lead.phone, MESSAGES.reengagement(name, 0));
+    const reMsg = MESSAGES.reengagement(name, 0);
+    await queueTextMessage(lead.phone, reMsg);
+    await logOutboundMessage(leadId, reMsg);
     await trackEvent(leadId, 'REENGAGEMENT_SENT', { type, attempt });
     log.info({ leadId, type, attempt }, 'Reengagement enviado');
   }

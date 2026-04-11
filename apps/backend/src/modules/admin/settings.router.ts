@@ -21,6 +21,8 @@ const SETTING_RULES: Record<string, SettingRule> = {
   [SETTING_KEYS.PAYMENT_ACCOUNT_NAME]: { type: 'text', maxLength: 200, label: 'Nome da Conta para Pagamento' },
   [SETTING_KEYS.MODEL_AGENT_EXTRACTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Extração' },
   [SETTING_KEYS.MODEL_AGENT_CONVERSATION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Conversa' },
+  [SETTING_KEYS.GENERATION_RESOLUTION]: { type: 'enum', values: ['1K', '2K', '4K'], label: 'Resolução da Geração' },
+  [SETTING_KEYS.UPSCALE_PROVIDER]: { type: 'enum', values: ['none', 'topaz', 'crisp'], label: 'Upscale Provider' },
 };
 
 export async function settingsRouter(app: FastifyInstance): Promise<void> {

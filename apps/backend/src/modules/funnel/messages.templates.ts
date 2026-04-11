@@ -54,9 +54,9 @@ export const MESSAGES = {
   pixCopyPasteHint: () =>
     `👆 Essa é a chave *copia e cola*. Abra o app do seu banco, vá em *Pix Copia e Cola* e cole o código acima.\n\nSe não conseguir pelo código, escaneie o *QR Code* que enviei antes 📱`,
 
-  paymentConfirmed: (name: string) =>
-    `✅ Pagamento confirmado, ${name}!\n\n` +
-    `A IA já está trabalhando na sua sessão 🎨\n\n` +
+  paymentConfirmed: () =>
+    `✅ Pagamento confirmado!\n\n` +
+    `A equipe já está trabalhando na sua sessão 🎨\n\n` +
     `Aviso assim que ficar pronto! ⏳`,
 
   paymentReminder: () =>
@@ -83,13 +83,13 @@ export const MESSAGES = {
     `Se quiser fazer outro ensaio com um estilo diferente, é só me chamar! 🌟`,
 
   // ─── Upsell ──────────────────────────────────────────────
-  upsellFollowUp: (name: string) =>
-    `Olá, ${name}! 😊 Tudo bem?\n\n` +
+  upsellFollowUp: (_name: string) =>
+    `Olá! 😊 Tudo bem?\n\n` +
     `Que tal uma nova sessão com estilo diferente? 🌟\n\n` +
     `Responda *QUERO* para saber mais.`,
 
-  reengagement: (name: string, _discount: number) =>
-    `${name}, bora fazer mais um ensaio? 📸\n\n` +
+  reengagement: (_name: string, _discount: number) =>
+    `Bora fazer mais um ensaio? 📸\n\n` +
     `Responda *SIM* pra começar!`,
 
   // ─── Erros / Fallback ─────────────────────────────────────────

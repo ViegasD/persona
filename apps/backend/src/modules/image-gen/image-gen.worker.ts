@@ -10,10 +10,11 @@ import { kieApi, KieApiError } from './kie-ai.client.js';
 import { buildPromptVariations } from './prompt.engine.js';
 import { pickRandomStyleTemplates, pickStyleTemplatesFromDb } from './templates.config.js';
 import { processGeneratedImages } from './result.processor.js';
-import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
+import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
-import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';const log = createChildLogger('image-gen-worker');
+import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
+import { getSetting, SETTING_KEYS } from '../admin/settings.service.js';const log = createChildLogger('image-gen-worker');
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_ATTEMPTS = 120; // 10 minutos máximo
 
@@ -114,12 +115,14 @@ export async function processImageGeneration(
 
     // Enviar para Kie.ai — 1 task por imagem (Nano Banana 2 gera 1 por chamada)
     // Cada task recebe referências + template de estilo + prompt com pose única
+    const resolution = await getSetting(SETTING_KEYS.GENERATION_RESOLUTION);
     const taskPromises = Array.from({ length: pkg.photos }, (_, i) => {
       const styleUrl = styleTemplateUrls[i];
       const imagesForTask = styleUrl ? [...referenceUrls, styleUrl] : referenceUrls;
       return kieApi.submitGeneration({
         prompt: prompts[i],
         referenceImages: imagesForTask,
+        resolution,
       });
     });
     const kieTasks = await Promise.all(taskPromises);
@@ -143,7 +146,9 @@ export async function processImageGeneration(
     });
 
     // Enviar mensagem de progresso
-    await queueTextMessage(session.lead.phone, MESSAGES.generationProgress());
+    const progressMsg = MESSAGES.generationProgress();
+    await queueTextMessage(session.lead.phone, progressMsg);
+    await logOutboundMessage(session.leadId, progressMsg);
 
     // Polling de todas as tasks até completarem
     const completedUrls = await pollTasks(taskIds);
@@ -157,7 +162,7 @@ export async function processImageGeneration(
           const originalIndex = completedUrls.length + i;
           const styleUrl = styleTemplateUrls[originalIndex];
           const imagesForTask = styleUrl ? [...referenceUrls, styleUrl] : referenceUrls;
-          return kieApi.submitGeneration({ prompt: prompts[originalIndex % prompts.length], referenceImages: imagesForTask });
+          return kieApi.submitGeneration({ prompt: prompts[originalIndex % prompts.length], referenceImages: imagesForTask, resolution });
         }),
       );
       const retryIds = retryTasks.map((t) => t.taskId);
@@ -175,7 +180,16 @@ export async function processImageGeneration(
       log.warn({ expected: pkg.photos, delivered: completedUrls.length, failed: totalFailed }, 'Geração parcial — algumas imagens não puderam ser geradas');
     }
 
-    const imageIds = await processGeneratedImages(completedUrls, generationJobId, leadSessionId);
+    // ── Upscale (optional) ──
+    const upscaleProvider = await getSetting(SETTING_KEYS.UPSCALE_PROVIDER);
+    let finalUrls = completedUrls;
+    if (upscaleProvider !== 'none') {
+      log.info({ provider: upscaleProvider, count: completedUrls.length }, 'Iniciando upscale das imagens');
+      finalUrls = await upscaleImages(completedUrls, upscaleProvider);
+      log.info({ original: completedUrls.length, upscaled: finalUrls.length }, 'Upscale concluído');
+    }
+
+    const imageIds = await processGeneratedImages(finalUrls, generationJobId, leadSessionId);
 
     // Atualizar status
     await prisma.generationJob.update({
@@ -206,7 +220,9 @@ export async function processImageGeneration(
       data: { status: 'APPROVING' },
     });
 
-    await queueTextMessage(session.lead.phone, MESSAGES.generationComplete());
+    const completeMsg = MESSAGES.generationComplete();
+    await queueTextMessage(session.lead.phone, completeMsg);
+    await logOutboundMessage(session.leadId, completeMsg);
 
     await trackEvent(session.leadId, 'IMAGES_GENERATED', {
       count: imageIds.length,
@@ -249,6 +265,59 @@ export async function processImageGeneration(
 
     throw error; // Para outros erros, BullMQ pode tentar novamente
   }
+}
+
+/**
+ * Upscales images via the configured provider (topaz or crisp).
+ * Falls back to original URL if an individual upscale fails.
+ */
+async function upscaleImages(imageUrls: string[], provider: string): Promise<string[]> {
+  const tasks = await Promise.all(
+    imageUrls.map(async (url, i) => {
+      try {
+        if (provider === 'topaz') {
+          return await kieApi.submitTopazUpscale(url);
+        } else {
+          return await kieApi.submitCrispUpscale(url);
+        }
+      } catch (err) {
+        log.warn({ index: i, provider, error: err }, 'Falha ao submeter upscale — usando imagem original');
+        return null;
+      }
+    }),
+  );
+
+  const taskMap = tasks.map((t, i) => ({ task: t, originalUrl: imageUrls[i] }));
+  const results: string[] = [];
+
+  for (const { task, originalUrl } of taskMap) {
+    if (!task) {
+      results.push(originalUrl);
+      continue;
+    }
+    try {
+      const upscaledUrls = await pollSingleTask(task.taskId);
+      results.push(upscaledUrls[0] ?? originalUrl);
+    } catch {
+      log.warn({ taskId: task.taskId }, 'Upscale poll falhou — usando imagem original');
+      results.push(originalUrl);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Polls a single Kie.ai task until success or failure.
+ */
+async function pollSingleTask(taskId: string): Promise<string[]> {
+  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+    await sleep(POLL_INTERVAL_MS);
+    const status = await kieApi.getTaskStatus(taskId);
+    if (status.state === 'success') return status.imageUrls;
+    if (status.state === 'fail') throw new Error(status.error ?? 'Upscale task failed');
+  }
+  throw new Error('Upscale poll timeout');
 }
 
 /**

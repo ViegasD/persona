@@ -127,6 +127,37 @@ export class KieAiClient {
   }
 
   /**
+   * Submete upscale via Topaz.
+   */
+  async submitTopazUpscale(imageUrl: string, upscaleFactor: string = '2'): Promise<KieJobResponse> {
+    const res = await this.request<KieCreateTaskData>('POST', '/api/v1/jobs/createTask', {
+      model: 'topaz/image-upscale',
+      input: {
+        image_url: imageUrl,
+        upscale_factor: upscaleFactor,
+      },
+    });
+
+    log.info({ taskId: res.data.taskId }, 'Topaz upscale task criada no Kie.ai');
+    return { taskId: res.data.taskId, state: 'waiting' };
+  }
+
+  /**
+   * Submete upscale via Recraft Crisp.
+   */
+  async submitCrispUpscale(imageUrl: string): Promise<KieJobResponse> {
+    const res = await this.request<KieCreateTaskData>('POST', '/api/v1/jobs/createTask', {
+      model: 'recraft/crisp-upscale',
+      input: {
+        image: imageUrl,
+      },
+    });
+
+    log.info({ taskId: res.data.taskId }, 'Crisp upscale task criada no Kie.ai');
+    return { taskId: res.data.taskId, state: 'waiting' };
+  }
+
+  /**
    * Consulta status de uma task.
    */
   async getTaskStatus(taskId: string): Promise<KieResultResponse> {

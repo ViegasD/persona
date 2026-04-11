@@ -4,7 +4,7 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 import { createPixPayment } from './mercadopago.client.js';
 import { uploadFile, getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { getQueue, QUEUE_NAMES, type ImageGenerationJobData } from '../../shared/queue/queues.js';
-import { queueTextMessage } from '../whatsapp/whatsapp.service.js';
+import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
@@ -140,10 +140,9 @@ export async function handlePaymentApproved(
   });
 
   // Notificar lead via WhatsApp
-  await queueTextMessage(
-    session.lead.phone,
-    MESSAGES.paymentConfirmed(session.lead.name ?? 'cliente'),
-  );
+  const confirmMsg = MESSAGES.paymentConfirmed();
+  await queueTextMessage(session.lead.phone, confirmMsg);
+  await logOutboundMessage(session.leadId, confirmMsg);
 
   // Disparar geração de imagens
   await triggerImageGeneration(sessionId);

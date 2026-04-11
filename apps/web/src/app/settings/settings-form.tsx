@@ -45,6 +45,18 @@ const AGENT_MODEL_LABELS: Record<string, { label: string; description: string }>
   model_agent_conversation: { label: 'Conversa',  description: 'Gera as respostas do agente em todas as fases do funil' },
 };
 
+const GENERATION_RESOLUTION_OPTIONS = [
+  { value: '1K', label: '1K — Rápido, menor custo' },
+  { value: '2K', label: '2K — Balanceado (padrão)' },
+  { value: '4K', label: '4K — Máxima qualidade' },
+];
+
+const UPSCALE_PROVIDER_OPTIONS = [
+  { value: 'none', label: 'Nenhum' },
+  { value: 'topaz', label: 'Topaz — Upscale realista (ajustável)' },
+  { value: 'crisp', label: 'Recraft Crisp — Upscale nítido' },
+];
+
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
   const [values, setValues] = useState(initialSettings);
   const [isPending, startTransition] = useTransition();
@@ -145,6 +157,43 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               </select>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-base font-semibold mb-3">Geração de Imagens</h2>
+        <div className="space-y-3">
+          <div className="border border-[var(--border)] rounded-lg p-5">
+            <label className="block text-sm font-medium mb-1">Resolução da Geração</label>
+            <p className="text-xs text-[var(--muted-foreground)] mb-3">
+              Resolução das imagens geradas pelo Nano Banana 2. Maior resolução = mais qualidade e custo.
+            </p>
+            <select
+              value={values['generation_resolution'] ?? '2K'}
+              onChange={(e) => setValues((prev) => ({ ...prev, generation_resolution: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm"
+            >
+              {GENERATION_RESOLUTION_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="border border-[var(--border)] rounded-lg p-5">
+            <label className="block text-sm font-medium mb-1">Upscale Pós-Geração</label>
+            <p className="text-xs text-[var(--muted-foreground)] mb-3">
+              Opcionalmente, aplica upscale em cada imagem gerada antes de enviar ao cliente. Aumenta o tempo de processamento.
+            </p>
+            <select
+              value={values['upscale_provider'] ?? 'none'}
+              onChange={(e) => setValues((prev) => ({ ...prev, upscale_provider: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm"
+            >
+              {UPSCALE_PROVIDER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

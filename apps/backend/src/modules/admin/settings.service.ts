@@ -16,6 +16,8 @@ export const SETTING_KEYS = {
   PAYMENT_ACCOUNT_NAME: 'payment_account_name',
   MODEL_AGENT_EXTRACTION: 'model_agent_extraction',
   MODEL_AGENT_CONVERSATION: 'model_agent_conversation',
+  GENERATION_RESOLUTION: 'generation_resolution',
+  UPSCALE_PROVIDER: 'upscale_provider',
 } as const;
 
 const DEFAULT_IDENTITY = 'Você é a *Bia*, atendente do *Ensaio Digital*. Amigável, competente, entusiasmada. Português brasileiro natural e acessível ("legal", "top", "bora", "show", "massa").';
@@ -28,6 +30,8 @@ const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.PAYMENT_ACCOUNT_NAME]: '',
   [SETTING_KEYS.MODEL_AGENT_EXTRACTION]: env.OPENAI_MODEL,
   [SETTING_KEYS.MODEL_AGENT_CONVERSATION]: env.OPENAI_MODEL,
+  [SETTING_KEYS.GENERATION_RESOLUTION]: '2K',
+  [SETTING_KEYS.UPSCALE_PROVIDER]: 'none',
 };
 
 /**
