@@ -659,10 +659,25 @@ async function applyExtractedData(
     await trackEvent(leadId, 'QUALIFIED', { name: data.name });
   }
 
+  // Reclassify last uploaded image as style reference if agent flagged it
+  if (data.reclassifyLastImageAsStyle === true) {
+    const lastImage = await prisma.referenceImage.findFirst({
+      where: { leadSessionId: sessionId, type: 'face' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (lastImage) {
+      await prisma.referenceImage.update({
+        where: { id: lastImage.id },
+        data: { type: 'style' },
+      });
+      log.info({ imageId: lastImage.id, sessionId }, '[DATA:RECLASSIFY] Last image reclassified as style reference');
+    }
+  }
+
   // Update session preferences (excluding name which goes to Lead)
   const prefUpdates: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
-    if (key !== 'name' && key !== 'newSession' && key !== 'changePackage' && value !== null && value !== undefined) {
+    if (key !== 'name' && key !== 'newSession' && key !== 'changePackage' && key !== 'reclassifyLastImageAsStyle' && value !== null && value !== undefined) {
       // Validate packageId and occasion before storing
       if (key === 'packageId' && (typeof value !== 'string' || !VALID_PACKAGE_IDS.has(value))) {
         log.warn({ key, value }, '[DATA:VALIDATE] Invalid packageId — discarded');

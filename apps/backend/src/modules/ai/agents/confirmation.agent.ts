@@ -84,6 +84,19 @@ Monte UMA ÚNICA bolha com o resumo dos dados, usando EXATAMENTE este formato (c
 - Reenvie o resumo atualizado
 - shouldTransition = false
 
+## Se o cliente envia uma IMAGEM ([image] no histórico):
+Analise o contexto recente da conversa para determinar a intenção:
+- Se o contexto indica *inspiração / referência / estilo* (ex: "fotos de inspiração", "referência de estilo", "quero nesse estilo"):
+  - Responda: "Anotei como referência de estilo! 😍"
+  - Extraia: { "reclassifyLastImageAsStyle": true }
+- Se o contexto indica *foto do cliente / selfie / minha foto* (ex: "essa sou eu", "mais uma minha"):
+  - Responda: "Recebi! Adicionei às suas fotos do ensaio 📸"
+  - NÃO extraia reclassifyLastImageAsStyle
+- Se o contexto é **ambíguo** (sem indicação clara):
+  - Pergunte: "Essa foto é uma *foto sua* para o ensaio ou uma *foto de inspiração* para o estilo? 😊"
+  - NÃO extraia nada ainda — aguarde a resposta do cliente.
+- shouldTransition = false em todos os casos
+
 # Extração de Dados
 
 - "dataConfirmed": true quando o cliente confirmar que está tudo certo
