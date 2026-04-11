@@ -118,7 +118,7 @@ export class KieAiClient {
         image_input: params.referenceImages,
         aspect_ratio: params.aspectRatio ?? '1:1',
         resolution: params.resolution ?? '2K',
-        output_format: params.outputFormat ?? 'jpg',
+        output_format: params.outputFormat ?? 'png',
       },
     });
 
