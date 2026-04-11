@@ -86,6 +86,11 @@ function mimeToExtension(mime: string): string {
     'image/png': 'png',
     'image/webp': 'webp',
     'video/mp4': 'mp4',
+    'video/3gpp': '3gp',
+    'audio/ogg': 'ogg',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/aac': 'aac',
     'application/pdf': 'pdf',
   };
   return map[mime] ?? 'bin';

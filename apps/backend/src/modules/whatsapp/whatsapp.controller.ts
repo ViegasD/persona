@@ -104,23 +104,23 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
 
   log.info({ leadId: lead.id, direction: 'INBOUND', messageType: mediaType ?? 'text' }, '[WEBHOOK] Inbound message logged');
 
-  // If image received, download and store it immediately (before debounce)
-  if (mediaType === 'image') {
-    log.info({ phone, messageId: key.id }, '[WEBHOOK:IMAGE] Image detected — looking for session...');
+  // If any media received, download and store it immediately (before debounce)
+  if (mediaType !== null) {
+    log.info({ phone, messageId: key.id, mediaType }, '[WEBHOOK:MEDIA] Media detected — looking for session...');
     const session = await prisma.leadSession.findFirst({
       where: { leadId: lead.id },
       orderBy: { createdAt: 'desc' },
     });
     if (session) {
-      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:IMAGE] Session found — downloading media...');
+      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:MEDIA] Session found — downloading media...');
       try {
         const result = await downloadAndStoreMedia(jid, key.id, key.fromMe, session.id);
-        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:IMAGE] ✅ Image downloaded and stored');
+        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:MEDIA] ✅ Media downloaded and stored');
       } catch (err) {
-        log.error(err, '[WEBHOOK:IMAGE] ❌ Falha ao baixar mídia');
+        log.error(err, '[WEBHOOK:MEDIA] ❌ Falha ao baixar mídia');
       }
     } else {
-      log.warn({ leadId: lead.id }, '[WEBHOOK:IMAGE] ⚠️ No session found — image will NOT be stored!');
+      log.warn({ leadId: lead.id }, '[WEBHOOK:MEDIA] ⚠️ No session found — media will NOT be stored!');
     }
   }
 
