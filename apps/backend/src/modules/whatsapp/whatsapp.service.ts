@@ -5,6 +5,7 @@ import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { env } from '../../shared/config/env.js';
 import { getRedisConnection } from '../../shared/queue/queue.config.js';
+import { publishEvent } from '../../shared/queue/event-bus.js';
 import type { Job } from 'bullmq';
 
 const log = createChildLogger('whatsapp-service');
@@ -59,7 +60,7 @@ export async function logOutboundMessage(
   messageType: string = 'text',
   whatsappMessageId?: string,
 ): Promise<void> {
-  await prisma.conversationMessage.create({
+  const msg = await prisma.conversationMessage.create({
     data: {
       leadId,
       direction: 'OUTBOUND',
@@ -68,6 +69,9 @@ export async function logOutboundMessage(
       whatsappMessageId,
     },
   });
+  publishEvent(`chat:${leadId}`, {
+    id: msg.id, leadId, direction: 'OUTBOUND', content, messageType, createdAt: msg.createdAt,
+  }).catch(() => {});
 }
 
 /**
@@ -80,7 +84,7 @@ export async function logInboundMessage(
   whatsappMessageId?: string,
   metadata?: Record<string, unknown>,
 ): Promise<void> {
-  await prisma.conversationMessage.create({
+  const msg = await prisma.conversationMessage.create({
     data: {
       leadId,
       direction: 'INBOUND',
@@ -90,6 +94,9 @@ export async function logInboundMessage(
       metadata: (metadata ?? {}) as any,
     },
   });
+  publishEvent(`chat:${leadId}`, {
+    id: msg.id, leadId, direction: 'INBOUND', content, messageType, createdAt: msg.createdAt,
+  }).catch(() => {});
 }
 
 /**

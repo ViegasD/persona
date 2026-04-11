@@ -3,6 +3,7 @@ import { logger } from './shared/utils/logger.js';
 import { connectDatabase, disconnectDatabase } from './shared/database/prisma.js';
 import { closeRedis } from './shared/queue/queue.config.js';
 import { closeQueues } from './shared/queue/queues.js';
+import { closeEventBus } from './shared/queue/event-bus.js';
 import { buildApp } from './app.js';
 import { startWorkers, stopWorkers } from './workers.js';
 
@@ -24,6 +25,7 @@ async function main() {
     await app.close();
     await stopWorkers();
     await closeQueues();
+    await closeEventBus();
     await closeRedis();
     await disconnectDatabase();
     process.exit(0);

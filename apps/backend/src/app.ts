@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifySSE from '@fastify/sse';
 import { env } from './shared/config/env.js';
 import { errorHandler } from './shared/middleware/error-handler.js';
 import { createChildLogger, getRecentLogs } from './shared/utils/logger.js';
@@ -16,6 +17,7 @@ import { imageProxyRouter } from './modules/analytics/image-proxy.router.js';
 import { devRouter } from './modules/dev/dev.router.js';
 import { templatesRouter } from './modules/admin/templates.router.js';
 import { settingsRouter } from './modules/admin/settings.router.js';
+import { chatRouter } from './modules/admin/chat.router.js';
 
 const log = createChildLogger('app');
 
@@ -42,6 +44,9 @@ export async function buildApp() {
     allowList: (req) => req.url?.startsWith('/api/internal/') ?? false,
   });
 
+  // @ts-expect-error — CJS/ESM interop: @fastify/sse types mismatch with NodeNext
+  await app.register(fastifySSE);
+
   // ─── Error Handler ───────────────────────────────────────
   app.setErrorHandler(errorHandler);
 
@@ -66,6 +71,7 @@ export async function buildApp() {
   await app.register(analyticsRouter, { prefix: '/api/admin' });
   await app.register(templatesRouter, { prefix: '/api/admin' });
   await app.register(settingsRouter, { prefix: '/api/admin' });
+  await app.register(chatRouter, { prefix: '/api/admin' });
   await app.register(imageProxyRouter, { prefix: '/api/internal/images' });
 
   // Dev routes — available in all environments (protected by API key in router)

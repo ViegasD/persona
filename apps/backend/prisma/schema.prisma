@@ -80,6 +80,7 @@ model LeadSession {
   id          String  @id @default(uuid())
   leadId      String  @map("lead_id")
   funnelState String  @default("WELCOME") @map("funnel_state")
+  aiEnabled   Boolean @default(true) @map("ai_enabled")
   preferences Json    @default("{}") @db.JsonB
   metadata    Json    @default("{}") @db.JsonB
   expiresAt   DateTime? @map("expires_at")

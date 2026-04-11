@@ -1,6 +1,6 @@
 'use server';
 
-import { approveAllImages, regenerateImage, generateSession } from '@/lib/api';
+import { approveAllImages, regenerateImage, generateSession, sendAdminMessage, toggleAi } from '@/lib/api';
 
 export async function approveAllAction(
   sessionId: string,
@@ -18,4 +18,18 @@ export async function generateSessionAction(
   sessionId: string,
 ): Promise<{ success: boolean; generationJobId?: string }> {
   return generateSession(sessionId);
+}
+
+export async function sendMessageAction(
+  leadId: string,
+  content: string,
+): Promise<{ success: boolean }> {
+  return sendAdminMessage(leadId, content);
+}
+
+export async function toggleAiAction(
+  leadId: string,
+  enabled: boolean,
+): Promise<{ success: boolean; aiEnabled: boolean }> {
+  return toggleAi(leadId, enabled);
 }

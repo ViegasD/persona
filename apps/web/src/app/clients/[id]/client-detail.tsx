@@ -122,6 +122,13 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
             <h2 className="text-2xl font-bold">{lead.name ?? 'Sem nome'}</h2>
             <p className="text-[var(--muted-foreground)]">{lead.phone}</p>
           </div>
+          <Link
+            href={`/clients/${lead.id}/chat`}
+            className="ml-auto px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+          >
+            💬 Chat
+          </Link>
         </div>
         <div className="flex gap-6 mt-4 text-sm">
           <div>

@@ -36,6 +36,7 @@ export interface AdminPayment {
 export interface AdminSession {
   id: string;
   funnelState: string;
+  aiEnabled: boolean;
   preferences: Record<string, unknown>;
   metadata: Record<string, unknown>;
   generatedImages: AdminImage[];
@@ -115,5 +116,63 @@ export async function generateSession(
     `${API_BASE}/api/admin/sessions/${encodeURIComponent(sessionId)}/generate`,
     { method: 'POST', headers: adminPostHeaders() },
   );
+  return res.json();
+}
+
+// ─── Chat API Functions ─────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  direction: 'INBOUND' | 'OUTBOUND';
+  messageType: string;
+  content: string;
+  createdAt: string;
+}
+
+export async function fetchMessages(
+  leadId: string,
+  limit = 50,
+  before?: string,
+): Promise<{ messages: ChatMessage[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (before) params.set('before', before);
+
+  const res = await fetch(
+    `${API_BASE}/api/admin/leads/${encodeURIComponent(leadId)}/messages?${params}`,
+    { headers: adminHeaders(), cache: 'no-store' },
+  );
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
+export async function sendAdminMessage(
+  leadId: string,
+  content: string,
+): Promise<{ success: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/api/admin/leads/${encodeURIComponent(leadId)}/messages`,
+    {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ content }),
+    },
+  );
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
+export async function toggleAi(
+  leadId: string,
+  enabled: boolean,
+): Promise<{ success: boolean; aiEnabled: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/api/admin/leads/${encodeURIComponent(leadId)}/ai`,
+    {
+      method: 'PUT',
+      headers: adminHeaders(),
+      body: JSON.stringify({ enabled }),
+    },
+  );
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
 }

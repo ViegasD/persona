@@ -109,6 +109,12 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
 
   log.info({ phone, state, leadId, sessionId: session.id, photoCount, prefs }, '[BATCH:CTX] Loaded context');
 
+  // ─── AI disabled check ────────────────────────────────────
+  if (!session.aiEnabled) {
+    log.info({ phone, sessionId: session.id }, '[BATCH] AI disabled for this session — skipping');
+    return;
+  }
+
   // ─── Follow-up guard ──────────────────────────────────────
   const isFollowUp = !!followUpTier;
   if (isFollowUp) {
