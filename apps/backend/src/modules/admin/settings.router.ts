@@ -15,6 +15,7 @@ const VALID_OPENAI_MODELS = ['gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nan
 
 const SETTING_RULES: Record<string, SettingRule> = {
   [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: { type: 'number', min: 2000, max: 60000, label: 'Tempo de espera (ms)' },
+  [SETTING_KEYS.STALE_FOLLOWUP_DELAY_MS]: { type: 'number', min: 30000, max: 3600000, label: 'Delay follow-up (ms)' },
   [SETTING_KEYS.PORTFOLIO_URL]: { type: 'text', maxLength: 500, label: 'URL do Portfólio' },
   [SETTING_KEYS.AGENT_IDENTITY]: { type: 'text', maxLength: 2000, label: 'Identidade do Agente' },
   [SETTING_KEYS.PAYMENT_ACCOUNT_NAME]: { type: 'text', maxLength: 200, label: 'Nome da Conta para Pagamento' },

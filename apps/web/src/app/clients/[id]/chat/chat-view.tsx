@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import Link from 'next/link';
 import type { AdminLead, ChatMessage } from '@/lib/api';
-import { useSSE } from '@/lib/use-sse';
+import { useChatPolling } from '@/lib/use-chat-polling';
 import { sendMessageAction, toggleAiAction } from '@/lib/actions';
 
 function fmtTime(iso: string) {
@@ -25,25 +25,29 @@ export function ChatView({ lead, initialMessages, aiEnabled: initialAi }: ChatVi
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
 
-  const { messages: sseMessages, aiToggled, connected } = useSSE(lead.id);
+  const polling = useChatPolling(lead.id, 3_000) as ReturnType<typeof useChatPolling> & {
+    registerKnown: (msgs: ChatMessage[]) => void;
+  };
 
-  // Merge SSE messages into local state
+  // Register initial messages so polling skips them
   useEffect(() => {
-    if (sseMessages.length === 0) return;
+    if (!initializedRef.current && initialMessages.length > 0) {
+      polling.registerKnown(initialMessages);
+      initializedRef.current = true;
+    }
+  }, [initialMessages, polling]);
+
+  // Merge polled messages into local state
+  useEffect(() => {
+    if (polling.messages.length === 0) return;
     setAllMessages((prev) => {
       const ids = new Set(prev.map((m) => m.id));
-      const newMsgs = sseMessages.filter((m) => !ids.has(m.id));
+      const newMsgs = polling.messages.filter((m) => !ids.has(m.id));
       return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
     });
-  }, [sseMessages]);
-
-  // React to AI toggle events from SSE
-  useEffect(() => {
-    if (aiToggled && aiToggled.leadId === lead.id) {
-      setAiOn(aiToggled.enabled);
-    }
-  }, [aiToggled, lead.id]);
+  }, [polling.messages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -58,11 +62,23 @@ export function ChatView({ lead, initialMessages, aiEnabled: initialAi }: ChatVi
 
       setSending(true);
       setInput('');
+
+      // Optimistic: add message immediately
+      const optimisticMsg: ChatMessage = {
+        id: `opt-${Date.now()}`,
+        direction: 'OUTBOUND',
+        messageType: 'text',
+        content: text,
+        createdAt: new Date().toISOString(),
+      };
+      setAllMessages((prev) => [...prev, optimisticMsg]);
+
       try {
         await sendMessageAction(lead.id, text);
       } catch {
-        // Message will still arrive via SSE if send succeeded
-        setInput(text); // restore on error
+        // Remove optimistic message on error, restore input
+        setAllMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+        setInput(text);
       } finally {
         setSending(false);
       }
@@ -100,11 +116,11 @@ export function ChatView({ lead, initialMessages, aiEnabled: initialAi }: ChatVi
             <h2 className="font-semibold text-sm">{lead.name ?? 'Sem nome'}</h2>
             <p className="text-xs text-[var(--muted-foreground)]">{lead.phone}</p>
           </div>
-          {/* SSE connection indicator */}
+          {/* Connection indicator */}
           <span
             className="w-2 h-2 rounded-full ml-1"
-            style={{ background: connected ? 'var(--success)' : 'var(--error)' }}
-            title={connected ? 'Conectado' : 'Desconectado'}
+            style={{ background: polling.connected ? 'var(--success)' : 'var(--error)' }}
+            title={polling.connected ? 'Conectado' : 'Desconectado'}
           />
         </div>
 

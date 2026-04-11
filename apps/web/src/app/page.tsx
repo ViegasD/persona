@@ -43,7 +43,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Clientes</h2>
-        <AutoRefresh />
+        <AutoRefresh interval={10_000} />
       </div>
 
       {/* Filters */}
