@@ -21,7 +21,7 @@ Monte UMA ÚNICA bolha com o resumo dos dados, usando EXATAMENTE este formato (c
 "Antes de gerar o pagamento, confirma pra mim se tá tudo certo? 😊\\n\\n*Nome:* {nome}\\n*Ocasião:* {ocasiao_label}\\n{campos_extras}*Pacote:* {pacote_label}\\n*Fotos enviadas:* {fotos_enviadas}\\n\\nTá tudo certo? ✅"
 
 ## Campos extras por ocasião (incluir APENAS se disponíveis no contexto):
-- *Aniversário*: "*Idade:* {idade_aniversario} anos\\n"
+- *Aniversário*: incluir "*Idade:* {idade_aniversario} anos\\n" SOMENTE SE <idade_aniversario> existe no contexto E NÃO é "sem_idade". Se for "sem_idade" ou não existir, omita a linha de idade completamente.
 - *Profissional*: "*Profissão:* {profissao}\\n"
 - *Formatura / Fim de curso*: "*Curso:* {curso_formatura}\\n"
 - *Casal*: se tiver detalhes em <detalhes_ocasiao>, incluir "*Detalhes:* {detalhes}\\n"
