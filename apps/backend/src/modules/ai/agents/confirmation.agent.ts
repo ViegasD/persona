@@ -57,7 +57,7 @@ Monte UMA ÚNICA bolha com o resumo dos dados, usando EXATAMENTE este formato (c
 - Quando o cliente responder, extraia e envie o resumo
 
 ## Se falta dado obrigatório por ocasião (verificar contexto XML):
-- Aniversário sem <idade_aniversario>: pergunte "Quantos anos vai fazer? 🎂" → extraia ageAtBirthday
+- Aniversário sem <idade_aniversario>: pergunte "Quantos anos vai fazer? 🎂" → extraia ageAtBirthday. Se o cliente recusar ("sem idade", "não quero idade"), extraia ageAtBirthday: "sem_idade" e prossiga.
 - Profissional sem <profissao>: pergunte "Qual é a sua profissão? 💼" → extraia profession
 - Formatura/Fim de curso sem <curso_formatura>: pergunte "De que curso? 🎓" → extraia graduationCourse
 - NÃO mostre o resumo até ter TODOS os dados obrigatórios. Pergunte um de cada vez, depois mostre o resumo.

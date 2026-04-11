@@ -1,0 +1,2688 @@
+﻿{
+    "value":  [
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:10.768Z",
+                      "service":  "ensaio-backend",
+                      "msg":  "Iniciando Ensaio Backend..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:10.769Z",
+                      "service":  "ensaio-backend",
+                      "module":  "database",
+                      "msg":  "Aplicando migrations..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.297Z",
+                      "service":  "ensaio-backend",
+                      "module":  "database",
+                      "msg":  "Migrations aplicadas"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.501Z",
+                      "service":  "ensaio-backend",
+                      "module":  "database",
+                      "msg":  "Conectado ao PostgreSQL"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.770Z",
+                      "service":  "ensaio-backend",
+                      "module":  "app",
+                      "msg":  "App configurado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.771Z",
+                      "service":  "ensaio-backend",
+                      "module":  "workers",
+                      "msg":  "Iniciando workers..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.785Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "image-generation",
+                      "concurrency":  3,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.786Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "delivery",
+                      "concurrency":  5,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.787Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "upsell",
+                      "concurrency":  2,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.788Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "analytics",
+                      "concurrency":  10,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.789Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "whatsapp-send",
+                      "concurrency":  5,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.789Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "message-batch",
+                      "concurrency":  5,
+                      "msg":  "Worker iniciado"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.789Z",
+                      "service":  "ensaio-backend",
+                      "module":  "workers",
+                      "count":  6,
+                      "msg":  "Workers iniciados"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.812Z",
+                      "service":  "ensaio-backend",
+                      "port":  3000,
+                      "msg":  "Servidor rodando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:15.817Z",
+                      "service":  "ensaio-backend",
+                      "module":  "redis",
+                      "msg":  "Conectado ao Redis"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.647Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.654Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  488,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.655Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.655Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.655Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556399813632",
+                      "text":  "oi",
+                      "mediaType":  "text",
+                      "pushName":  "Fábio",
+                      "messageId":  "wamid.HBgMNTU2Mzk5ODEzNjMyFQIAEhggQUMxOUFFMzRBRTFBNzNCNzM0RjIzOTJCOUI2MjY1MzUA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.671Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "8ca920e7-700c-4bee-9b9a-c551d6a046ea",
+                      "phone":  "556399813632",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:28.822Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "message-batch",
+                      "msg":  "Fila criada"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.890Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556399813632",
+                      "leadId":  "8ca920e7-700c-4bee-9b9a-c551d6a046ea",
+                      "jobId":  "batch_556399813632",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.891Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556399813632",
+                      "leadId":  "8ca920e7-700c-4bee-9b9a-c551d6a046ea",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.903Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "sessionId":  "be5dc01d-7661-441d-8f06-713bdef71a1d",
+                      "msg":  "[BATCH] New session created"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.904Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "analytics",
+                      "msg":  "Fila criada"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.924Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556399813632",
+                      "state":  "ENGAGING",
+                      "leadId":  "8ca920e7-700c-4bee-9b9a-c551d6a046ea",
+                      "sessionId":  "be5dc01d-7661-441d-8f06-713bdef71a1d",
+                      "photoCount":  0,
+                      "prefs":  {
+
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.932Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[BATCH:WELCOME] First contact — sending static welcome"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.933Z",
+                      "service":  "ensaio-backend",
+                      "module":  "queues",
+                      "queue":  "whatsapp-send",
+                      "msg":  "Fila criada"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.953Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[BATCH:WELCOME] Welcome sent — skipping LLM"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:36.955Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556399813632",
+                      "jobId":  "batch_556399813632",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:39.571Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:39.571Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:39.572Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:39.572Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:39.572Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:40.650Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:40.651Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:40.654Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:40.654Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:19:40.655Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.957Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.958Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  477,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.959Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.959Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.959Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "text":  "Opa",
+                      "mediaType":  "text",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E3NDg0RTNERjFBQjdERTNCMkEA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:06.972Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.053Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.054Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.069Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "msg":  "[BATCH] New session created"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.079Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "ENGAGING",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  0,
+                      "prefs":  {
+
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.086Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[BATCH:WELCOME] First contact — sending static welcome"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.098Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[BATCH:WELCOME] Welcome sent — skipping LLM"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:15.101Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:17.363Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:17.364Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:17.364Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:17.364Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:17.364Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:18.972Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:18.972Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:18.973Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:18.973Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:18.973Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:19.600Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:19.600Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:19.600Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:19.600Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:19.601Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.928Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.928Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  475,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.929Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.929Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.929Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "text":  "5",
+                      "mediaType":  "text",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0EzNzM0MjZBRDBGNjRDN0Y5NjYA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:25.936Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:33.982Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:33.982Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:34.005Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "ENGAGING",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  0,
+                      "prefs":  {
+
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:34.008Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "engagement",
+                      "state":  "ENGAGING",
+                      "msg":  "[BATCH:AGENT] Selected agent"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:34.013Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageCount":  2,
+                      "roles":  [
+                                    "assistant",
+                                    "user"
+                                ],
+                      "msg":  "[BATCH:HISTORY] Conversation history loaded"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:34.022Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "engagement",
+                      "msg":  "[BATCH:LLM] Calling LLM..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.477Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "model":  "gpt-4o-mini",
+                      "promptTokens":  3261,
+                      "completionTokens":  61,
+                      "durationMs":  2455,
+                      "agent":  "engagement",
+                      "attempt":  1,
+                      "finishReason":  "stop",
+                      "refusal":  null,
+                      "msg":  "[LLM:JSON] Call completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.478Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "rawResponse":  "{\"messages\":[\"Ótima escolha! Pacote de *5 fotos* — R$ 18,90 ✨\"],\"extractedData\":{\"packageId\":\"pkg_5\"},\"shouldTransition\":true,\"reasoning\":\"Cliente escolheu pacote de 5 fotos. Posso transitar.\"}",
+                      "msg":  "[LLM:JSON] Raw response"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.479Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "engagement",
+                      "shouldTransition":  true,
+                      "messages":  1,
+                      "deduped":  0,
+                      "extractedData":  {
+                                            "packageId":  "pkg_5"
+                                        },
+                      "reasoning":  "Cliente escolheu pacote de 5 fotos. Posso transitar.",
+                      "msg":  "[BATCH:LLM] Agent response received"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.480Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "extractedData":  {
+                                            "packageId":  "pkg_5"
+                                        },
+                      "msg":  "[BATCH:DATA] Applying extracted data"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.499Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageBubbles":  1,
+                      "msg":  "[BATCH:SEND] Messages sent and logged"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.509Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "from":  "ENGAGING",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "msg":  "[BATCH:TRANSITION] Starting transition..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.510Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "currentState":  "ENGAGING",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "extractedData":  {
+                                            "packageId":  "pkg_5"
+                                        },
+                      "msg":  "[TRANSITION] handleTransition called"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.511Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Starting..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.521Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "from":  "ENGAGING",
+                      "to":  "COLLECTING_PHOTOS",
+                      "msg":  "[STATE] ✅ State updated in DB"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.550Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "msg":  "[TRANSITION:ENGAGING→COLLECTING_PHOTOS] Done"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.550Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "from":  "ENGAGING",
+                      "msg":  "[BATCH:TRANSITION] Transition completed successfully"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.550Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "ENGAGING",
+                      "msg":  "[BATCH:END] Funnel batch complete"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:36.551Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:40.532Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:40.533Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:40.533Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:40.533Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:40.533Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.034Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.034Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.035Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.035Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.035Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.355Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.356Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.356Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.356Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.356Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.426Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.427Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.427Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.427Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.428Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.442Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.443Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.443Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.443Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.443Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.591Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.592Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.593Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.593Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:41.593Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.012Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.013Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  654,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.013Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.013Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.013Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "mediaType":  "unsupported",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E2MjFBN0E4NjZBQ0U4MTI1RjQA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:54.023Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  50,
+                      "time":  "2026-04-11T01:20:54.430Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-api",
+                      "status":  400,
+                      "body":  "{\"error\":{\"message\":\"(#100) Invalid parameter\",\"type\":\"OAuthException\",\"code\":100,\"error_data\":{\"messaging_product\":\"whatsapp\",\"details\":\"Message ID: wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E2MjFBN0E4NjZBQ0U4MTI1RjQA does not exist. Please check the message ID provided.\"},\"fbtrace_id\":\"AnimNyW1D3DnnpPNpViXPp6\"}}",
+                      "msg":  "Cloud API error"
+                  },
+                  {
+                      "level":  40,
+                      "time":  "2026-04-11T01:20:54.433Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "err":  {
+                                  "type":  "Error",
+                                  "message":  "WhatsApp Cloud API error 400: {\"error\":{\"message\":\"(#100) Invalid parameter\",\"type\":\"OAuthException\",\"code\":100,\"error_data\":{\"messaging_product\":\"whatsapp\",\"details\":\"Message ID: wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E2MjFBN0E4NjZBQ0U4MTI1RjQA does not exist. Please check the message ID provided.\"},\"fbtrace_id\":\"AnimNyW1D3DnnpPNpViXPp6\"}}",
+                                  "stack":  "Error: WhatsApp Cloud API error 400: {\"error\":{\"message\":\"(#100) Invalid parameter\",\"type\":\"OAuthException\",\"code\":100,\"error_data\":{\"messaging_product\":\"whatsapp\",\"details\":\"Message ID: wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E2MjFBN0E4NjZBQ0U4MTI1RjQA does not exist. Please check the message ID provided.\"},\"fbtrace_id\":\"AnimNyW1D3DnnpPNpViXPp6\"}}\n    at WhatsAppCloudApiClient.request (file:///app/apps/backend/dist/modules/whatsapp/whatsapp-cloud-api.client.js:34:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async WhatsAppCloudApiClient.showTypingIndicator (file:///app/apps/backend/dist/modules/whatsapp/whatsapp-cloud-api.client.js:85:9)"
+                              },
+                      "msg":  "Failed to show typing indicator"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.956Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.957Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  748,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.957Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.957Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.957Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "mediaType":  "image",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0FFQTVCQzQ2QkE2REYzNTc3N0EA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.962Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:55.967Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "mediaId":  "1412188570945538",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0FFQTVCQzQ2QkE2REYzNTc3N0EA",
+                      "msg":  "[CLOUD WEBHOOK:IMAGE] Image detected — downloading..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.291Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.291Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  747,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.292Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.292Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.292Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "mediaType":  "image",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E5ODdENjAyOUE1MjM0OTBFRjUA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.296Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:56.299Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "mediaId":  "1971578690417263",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E5ODdENjAyOUE1MjM0OTBFRjUA",
+                      "msg":  "[CLOUD WEBHOOK:IMAGE] Image detected — downloading..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:57.521Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "s3Key":  "sessions/70399493-ac04-45a9-a7fd-a8e3557f1a23/references/bd0f7e0c-1f42-47a9-a72e-f7311ab6d2a4.jpg",
+                      "fileSize":  332077,
+                      "mimeType":  "image/jpeg",
+                      "imageType":  "face",
+                      "msg":  "[CLOUD WEBHOOK:IMAGE] ✅ Image stored"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:57.782Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "s3Key":  "sessions/70399493-ac04-45a9-a7fd-a8e3557f1a23/references/92e578ff-e49a-4d79-b6bb-8864cccbaba8.jpg",
+                      "fileSize":  333506,
+                      "mimeType":  "image/jpeg",
+                      "imageType":  "face",
+                      "msg":  "[CLOUD WEBHOOK:IMAGE] ✅ Image stored"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:20:59.026Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "gender":  "female",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "msg":  "[CLOUD WEBHOOK:IMAGE] Gender detected from selfie"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.874Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.874Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.890Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  2,
+                      "prefs":  {
+                                    "packageId":  "pkg_5",
+                                    "detectedGender":  "female"
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.890Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:AGENT] Selected agent"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.895Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageCount":  7,
+                      "roles":  [
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "assistant",
+                                    "user",
+                                    "user",
+                                    "user"
+                                ],
+                      "msg":  "[BATCH:HISTORY] Conversation history loaded"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:05.899Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "msg":  "[BATCH:LLM] Calling LLM..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.088Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "model":  "gpt-4o-mini",
+                      "promptTokens":  3471,
+                      "completionTokens":  60,
+                      "durationMs":  2188,
+                      "agent":  "photo-collection",
+                      "attempt":  1,
+                      "finishReason":  "stop",
+                      "refusal":  null,
+                      "msg":  "[LLM:JSON] Call completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.089Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "rawResponse":  "{\"messages\":[\"Adorei essa! 😍\",\"Pode enviar mais se quiser — quando tiver enviado todas, me avisa que eu prossigo! 😉\"],\"extractedData\":{},\"shouldTransition\":false,\"reasoning\":\"Cliente enviou fotos, mas ainda não coletamos a ocasião.\"}",
+                      "msg":  "[LLM:JSON] Raw response"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.090Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "shouldTransition":  false,
+                      "messages":  2,
+                      "deduped":  0,
+                      "extractedData":  {
+
+                                        },
+                      "reasoning":  "Cliente enviou fotos, mas ainda não coletamos a ocasião.",
+                      "msg":  "[BATCH:LLM] Agent response received"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.126Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageBubbles":  2,
+                      "msg":  "[BATCH:SEND] Messages sent and logged"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.126Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:END] Funnel batch complete"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:08.142Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.370Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.371Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.371Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.371Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.371Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.897Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.898Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.898Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.898Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:11.898Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.243Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.244Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.244Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.244Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.244Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.408Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.408Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.408Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.408Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.408Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.634Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.634Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.634Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.635Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:16.635Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.704Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.705Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  480,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.705Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.706Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.706Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "text":  "Pronto",
+                      "mediaType":  "text",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E4Q0I4NTNBNjFCQTk3NTFBOTQA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:37.711Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.819Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.819Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.846Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  2,
+                      "prefs":  {
+                                    "packageId":  "pkg_5",
+                                    "detectedGender":  "female"
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.848Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:AGENT] Selected agent"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.860Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageCount":  9,
+                      "roles":  [
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "assistant",
+                                    "user",
+                                    "user",
+                                    "user",
+                                    "assistant",
+                                    "user"
+                                ],
+                      "msg":  "[BATCH:HISTORY] Conversation history loaded"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:45.871Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "msg":  "[BATCH:LLM] Calling LLM..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.658Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "model":  "gpt-4o-mini",
+                      "promptTokens":  3508,
+                      "completionTokens":  97,
+                      "durationMs":  2785,
+                      "agent":  "photo-collection",
+                      "attempt":  1,
+                      "finishReason":  "stop",
+                      "refusal":  null,
+                      "msg":  "[LLM:JSON] Call completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.658Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "rawResponse":  "{\"messages\":[\"Recebi suas fotos, show! 🔥 Pra que *ocasião* é o ensaio? 🎂 Aniversário • 💼 Profissional • 🎓 Formatura • 💕 Casal • 👶 Gravidez • 🏙️ Casual • ou me diz qual! 📸\"],\"extractedData\":{\"photosReady\":true},\"shouldTransition\":false,\"reasoning\":\"Cliente confirmou que terminou de enviar fotos, mas não informou a ocasião.\"}",
+                      "msg":  "[LLM:JSON] Raw response"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.660Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "shouldTransition":  false,
+                      "messages":  1,
+                      "deduped":  0,
+                      "extractedData":  {
+                                            "photosReady":  true
+                                        },
+                      "reasoning":  "Cliente confirmou que terminou de enviar fotos, mas não informou a ocasião.",
+                      "msg":  "[BATCH:LLM] Agent response received"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.660Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "extractedData":  {
+                                            "photosReady":  true
+                                        },
+                      "msg":  "[BATCH:DATA] Applying extracted data"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.675Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageBubbles":  1,
+                      "msg":  "[BATCH:SEND] Messages sent and logged"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.675Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:END] Funnel batch complete"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:48.676Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:53.942Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:53.943Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:53.943Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:53.943Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:53.943Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:55.041Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:55.042Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:55.042Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:55.042Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:21:55.042Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.534Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.535Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  479,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.535Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.535Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.535Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "text":  "Niver",
+                      "mediaType":  "text",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0FCOUE0NjVEOEVBQjkyNDYwQjQA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:50.540Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.647Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.647Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.661Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  2,
+                      "prefs":  {
+                                    "packageId":  "pkg_5",
+                                    "photosReady":  true,
+                                    "detectedGender":  "female"
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.661Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:AGENT] Selected agent"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.664Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageCount":  11,
+                      "roles":  [
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "assistant",
+                                    "user",
+                                    "user",
+                                    "user",
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "user"
+                                ],
+                      "msg":  "[BATCH:HISTORY] Conversation history loaded"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:22:58.666Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "msg":  "[BATCH:LLM] Calling LLM..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.376Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "model":  "gpt-4o-mini",
+                      "promptTokens":  3578,
+                      "completionTokens":  63,
+                      "durationMs":  1710,
+                      "agent":  "photo-collection",
+                      "attempt":  1,
+                      "finishReason":  "stop",
+                      "refusal":  null,
+                      "msg":  "[LLM:JSON] Call completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.376Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "rawResponse":  "{ \"messages\": [\"Show! 🎉\", \"Quantos anos vai fazer? 🎂\"], \"extractedData\": { \"occasion\": \"aniversario\" }, \"shouldTransition\": false, \"reasoning\": \"Cliente informou que a ocasião é aniversário. Agora preciso da idade para prosseguir.\" }",
+                      "msg":  "[LLM:JSON] Raw response"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.378Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "shouldTransition":  false,
+                      "messages":  2,
+                      "deduped":  0,
+                      "extractedData":  {
+                                            "occasion":  "aniversario"
+                                        },
+                      "reasoning":  "Cliente informou que a ocasião é aniversário. Agora preciso da idade para prosseguir.",
+                      "msg":  "[BATCH:LLM] Agent response received"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.378Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "extractedData":  {
+                                            "occasion":  "aniversario"
+                                        },
+                      "msg":  "[BATCH:DATA] Applying extracted data"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.405Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageBubbles":  2,
+                      "msg":  "[BATCH:SEND] Messages sent and logged"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.406Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:END] Funnel batch complete"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:00.411Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:03.403Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:03.404Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:03.404Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:03.404Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:03.404Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:04.446Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:04.447Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:04.447Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:04.447Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:04.447Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:05.739Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:05.739Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:05.740Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:05.740Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:05.740Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:06.481Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:06.481Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:06.481Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:06.481Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:06.482Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.906Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.907Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  506,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.907Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.907Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.907Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "phone":  "556293492664",
+                      "text":  "Não quero que coloque idade",
+                      "mediaType":  "text",
+                      "pushName":  "Eduardo Santos",
+                      "messageId":  "wamid.HBgMNTU2MjkzNDkyNjY0FQIAEhgUM0E1QkQ0NjEzMTM3NjY3NzlBQUYA",
+                      "msg":  "[CLOUD WEBHOOK] Mensagem recebida"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:18.911Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "phone":  "556293492664",
+                      "msg":  "[CLOUD WEBHOOK] Lead upserted"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:26.996Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "jobId":  "batch_556293492664",
+                      "attempt":  1,
+                      "msg":  "[WORKER] ▶ Processing message batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:26.996Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "msg":  "[BATCH:START] Processing funnel batch"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:27.005Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "leadId":  "809f792d-0e8f-4507-b07d-1e4f9d80615e",
+                      "sessionId":  "70399493-ac04-45a9-a7fd-a8e3557f1a23",
+                      "photoCount":  2,
+                      "prefs":  {
+                                    "occasion":  "aniversario",
+                                    "packageId":  "pkg_5",
+                                    "photosReady":  true,
+                                    "detectedGender":  "female"
+                                },
+                      "msg":  "[BATCH:CONTEXT] Loaded lead context"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:27.005Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:AGENT] Selected agent"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:27.007Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageCount":  13,
+                      "roles":  [
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "assistant",
+                                    "user",
+                                    "user",
+                                    "user",
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "user",
+                                    "assistant",
+                                    "user"
+                                ],
+                      "msg":  "[BATCH:HISTORY] Conversation history loaded"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:27.007Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "msg":  "[BATCH:LLM] Calling LLM..."
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.336Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "model":  "gpt-4o-mini",
+                      "promptTokens":  3616,
+                      "completionTokens":  48,
+                      "durationMs":  1329,
+                      "agent":  "photo-collection",
+                      "attempt":  1,
+                      "finishReason":  "stop",
+                      "refusal":  null,
+                      "msg":  "[LLM:JSON] Call completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.336Z",
+                      "service":  "ensaio-backend",
+                      "module":  "llm-client",
+                      "rawResponse":  "{\"messages\":[\"Entendi, sem problemas! 😊\"],\"extractedData\":{\"occasionDetails\":\"não informou idade\"},\"shouldTransition\":false,\"reasoning\":\"Cliente informou que é aniversário, mas não quer que a idade seja registrada.\"}",
+                      "msg":  "[LLM:JSON] Raw response"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.336Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "agentName":  "photo-collection",
+                      "shouldTransition":  false,
+                      "messages":  1,
+                      "deduped":  0,
+                      "extractedData":  {
+                                            "occasionDetails":  "não informou idade"
+                                        },
+                      "reasoning":  "Cliente informou que é aniversário, mas não quer que a idade seja registrada.",
+                      "msg":  "[BATCH:LLM] Agent response received"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.336Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "extractedData":  {
+                                            "occasionDetails":  "não informou idade"
+                                        },
+                      "msg":  "[BATCH:DATA] Applying extracted data"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.365Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "messageBubbles":  1,
+                      "msg":  "[BATCH:SEND] Messages sent and logged"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.365Z",
+                      "service":  "ensaio-backend",
+                      "module":  "funnel-service",
+                      "phone":  "556293492664",
+                      "state":  "COLLECTING_PHOTOS",
+                      "msg":  "[BATCH:END] Funnel batch complete"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:28.368Z",
+                      "service":  "ensaio-backend",
+                      "module":  "batch-worker",
+                      "phone":  "556293492664",
+                      "jobId":  "batch_556293492664",
+                      "msg":  "[WORKER] ✅ Batch completed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.067Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.067Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  494,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.068Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.068Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.068Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.524Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "method":  "POST",
+                      "url":  "/api/webhooks/whatsapp",
+                      "msg":  "[CLOUD WEBHOOK] POST recebido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.524Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "hasSignature":  true,
+                      "hasRawBody":  true,
+                      "rawBodyLen":  499,
+                      "msg":  "[CLOUD WEBHOOK] HMAC check"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.524Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "msg":  "[CLOUD WEBHOOK] HMAC válido"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.524Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "object":  "whatsapp_business_account",
+                      "hasEntry":  true,
+                      "entryLen":  1,
+                      "msg":  "[CLOUD WEBHOOK] Payload parsed"
+                  },
+                  {
+                      "level":  30,
+                      "time":  "2026-04-11T01:23:31.524Z",
+                      "service":  "ensaio-backend",
+                      "module":  "whatsapp-cloud-controller",
+                      "field":  "messages",
+                      "msg":  "[CLOUD WEBHOOK] Change sem messages — possível status/delivery update, ignorando"
+                  }
+              ],
+    "Count":  283
+}

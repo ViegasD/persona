@@ -49,11 +49,23 @@ const REALISM_BLOCK =
  * Interpolates dynamic values ({age}, {profession}, {course}) into a scene template.
  */
 function interpolateScene(template: string, params: PromptParams): string {
-  const age = String(params.ageAtBirthday ?? '').replace(/\D/g, '');
+  const rawAge = String(params.ageAtBirthday ?? '');
+  const noAge = !rawAge || rawAge === 'sem_idade';
+  const age = rawAge.replace(/\D/g, '');
   const profession = params.profession ?? params.occasionDetails ?? 'professional';
   const course = params.graduationCourse ?? params.occasionDetails ?? 'graduation';
+
+  if (noAge) {
+    // Strip age-specific phrases so scenes stay natural without a number
+    template = template
+      .replace(/\s*with the number \{age\}/g, '')
+      .replace(/\{age\}\s*/g, '')
+      .replace(/number \{age\}\s*on /g, '');
+  } else {
+    template = template.replace(/\{age\}/g, age || '??');
+  }
+
   return template
-    .replace(/\{age\}/g, age || '??')
     .replace(/\{profession\}/g, profession)
     .replace(/\{course\}/g, course);
 }
@@ -112,7 +124,14 @@ export function buildPrompt(params: PromptParams, sceneDescription?: string): st
   // 4. Realism hierarchy
   parts.push(REALISM_BLOCK);
 
-  // 5. Exclusion constraint
+  // 5. No-age constraint (client declined to provide age for birthday)
+  const rawAge = String(params.ageAtBirthday ?? '');
+  const noAge = !rawAge.replace(/\D/g, '') || rawAge === 'sem_idade';
+  if (noAge && params.occasion.toLowerCase().trim() === 'aniversario') {
+    parts.push('Do NOT include any age numbers, numbered candles, numbered balloons, or any text or decoration showing the person\'s age in the image.');
+  }
+
+  // 6. Exclusion constraint
   if (params.isCoupleShot) {
     parts.push('Only the two people from the reference photos should appear — no other faces, people, or bystanders in the image.');
   } else {

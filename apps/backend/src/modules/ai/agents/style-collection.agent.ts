@@ -78,7 +78,7 @@ ANTES de produzir sua resposta, leia os dados JÁ COLETADOS no bloco <lead_conte
 - "styleDescription": string com palavras-chave do estilo descrito pelo cliente em texto (ex: "boho, luz natural, ar livre"). Extraia sempre que o cliente descrever um estilo VISUAL por texto.
 - "occasion": chave normalizada se o cliente mencionar a ocasião — SOMENTE se <ocasiao> NÃO existe no contexto
 - "occasionDetails": detalhes extras da ocasião — SOMENTE se novo
-- "ageAtBirthday": idade que o cliente vai completar — SOMENTE se <idade_aniversario> NÃO existe no contexto
+- "ageAtBirthday": idade que o cliente vai completar — SOMENTE se <idade_aniversario> NÃO existe no contexto. Se o cliente recusar informar a idade, extraia "sem_idade"
 - "name": nome do cliente — SOMENTE se <nome> está como "não informado" no contexto
 
 # Transição

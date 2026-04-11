@@ -32,7 +32,7 @@ const PERGUNTAS_OCASIAO = `# Perguntas proativas por ocasião
 
 Essas perguntas são OBRIGATÓRIAS para a ocasião correspondente. Faça UMA VEZ e extraia a resposta.
 Se o cliente JÁ respondeu (verifique no histórico), NÃO pergunte novamente.
-- *Aniversário*: "Quantos anos vai fazer? 🎂" → ageAtBirthday (OBRIGATÓRIO para transitar)
+- *Aniversário*: "Quantos anos vai fazer? 🎂" → ageAtBirthday. Se o cliente RECUSAR informar a idade ("não quero idade", "sem idade", "não coloca idade"), respeite e extraia ageAtBirthday: "sem_idade". NÃO insista.
 - *Profissional*: "Qual é a sua profissão? 💼" → profession (OBRIGATÓRIO para transitar)
 - *Formatura*: "De que curso? 🎓" → graduationCourse (OBRIGATÓRIO para transitar)
 - *Gravidez*: "De quantas semanas? 🤰" → occasionDetails
@@ -45,7 +45,7 @@ const EXTRACAO = `# Extração de Dados
 - "photosReady": true quando o cliente disser que terminou ("pronto", "ok", "são essas", "terminei", "pode fazer", "é isso", "já enviei", "pode prosseguir", "pode seguir", "já mandei todas")
 - "occasion": chave normalizada (ex: "aniversario", "profissional", "fim_de_curso", "casal", "gravidez", "casual") — SOMENTE se <ocasiao> NÃO existe no contexto
 - "occasionDetails": detalhes adicionais — SOMENTE se novo
-- "ageAtBirthday": idade (apenas aniversário) — SOMENTE se <idade_aniversario> NÃO existe no contexto
+- "ageAtBirthday": idade (apenas aniversário) — SOMENTE se <idade_aniversario> NÃO existe no contexto. Se o cliente recusar informar a idade, extraia "sem_idade"
 - "profession": profissão (apenas profissional) — SOMENTE se <profissao> NÃO existe no contexto
 - "graduationCourse": curso (apenas formatura) — SOMENTE se <curso_formatura> NÃO existe no contexto`;
 
@@ -56,7 +56,7 @@ shouldTransition = true quando TODAS verdadeiras:
 2. <minimo_atingido> é "sim"
 3. <ocasiao> definida OU cliente informou ocasião agora
 4. Dados obrigatórios da ocasião coletados:
-   - Se <ocasiao> é "aniversario": precisa de <idade_aniversario> OU ageAtBirthday nos extractedData
+   - Se <ocasiao> é "aniversario": precisa de <idade_aniversario> OU ageAtBirthday nos extractedData (inclui "sem_idade" se o cliente recusou)
    - Se <ocasiao> é "profissional": precisa de <profissao> OU profession nos extractedData
    - Se <ocasiao> é "fim_de_curso" ou "formatura": precisa de <curso_formatura> OU graduationCourse nos extractedData
    - Outras ocasiões: sem requisito extra
@@ -68,6 +68,7 @@ Se photosReady = true e fotos suficientes mas sem ocasião:
 Se photosReady = true e ocasião definida mas FALTA dado obrigatório da ocasião:
 - shouldTransition = false
 - Pergunte o dado que falta (ex: "Quantos anos vai fazer? 🎂")
+- Se o cliente já recusou dar a idade (ageAtBirthday = "sem_idade" no contexto), NÃO pergunte novamente — o dado está satisfeito
 
 NÃO transite logo após receber foto. Espere o cliente confirmar.
 
