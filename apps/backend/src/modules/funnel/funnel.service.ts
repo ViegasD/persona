@@ -144,7 +144,7 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
     const lastMsg = await prisma.conversationMessage.findFirst({
       where: { leadId: lead.id },
       orderBy: { createdAt: 'desc' },
-      select: { direction: true },
+      select: { direction: true, content: true },
     });
     if (lastMsg?.direction === 'INBOUND') {
       log.info({ phone, tier: followUpTier }, '[BATCH:FOLLOWUP] Client already replied — skipping stale follow-up');
@@ -154,7 +154,29 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
       log.info({ phone, state, tier: followUpTier }, '[BATCH:FOLLOWUP] State no longer eligible — skipping');
       return;
     }
-    log.info({ phone, state, tier: followUpTier }, '[BATCH:FOLLOWUP] Running stale conversation follow-up');
+
+    // ── Tier 1 (5 min): simple static nudge to avoid LLM repetition ──
+    // If the bot's last message already contained a question, send a short
+    // "podemos continuar?" instead of calling the LLM (which tends to repeat).
+    // If it didn't contain a question (conversation left hanging), re-run
+    // the funnel normally so the agent moves things forward.
+    if (followUpTier === 1) {
+      const lastBotText = (lastMsg?.content ?? '').trim();
+      const hadQuestion = lastBotText.includes('?');
+      if (hadQuestion) {
+        log.info({ phone, state }, '[BATCH:FOLLOWUP:T1] Last bot message had a question — sending static nudge');
+        const nudge = 'Oi! Podemos continuar? 😊';
+        await queueTextMessage(phone, nudge, { typingDelay: 800 });
+        await logOutboundMessage(leadId, nudge);
+        return;
+      }
+      // No question in last message — conversation was left hanging.
+      // Continue below to call the LLM normally (without follow-up context)
+      // so it picks up where the funnel left off.
+      log.info({ phone, state }, '[BATCH:FOLLOWUP:T1] Last bot message had no question — re-running funnel normally');
+    } else {
+      log.info({ phone, state, tier: followUpTier }, '[BATCH:FOLLOWUP] Running stale conversation follow-up');
+    }
   }
 
   // ─── Step 0: Static welcome for brand-new sessions ──────
@@ -229,18 +251,11 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
 
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
 
-    const followUpContext = isFollowUp
+    const followUpContext = isFollowUp && followUpTier !== 1
       ? '\n\n--- FOLLOW-UP AUTOMÁTICO (nível ' + followUpTier + ') ---\n' +
         'O cliente não respondeu há algum tempo. A última mensagem na conversa foi SUA (assistente).\n' +
         'Envie UMA mensagem curta e amigável para retomar a conversa.\n' +
-        (followUpTier === 1
-          ? '- Avalie o contexto: se falta alguma informação, pergunte novamente de forma leve.\n' +
-            '- Se a conversa estava aguardando fotos, lembre gentilmente.\n' +
-            '- Se falta dado (ocasião, idade, profissão, etc.), pergunte de forma breve.\n' +
-            '- Se está aguardando pagamento, lembre do Pix com gentileza.\n' +
-            '- NÃO repita a mesma mensagem anterior — reformule.\n' +
-            '- Tom: leve, sem pressão, como quem lembra de forma carinhosa. Ex: "Oi! Tá tudo bem? 😊 Ainda tô por aqui se precisar!"'
-          : followUpTier === 2
+        (followUpTier === 2
           ? '- Já faz algumas HORAS que o cliente não responde.\n' +
             '- Pergunte se está tudo bem e se ficou com alguma dúvida.\n' +
             '- Exemplos de tom: "Oi! Tudo bem? 😊 Continuamos? Se ficou com alguma dúvida, pode perguntar sem compromisso!", "Ei, tudo certo por aí? 😊 Qualquer dúvida é só falar, tô por aqui!"\n' +

@@ -9,6 +9,7 @@ import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.js';
 import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
+import QRCode from 'qrcode';
 
 const log = createChildLogger('payment-service');
 
@@ -38,7 +39,7 @@ export async function initiatePixPayment(
   const externalReference = `ensaio_${sessionId}`;
 
   log.info({ externalReference, amount: finalPrice }, '[PAYMENT] Calling Mercado Pago createPixPayment...');
-  const { paymentId: mpPaymentId, qrCode, qrCodeBase64 } = await createPixPayment({
+  const { paymentId: mpPaymentId, qrCode } = await createPixPayment({
     amount: finalPrice,
     description: `Ensaio fotográfico digital com ${pkg.photos} imagens profissionais`,
     externalReference,
@@ -47,8 +48,18 @@ export async function initiatePixPayment(
 
   log.info({ mpPaymentId, hasQrCode: !!qrCode }, '[PAYMENT] ✅ Pix payment created');
 
-  // Upload QR code image to S3
-  const qrBuffer = Buffer.from(qrCodeBase64, 'base64');
+  // Generate QR code locally from the Pix EMV string (qrCode) instead of using
+  // Mercado Pago's qrCodeBase64. This ensures:
+  //  1. High error-correction (H) so the QR survives WhatsApp image compression
+  //  2. Large module size (scale 10) for better scan reliability
+  //  3. Wide margin (4 modules) for easier detection by scanners
+  const qrBuffer = await QRCode.toBuffer(qrCode, {
+    errorCorrectionLevel: 'H',
+    type: 'png',
+    scale: 10,
+    margin: 4,
+    color: { dark: '#000000', light: '#FFFFFF' },
+  });
   const s3Key = `sessions/${sessionId}/pix-qr/${mpPaymentId}.png`;
   await uploadFile(s3Key, qrBuffer, 'image/png');
   const qrImageUrl = await getPresignedUrl(s3Key, 1800); // 30 min, same as QR expiry
