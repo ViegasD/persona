@@ -181,6 +181,22 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
     // For photo-collection, use dynamic prompt based on whether min photos reached
     const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
     const minReached = photoCount >= minPhotos;
+
+    // ── Photo-collection bypass: if all required data is already present, skip LLM ──
+    // This happens when the client sends photos during ENGAGING and then picks a package,
+    // causing a photo_trigger that fires with everything already collected.
+    if (agentName === 'photo-collection' && minReached && isOccasionDataComplete(prefs)) {
+      log.info(
+        { photoCount, occasion: prefs.occasion },
+        '[BATCH:PHOTO-BYPASS] All data already collected — skipping LLM, auto-transitioning',
+      );
+      const ack = 'Recebi tudo! Ficaram ótimas 📸';
+      await queueTextMessage(phone, ack, { jobDelay: 1000 });
+      await logOutboundMessage(leadId, ack);
+      await handleTransition(session.id, lead.id, phone, state, prefs);
+      return;
+    }
+
     const agent = agentName === 'photo-collection'
       ? getPhotoCollectionAgent(minReached)
       : AGENTS[agentName];
@@ -396,6 +412,19 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
 }
 
 // ─── Agent-Driven Transition Logic ──────────────────────────
+
+/**
+ * Returns true if all occasion-specific required fields are already present in prefs.
+ * Used to bypass the LLM when the photo-collection agent has nothing left to collect.
+ */
+function isOccasionDataComplete(prefs: Record<string, unknown>): boolean {
+  const occasion = prefs.occasion as string | undefined;
+  if (!occasion) return false;
+  if (occasion === 'aniversario') return !!(prefs.ageAtBirthday);
+  if (occasion === 'profissional') return !!(prefs.profession);
+  if (occasion === 'fim_de_curso' || occasion === 'formatura') return !!(prefs.graduationCourse);
+  return true;
+}
 
 async function handleTransition(
   sessionId: string,
