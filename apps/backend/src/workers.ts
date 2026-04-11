@@ -59,7 +59,7 @@ export function startWorkers(): void {
     createWorker<WhatsAppSendJobData>(
       QUEUE_NAMES.WHATSAPP_SEND,
       processWhatsAppSend,
-      { concurrency: 5, limiter: { max: 20, duration: 60_000 } },
+      { concurrency: 10, limiter: { max: 60, duration: 60_000 } },
     ),
   );
 
@@ -67,7 +67,7 @@ export function startWorkers(): void {
     createWorker<MessageBatchJobData>(
       QUEUE_NAMES.MESSAGE_BATCH,
       processMessageBatch,
-      { concurrency: 5 },
+      { concurrency: 10 },
     ),
   );
 
