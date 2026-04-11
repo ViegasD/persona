@@ -89,7 +89,7 @@ export async function callLlmJson<T>(
       completion = await getClient().chat.completions.create({
         model,
         messages,
-        max_completion_tokens: 1200,
+        max_completion_tokens: 10000,
         response_format: { type: 'json_object' },
       });
     } catch (apiErr) {
