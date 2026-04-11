@@ -68,6 +68,7 @@ export interface WhatsAppSendJobData {
 export interface MessageBatchJobData {
   phone: string;
   leadId: string;
+  followUpTier?: number;
 }
 
 // ─── Worker Factory ─────────────────────────────────────────

@@ -25,7 +25,7 @@ import { reengagementAgent } from '../ai/agents/reengagement.agent.js';
 import { styleCollectionAgent } from '../ai/agents/style-collection.agent.js';
 import { upsellAgent } from '../ai/agents/upsell.agent.js';
 import { confirmationAgent } from '../ai/agents/confirmation.agent.js';
-import { getSetting, SETTING_KEYS } from '../admin/settings.service.js';
+import { getSetting, getSettingNumber, SETTING_KEYS } from '../admin/settings.service.js';
 import { PACKAGES } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
@@ -47,13 +47,23 @@ const AGENTS: Record<string, AgentConfig> = {
   reengagement: reengagementAgent,
 };
 
+/** Pre-payment states where a stale follow-up makes sense. */
+const FOLLOWUP_STATES = new Set<string>([
+  FUNNEL_STATES.ENGAGING,
+  FUNNEL_STATES.COLLECTING_PHOTOS,
+  FUNNEL_STATES.COLLECTING_STYLE_REFS,
+  FUNNEL_STATES.UPSELLING,
+  FUNNEL_STATES.CONFIRMING_DATA,
+  FUNNEL_STATES.AWAITING_PAYMENT,
+]);
+
 /**
  * Main entry point called by the batch worker after debounce completes.
  * Loads conversation context, selects the right agent, calls the LLM,
  * and applies the result.
  */
-export async function handleFunnelBatch(phone: string, leadId: string): Promise<void> {
-  log.info({ phone, leadId }, '[BATCH:START] Processing funnel batch');
+export async function handleFunnelBatch(phone: string, leadId: string, followUpTier?: number): Promise<void> {
+  log.info({ phone, leadId, followUpTier }, '[BATCH:START] Processing funnel batch');
 
   // Acquire a per-phone lock to prevent concurrent batches from sending duplicate messages
   const redis = getRedisConnection();
@@ -72,7 +82,7 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
   }
 
   try {
-    await _handleFunnelBatchInner(phone, leadId);
+    await _handleFunnelBatchInner(phone, leadId, followUpTier);
   } finally {
     // Release lock only if we still own it
     const current = await redis.get(lockKey);
@@ -82,7 +92,7 @@ export async function handleFunnelBatch(phone: string, leadId: string): Promise<
   }
 }
 
-async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<void> {
+async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTier?: number): Promise<void> {
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) {
     log.warn({ leadId }, '[BATCH] Lead não encontrado');
@@ -127,6 +137,25 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
     { phone, state, leadId, sessionId: session.id, photoCount, prefs },
     '[BATCH:CONTEXT] Loaded lead context',
   );
+
+  // ─── Follow-up guard: skip if client replied since the bot's last message ──
+  const isFollowUp = !!followUpTier;
+  if (isFollowUp) {
+    const lastMsg = await prisma.conversationMessage.findFirst({
+      where: { leadId: lead.id },
+      orderBy: { createdAt: 'desc' },
+      select: { direction: true },
+    });
+    if (lastMsg?.direction === 'INBOUND') {
+      log.info({ phone, tier: followUpTier }, '[BATCH:FOLLOWUP] Client already replied — skipping stale follow-up');
+      return;
+    }
+    if (!FOLLOWUP_STATES.has(state)) {
+      log.info({ phone, state, tier: followUpTier }, '[BATCH:FOLLOWUP] State no longer eligible — skipping');
+      return;
+    }
+    log.info({ phone, state, tier: followUpTier }, '[BATCH:FOLLOWUP] Running stale conversation follow-up');
+  }
 
   // ─── Step 0: Static welcome for brand-new sessions ──────
   if (state === FUNNEL_STATES.ENGAGING) {
@@ -184,7 +213,31 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
 
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
 
-    const systemMessage = agent.systemPrompt + '\n\n' + leadContext + stateContext;
+    const followUpContext = isFollowUp
+      ? '\n\n--- FOLLOW-UP AUTOMÁTICO (nível ' + followUpTier + ') ---\n' +
+        'O cliente não respondeu há algum tempo. A última mensagem na conversa foi SUA (assistente).\n' +
+        'Envie UMA mensagem curta e amigável para retomar a conversa.\n' +
+        (followUpTier === 1
+          ? '- Avalie o contexto: se falta alguma informação, pergunte novamente de forma leve.\n' +
+            '- Se a conversa estava aguardando fotos, lembre gentilmente.\n' +
+            '- Se falta dado (ocasião, idade, profissão, etc.), pergunte de forma breve.\n' +
+            '- Se está aguardando pagamento, lembre do Pix com gentileza.\n' +
+            '- NÃO repita a mesma mensagem anterior — reformule.\n' +
+            '- Tom: leve, sem pressão, como quem lembra de forma carinhosa. Ex: "Oi! Tá tudo bem? 😊 Ainda tô por aqui se precisar!"'
+          : followUpTier === 2
+          ? '- Já faz algumas HORAS que o cliente não responde.\n' +
+            '- Pergunte se está tudo bem e se ficou com alguma dúvida.\n' +
+            '- Exemplos de tom: "Oi! Tudo bem? 😊 Continuamos? Se ficou com alguma dúvida, pode perguntar sem compromisso!", "Ei, tudo certo por aí? 😊 Qualquer dúvida é só falar, tô por aqui!"\n' +
+            '- NÃO repita mensagens anteriores — reformule com naturalidade.\n' +
+            '- Tom: gentil, sem pressão, mostrando disponibilidade.'
+          : '- Já faz MUITAS HORAS que o cliente não responde. Este pode ser o último contato.\n' +
+            '- Envie uma mensagem carinhosa de "porta aberta" — sem urgência, sem pressão.\n' +
+            '- Exemplos de tom: "Oi! Só passando pra lembrar que seu ensaio tá guardadinho aqui 😊📸 Quando quiser continuar, é só me chamar!", "Tô por aqui se precisar! Sem pressa 💛"\n' +
+            '- NÃO repita mensagens anteriores.\n' +
+            '- Tom: acolhedor, sem cobrar, como quem deixa a porta aberta.')
+      : '';
+
+    const systemMessage = agent.systemPrompt + '\n\n' + leadContext + stateContext + followUpContext;
 
     // Call LLM
     log.info({ agentName }, '[BATCH:LLM] Calling LLM...');
@@ -271,6 +324,48 @@ async function _handleFunnelBatchInner(phone: string, leadId: string): Promise<v
     // Fallback to template message — LLM failed, nothing was sent
     await handleFallback(phone, lead.id, state);
     return;
+  }
+
+  // ─── Schedule stale-conversation follow-ups ───────────────
+  // If the bot just replied and is NOT transitioning, schedule tiered follow-up
+  // jobs so the conversation doesn't die if the client stops responding.
+  // Tier 1 = 5min contextual nudge, Tier 2 = 3h check-in, Tier 3 = 5h last call.
+  if (!agentResponse.shouldTransition && FOLLOWUP_STATES.has(state)) {
+    try {
+      const batchQueue = getQueue(QUEUE_NAMES.MESSAGE_BATCH);
+      const tier1Delay = await getSettingNumber(SETTING_KEYS.STALE_FOLLOWUP_DELAY_MS) || 300_000;
+      const TIERS = [
+        { tier: 1, delay: tier1Delay },
+        { tier: 2, delay: 3 * 60 * 60_000 },  // 3 hours
+        { tier: 3, delay: 5 * 60 * 60_000 },  // 5 hours
+      ];
+
+      // Only schedule tiers that haven't already fired (skip tiers <= current)
+      const startFrom = followUpTier ? followUpTier + 1 : 1;
+
+      for (const { tier, delay } of TIERS) {
+        if (tier < startFrom) continue;
+        const jobId = `followup_${phone}_t${tier}`;
+
+        // Remove any existing job for this tier (reset timer)
+        const existing = await batchQueue.getJob(jobId);
+        if (existing) {
+          const jState = await existing.getState();
+          if (jState === 'delayed' || jState === 'waiting') {
+            await existing.remove();
+          }
+        }
+
+        await batchQueue.add(
+          'process-batch',
+          { phone, leadId, followUpTier: tier } satisfies MessageBatchJobData,
+          { jobId, delay, removeOnComplete: true, removeOnFail: true },
+        );
+      }
+      log.info({ phone, startFrom, tier1Delay }, '[BATCH:FOLLOWUP] Scheduled stale follow-up tiers');
+    } catch (err) {
+      log.warn({ err, phone }, '[BATCH:FOLLOWUP] Failed to schedule follow-ups — non-critical');
+    }
   }
 
   // ─── Step 2: State Transition (separate try/catch) ───────

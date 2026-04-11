@@ -49,6 +49,19 @@ export async function debounceFunnelMessage(
     }
   }
 
+  // Cancel any pending stale-conversation follow-up tiers since the client is active
+  for (const tier of [1, 2, 3]) {
+    const followUpJobId = `followup_${phone}_t${tier}`;
+    const followUpJob = await queue.getJob(followUpJobId);
+    if (followUpJob) {
+      const fState = await followUpJob.getState();
+      if (fState === 'delayed' || fState === 'waiting') {
+        await followUpJob.remove();
+        log.debug({ phone, tier }, 'Cancelled pending stale follow-up job');
+      }
+    }
+  }
+
   // Add new delayed job
   await queue.add(
     'process-batch',

@@ -11,11 +11,13 @@ const CACHE_TTL_MS = 30_000; // 30 seconds
 export const SETTING_KEYS = {
   MESSAGE_DEBOUNCE_MS: 'message_debounce_ms',
   PORTFOLIO_URL: 'portfolio_url',
+  STALE_FOLLOWUP_DELAY_MS: 'stale_followup_delay_ms',
 } as const;
 
 const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: String(env.MESSAGE_DEBOUNCE_MS),
   [SETTING_KEYS.PORTFOLIO_URL]: '',
+  [SETTING_KEYS.STALE_FOLLOWUP_DELAY_MS]: '300000',
 };
 
 /**

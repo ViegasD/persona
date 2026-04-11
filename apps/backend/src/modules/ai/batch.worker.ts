@@ -12,11 +12,11 @@ const log = createChildLogger('batch-worker');
 export async function processMessageBatch(
   job: Job<MessageBatchJobData>,
 ): Promise<void> {
-  const { phone, leadId } = job.data;
-  log.info({ phone, leadId, jobId: job.id, attempt: job.attemptsMade + 1 }, '[WORKER] ▶ Processing message batch');
+  const { phone, leadId, followUpTier } = job.data;
+  log.info({ phone, leadId, jobId: job.id, attempt: job.attemptsMade + 1, followUpTier }, '[WORKER] ▶ Processing message batch');
 
   try {
-    await handleFunnelBatch(phone, leadId);
+    await handleFunnelBatch(phone, leadId, followUpTier);
     log.info({ phone, jobId: job.id }, '[WORKER] ✅ Batch completed');
   } catch (error) {
     log.error(error, '[WORKER] ❌ Batch failed');
