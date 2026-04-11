@@ -193,7 +193,8 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     log.info('[PIX:REGENERATE] Regenerating QR');
     try {
       const { qrImageUrl, pixCopyPaste, amount } = await initiatePixPayment(session.id, lead.id);
-      const caption = MESSAGES.pixPayment(amount);
+      const paymentAccountName = await getSetting(SETTING_KEYS.PAYMENT_ACCOUNT_NAME);
+      const caption = MESSAGES.pixPayment(amount, paymentAccountName || undefined);
       await queueMediaMessage(phone, qrImageUrl, {
         mediatype: 'image',
         mimetype: 'image/png',
@@ -220,6 +221,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     log.info({ msgCount: conversationHistory.length }, '[HISTORY] Loaded');
 
     const portfolioUrl = await getSetting(SETTING_KEYS.PORTFOLIO_URL);
+    const agentIdentity = await getSetting(SETTING_KEYS.AGENT_IDENTITY);
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
       { preferences: prefs, photoCount, styleRefCount },
@@ -228,7 +230,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
     const followUpContext = buildFollowUpContext(isFollowUp, followUpTier);
 
-    const systemMessage = conversationAgent.systemPrompt + '\n\n' + leadContext + stateContext + followUpContext;
+    const systemMessage = conversationAgent.systemPrompt.replace('{AGENT_IDENTITY}', agentIdentity) + '\n\n' + leadContext + stateContext + followUpContext;
 
     const agentModel = await getAgentModel('conversation');
     log.info({ model: agentModel }, '[LLM] Calling conversation agent...');
@@ -265,10 +267,11 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
       '[LLM] Response received',
     );
 
-    // Send messages sequentially with 3s typing indicator before each
+    // Send messages sequentially with typing indicator before each
     for (let i = 0; i < messages.length; i++) {
       await showTypingForLead(phone);
-      await new Promise((r) => setTimeout(r, 3000));
+      // First bubble: shorter pause (user already waited for LLM). Subsequent: 3s.
+      await new Promise((r) => setTimeout(r, i === 0 ? 1500 : 3000));
       await queueTextMessage(phone, messages[i]);
     }
     const fullReply = messages.join('\n\n');
@@ -500,7 +503,8 @@ async function createPixAndTransition(
   await transitionState(sessionId, leadId, fromState, FUNNEL_STATES.AWAITING_PAYMENT);
 
   // Send QR code image
-  const caption = MESSAGES.pixPayment(amount);
+  const paymentAccountName = await getSetting(SETTING_KEYS.PAYMENT_ACCOUNT_NAME);
+  const caption = MESSAGES.pixPayment(amount, paymentAccountName || undefined);
   await queueMediaMessage(phone, qrImageUrl, {
     mediatype: 'image',
     mimetype: 'image/png',

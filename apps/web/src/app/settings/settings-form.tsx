@@ -19,22 +19,30 @@ const RANGE_LABELS: Record<string, { label: string; description: string; unit: s
 const TEXT_LABELS: Record<string, { label: string; description: string; placeholder: string }> = {
   portfolio_url: {
     label: 'URL do Portfólio',
-    description: 'Link do Instagram ou site com trabalhos anteriores. A Bia envia quando o cliente pergunta se é confiável.',
+    description: 'Link do Instagram ou site com trabalhos anteriores. O agente envia quando o cliente pergunta se é confiável.',
     placeholder: 'https://www.instagram.com/ensaio.digital.ia',
+  },
+  payment_account_name: {
+    label: 'Nome da Conta para Pagamento',
+    description: 'Nome que aparece na mensagem do Pix como destinatário. Transmite credibilidade ao cliente.',
+    placeholder: 'Ensaio Digital LTDA',
+  },
+};
+
+const TEXTAREA_LABELS: Record<string, { label: string; description: string; placeholder: string; rows: number }> = {
+  agent_identity: {
+    label: 'Identidade do Agente',
+    description: 'Prompt que define a personalidade, nome e tom de voz do agente. Será injetado no início de cada conversa.',
+    placeholder: 'Você é a *Bia*, atendente do *Ensaio Digital*. Amigável, competente, entusiasmada. Português brasileiro natural e acessível.',
+    rows: 4,
   },
 };
 
 const OPENAI_MODELS = ['gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4.1'];
 
 const AGENT_MODEL_LABELS: Record<string, { label: string; description: string }> = {
-  model_agent_engagement:       { label: 'Engajamento',     description: 'Inicia a conversa, coleta pacote e ocasião' },
-  model_agent_photo_collection: { label: 'Coleta de Fotos', description: 'Solicita fotos de referência e dados da ocasião' },
-  model_agent_style_collection: { label: 'Estilo',          description: 'Coleta fotos de inspiração de estilo (opcional)' },
-  model_agent_upsell:           { label: 'Upsell',          description: 'Oferece upgrade de pacote' },
-  model_agent_confirmation:     { label: 'Confirmação',     description: 'Revisa e confirma os dados antes do pagamento' },
-  model_agent_payment:          { label: 'Pagamento',       description: 'Suporte durante o pagamento Pix' },
-  model_agent_support:          { label: 'Suporte',         description: 'Atende o cliente após o pagamento' },
-  model_agent_reengagement:     { label: 'Reengajamento',   description: 'Recebe clientes retornando para novo ensaio' },
+  model_agent_extraction:   { label: 'Extração',  description: 'Extrai dados estruturados das mensagens do cliente (nome, pacote, ocasião, etc.)' },
+  model_agent_conversation: { label: 'Conversa',  description: 'Gera as respostas do agente em todas as fases do funil' },
 };
 
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
@@ -101,6 +109,20 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
             placeholder={meta.placeholder}
             onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
             className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm"
+          />
+        </div>
+      ))}
+
+      {Object.entries(TEXTAREA_LABELS).map(([key, meta]) => (
+        <div key={key} className="border border-[var(--border)] rounded-lg p-5">
+          <label className="block text-sm font-medium mb-1">{meta.label}</label>
+          <p className="text-xs text-[var(--muted-foreground)] mb-3">{meta.description}</p>
+          <textarea
+            value={values[key] ?? ''}
+            placeholder={meta.placeholder}
+            rows={meta.rows}
+            onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
+            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm resize-y"
           />
         </div>
       ))}

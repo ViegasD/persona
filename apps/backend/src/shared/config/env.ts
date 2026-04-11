@@ -59,7 +59,7 @@ const envSchema = z.object({
   MAX_REFERENCE_IMAGES: z.coerce.number().default(10),
 
   // Debounce
-  MESSAGE_DEBOUNCE_MS: z.coerce.number().default(12_000),
+  MESSAGE_DEBOUNCE_MS: z.coerce.number().default(8_000),
 
   // WhatsApp Cloud API (Meta official — optional, parallel to Evolution)
   WA_CLOUD_API_TOKEN: z.string().optional(),

@@ -43,10 +43,11 @@ export const MESSAGES = {
     `Envie as fotos que quiser, ou diga *pular* se quiser seguir sem referência de estilo 😊`,
 
   // ─── Pagamento ───────────────────────────────────────────
-  pixPayment: (amount: number) =>
+  pixPayment: (amount: number, accountName?: string) =>
     `💰 *Pagamento via Pix*\n\n` +
-    `Valor: *R$ ${amount.toFixed(2).replace('.', ',')}*\n\n` +
-    `Escaneie o QR Code acima no app do seu banco 📱`,
+    `Valor: *R$ ${amount.toFixed(2).replace('.', ',')}*\n` +
+    (accountName ? `Destinatário: *${accountName}*\n` : '') +
+    `\nEscaneie o QR Code acima no app do seu banco 📱`,
 
   pixCopyPaste: (code: string) => code,
 

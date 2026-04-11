@@ -16,14 +16,10 @@ const VALID_OPENAI_MODELS = ['gpt-5-mini', 'gpt-4o-mini', 'gpt-4o', 'gpt-4.1-nan
 const SETTING_RULES: Record<string, SettingRule> = {
   [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: { type: 'number', min: 2000, max: 60000, label: 'Tempo de espera (ms)' },
   [SETTING_KEYS.PORTFOLIO_URL]: { type: 'text', maxLength: 500, label: 'URL do Portfólio' },
-  [SETTING_KEYS.MODEL_AGENT_ENGAGEMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Engajamento' },
-  [SETTING_KEYS.MODEL_AGENT_PHOTO_COLLECTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Coleta de Fotos' },
-  [SETTING_KEYS.MODEL_AGENT_STYLE_COLLECTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Estilo' },
-  [SETTING_KEYS.MODEL_AGENT_UPSELL]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Upsell' },
-  [SETTING_KEYS.MODEL_AGENT_CONFIRMATION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Confirmação' },
-  [SETTING_KEYS.MODEL_AGENT_PAYMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Pagamento' },
-  [SETTING_KEYS.MODEL_AGENT_SUPPORT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Suporte' },
-  [SETTING_KEYS.MODEL_AGENT_REENGAGEMENT]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Reengajamento' },
+  [SETTING_KEYS.AGENT_IDENTITY]: { type: 'text', maxLength: 2000, label: 'Identidade do Agente' },
+  [SETTING_KEYS.PAYMENT_ACCOUNT_NAME]: { type: 'text', maxLength: 200, label: 'Nome da Conta para Pagamento' },
+  [SETTING_KEYS.MODEL_AGENT_EXTRACTION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Extração' },
+  [SETTING_KEYS.MODEL_AGENT_CONVERSATION]: { type: 'enum', values: VALID_OPENAI_MODELS, label: 'Modelo — Conversa' },
 };
 
 export async function settingsRouter(app: FastifyInstance): Promise<void> {
