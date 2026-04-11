@@ -161,9 +161,6 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     log.info({ phone }, '[REACTIVATE] Churned → Conversation');
   }
 
-  // Show typing indicator
-  await showTypingForLead(phone);
-
   // ─── STEP 1: Extraction ───────────────────────────────────
   // Skip extraction on follow-ups — no new user data to extract
   let extraction: ExtractionResult | null = null;
@@ -203,8 +200,9 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
         caption,
       });
       await logOutboundMessage(leadId, `[QR Code Pix Regenerado] ${caption}`, 'image');
+      await new Promise((r) => setTimeout(r, 3000));
       const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-      await queueTextMessage(phone, copyPasteMsg, { jobDelay: 3000 });
+      await queueTextMessage(phone, copyPasteMsg);
       await logOutboundMessage(leadId, copyPasteMsg);
       await trackEvent(leadId, 'PIX_QR_REGENERATED');
     } catch (err) {
@@ -267,13 +265,11 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
       '[LLM] Response received',
     );
 
-    // Send messages with staggered delays for natural feel
+    // Send messages sequentially with 3s typing indicator before each
     for (let i = 0; i < messages.length; i++) {
-      const delay = i === 0 ? 0 : i * 2000; // 2s between each bubble
-      await queueTextMessage(phone, messages[i], {
-        jobDelay: delay,
-        typingDelay: i > 0 ? 2000 : undefined, // Evolution API: typing indicator between bubbles
-      });
+      await showTypingForLead(phone);
+      await new Promise((r) => setTimeout(r, 3000));
+      await queueTextMessage(phone, messages[i]);
     }
     const fullReply = messages.join('\n\n');
     await logOutboundMessage(lead.id, fullReply);
@@ -445,10 +441,13 @@ async function applyExtractedData(
     log.info({ old: current.packageId, new: prefUpdates.packageId }, '[DATA:CLEANUP] Package changed');
   }
 
-  // Apply promo pricing for pkg_10
+  // Apply promo pricing for pkg_10 ONLY when earned via upsell/promo
+  // (upgradeAccepted = customer accepted upsell, promoShown = promo was presented)
   if (merged.packageId === 'pkg_10' && !merged.priceOverride) {
-    merged.priceOverride = 29.90;
-    log.info('[DATA:PROMO] Applied promo price 29.90 for pkg_10');
+    if (data.upgradeAccepted === true || merged.promoShown === true) {
+      merged.priceOverride = 29.90;
+      log.info('[DATA:PROMO] Applied promo price 29.90 for pkg_10');
+    }
   }
 
   await prisma.leadSession.update({
@@ -509,14 +508,16 @@ async function createPixAndTransition(
   });
   await logOutboundMessage(leadId, `[QR Code Pix] ${caption}`, 'image');
 
-  // Send copy-paste code (delay so it arrives AFTER the QR image)
+  // Wait for QR to arrive, then send copy-paste code
+  await new Promise((r) => setTimeout(r, 3000));
   const copyPasteMsg = MESSAGES.pixCopyPaste(pixCopyPaste);
-  await queueTextMessage(phone, copyPasteMsg, { jobDelay: 3000 });
+  await queueTextMessage(phone, copyPasteMsg);
   await logOutboundMessage(leadId, copyPasteMsg);
 
-  // Send hint (delay further so it arrives last)
+  // Wait, then send hint
+  await new Promise((r) => setTimeout(r, 3000));
   const hintMsg = MESSAGES.pixCopyPasteHint();
-  await queueTextMessage(phone, hintMsg, { jobDelay: 5000 });
+  await queueTextMessage(phone, hintMsg);
   await logOutboundMessage(leadId, hintMsg);
 
   await trackEvent(leadId, 'PIX_QR_SENT');

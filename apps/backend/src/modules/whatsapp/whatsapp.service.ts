@@ -141,16 +141,6 @@ async function processCloudSend(
 ): Promise<void> {
   const api = getCloudApi();
 
-  // Show typing indicator for a natural feel before sending
-  try {
-    const lastMsgId = await getRedisConnection().get(`lastMsgId:${phone}`);
-    if (lastMsgId) {
-      await api.showTypingIndicator(lastMsgId).catch(() => {});
-      // Brief typing pause (max 3s) so the user sees "typing..." before the bubble
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  } catch { /* fire-and-forget */ }
-
   switch (type) {
     case 'text': {
       const { text } = payload as { text: string };

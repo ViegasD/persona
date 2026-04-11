@@ -106,7 +106,14 @@ true quando o cliente diz que o QR expirou ou não funciona: "expirou", "não fu
 true quando um cliente já atendido quer um novo ensaio: "quero outro ensaio", "vamos de novo", "novo ensaio"
 
 ## reclassifyLastImageAsStyle (boolean)
-true quando o cliente esclarece que a última imagem enviada é uma referência de inspiração, não foto pessoal
+true quando o cliente indica que a última imagem enviada é uma referência de estilo/inspiração.
+Detecte pelo contexto — NÃO precisa de confirmação explícita. Exemplos:
+- "quero nesse estilo" + imagem → true
+- "nessa pegada" + imagem → true
+- "faz parecido com essa" + imagem → true
+- "inspiração" + imagem → true
+- "referência de estilo" + imagem → true
+- Cliente apenas mandou imagem sem contexto → NÃO extraia (pode ser foto pessoal)
 
 # Formato de Saída
 Retorne JSON válido com APENAS os campos extraídos. Omita campos sem dados.
