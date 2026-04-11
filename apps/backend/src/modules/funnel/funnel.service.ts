@@ -313,6 +313,21 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
       await applyExtractedData(session.id, lead.id, agentResponse.extractedData);
     }
 
+    // ── Post-extraction photo-collection bypass ──
+    // The pre-LLM bypass can't catch the case where the LAST required field
+    // (e.g. ageAtBirthday) was just extracted in THIS batch. Re-check with
+    // merged prefs now that extractedData has been persisted.
+    if (agentName === 'photo-collection' && !agentResponse.shouldTransition && minReached) {
+      const mergedPrefs = { ...prefs, ...(agentResponse.extractedData ?? {}) };
+      if (isOccasionDataComplete(mergedPrefs)) {
+        log.info(
+          { photoCount, occasion: mergedPrefs.occasion },
+          '[BATCH:PHOTO-BYPASS:POST] Last required field just collected — overriding shouldTransition',
+        );
+        agentResponse.shouldTransition = true;
+      }
+    }
+
     // Send messages with staggered delays to preserve ordering
     let stagger = 0;
     for (const msg of dedupedMessages) {
