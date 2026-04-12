@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { execSync } from 'node:child_process';
 import { env } from '../config/env.js';
 import { createChildLogger } from '../utils/logger.js';
 
@@ -19,14 +18,7 @@ if (env.NODE_ENV !== 'production') {
 
 export async function connectDatabase(): Promise<void> {
   try {
-    log.info('Aplicando migrations...');
-    execSync('pnpm --filter @ensaio/backend prisma:deploy', {
-      stdio: 'inherit',
-      cwd: process.env.APP_ROOT || '/app',
-      env: { ...process.env, DATABASE_URL: env.DATABASE_URL },
-    });
-    log.info('Migrations aplicadas');
-
+    // Migrations are handled by start.sh before the server starts
     await prisma.$connect();
     log.info('Conectado ao PostgreSQL');
   } catch (error) {
