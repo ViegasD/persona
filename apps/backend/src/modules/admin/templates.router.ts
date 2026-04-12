@@ -147,6 +147,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
         scenePrompt: string;
         tags: string[];
         gender: string;
+        expression: string;
         imageUrl: string | null;
         createdAt: Date;
       }> = [];
