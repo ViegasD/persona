@@ -124,11 +124,12 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     setBusyId(id);
     try {
       const updated = await regeneratePromptAction(id);
+      if (!updated || !updated.scenePrompt) throw new Error('Resposta inválida do servidor');
       setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags, gender: updated.gender, expression: updated.expression } : t)),
+        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags ?? t.tags, gender: updated.gender ?? t.gender, expression: updated.expression ?? t.expression } : t)),
       );
     } catch (err) {
-      alert(`Erro: ${err}`);
+      alert(`Erro ao regenerar: ${err instanceof Error ? err.message : err}`);
     } finally {
       setBusyId(null);
     }
@@ -209,6 +210,14 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">📷</div>
+                )}
+
+                {/* Regeneration loading overlay */}
+                {busyId === t.id && (
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 z-10">
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="text-white text-xs font-medium">Analisando com GPT-4o...</span>
+                  </div>
                 )}
 
                 {/* Gender badge */}

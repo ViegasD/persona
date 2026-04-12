@@ -299,19 +299,24 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
       });
       if (!template) return reply.status(404).send({ error: 'Template not found' });
 
-      const obj = await getS3Object(template.s3Key);
-      const bodyBytes = await obj.Body!.transformToByteArray();
-      const base64 = Buffer.from(bodyBytes).toString('base64');
-      const mime = obj.ContentType ?? 'image/jpeg';
+      try {
+        const obj = await getS3Object(template.s3Key);
+        const bodyBytes = await obj.Body!.transformToByteArray();
+        const base64 = Buffer.from(bodyBytes).toString('base64');
+        const mime = obj.ContentType ?? 'image/jpeg';
 
-      const analysis = await analyzeTemplateImage(base64, mime, template.occasion.label);
+        const analysis = await analyzeTemplateImage(base64, mime, template.occasion.label);
 
-      const updated = await prisma.styleTemplate.update({
-        where: { id: req.params.id },
-        data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender, expression: analysis.expression },
-      });
+        const updated = await prisma.styleTemplate.update({
+          where: { id: req.params.id },
+          data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender, expression: analysis.expression },
+        });
 
-      reply.send(updated);
+        reply.send(updated);
+      } catch (err) {
+        log.error({ templateId: req.params.id, err }, 'Failed to regenerate prompt');
+        reply.status(500).send({ error: err instanceof Error ? err.message : 'Failed to regenerate prompt' });
+      }
     },
   );
 
