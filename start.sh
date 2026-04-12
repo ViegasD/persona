@@ -3,12 +3,13 @@
 # Backend on :3000, Web on :3001
 
 # Apply any pending Prisma migrations
-cd apps/backend && npx prisma migrate deploy && cd /app
+cd /app/apps/backend && npx prisma migrate deploy
+cd /app
 
-node apps/backend/dist/server.js &
+node /app/apps/backend/dist/server.js &
 BACKEND_PID=$!
 
-PORT=3001 HOSTNAME=0.0.0.0 node apps/web/.next/standalone/apps/web/server.js &
+PORT=3001 HOSTNAME=0.0.0.0 node /app/apps/web/.next/standalone/apps/web/server.js &
 WEB_PID=$!
 
 echo "Backend PID=$BACKEND_PID on :3000"
