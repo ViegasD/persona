@@ -14,11 +14,18 @@ function getVisionClient(): OpenAI {
 }
 
 export type TemplateGender = 'MALE' | 'FEMALE' | 'UNISEX';
+export type TemplateExpression = 'SMILING' | 'NEUTRAL' | 'ANY';
 
 export interface VisionAnalysisResult {
   scenePrompt: string;
   tags: string[];
   gender: TemplateGender;
+  expression: TemplateExpression;
+}
+
+export interface FaceAttributes {
+  gender: 'male' | 'female' | null;
+  smile: 'smiling' | 'neutral' | null;
 }
 
 const VISION_SYSTEM_PROMPT = `You are an expert photography scene descriptor for an AI portrait generation system.
@@ -54,8 +61,13 @@ GENDER DETECTION: Determine who this template is designed for based on the perso
 - "FEMALE" — the subject is clearly female (feminine clothing, build, features)
 - "UNISEX" — no person visible, or the scene works equally for any gender (e.g. landscape-only, abstract, back-facing silhouette)
 
+EXPRESSION DETECTION: Determine the facial expression of the person in the template:
+- "SMILING" — the subject is visibly smiling (teeth showing, clear smile, happy expression)
+- "NEUTRAL" — the subject has a neutral, serious, contemplative, or composed expression (no smile)
+- "ANY" — no person visible, face not clearly visible, or expression is ambiguous
+
 Respond ONLY with valid JSON:
-{"scenePrompt": "...", "tags": ["...", "..."], "gender": "MALE|FEMALE|UNISEX"}`;
+{"scenePrompt": "...", "tags": ["...", "..."], "gender": "MALE|FEMALE|UNISEX", "expression": "SMILING|NEUTRAL|ANY"}`;
 
 /**
  * Analyzes a template image using GPT-4o vision and generates a scene prompt + tags.
@@ -114,6 +126,8 @@ export async function analyzeTemplateImage(
 
     const validGenders: TemplateGender[] = ['MALE', 'FEMALE', 'UNISEX'];
     const rawGender = String(parsed.gender ?? '').toUpperCase() as TemplateGender;
+    const validExpressions: TemplateExpression[] = ['SMILING', 'NEUTRAL', 'ANY'];
+    const rawExpression = String((parsed as any).expression ?? '').toUpperCase() as TemplateExpression;
 
     return {
       scenePrompt: parsed.scenePrompt.trim(),
@@ -121,6 +135,7 @@ export async function analyzeTemplateImage(
         ? parsed.tags.map((t) => String(t).toLowerCase().trim()).filter(Boolean)
         : [],
       gender: validGenders.includes(rawGender) ? rawGender : 'UNISEX',
+      expression: validExpressions.includes(rawExpression) ? rawExpression : 'ANY',
     };
   } catch (err) {
     log.error({ raw, err }, 'Failed to parse vision response — using raw text as prompt');
@@ -128,18 +143,19 @@ export async function analyzeTemplateImage(
       scenePrompt: raw.substring(0, 500),
       tags: [],
       gender: 'UNISEX',
+      expression: 'ANY',
     };
   }
 }
 
 /**
- * Detects gender from a client selfie using GPT-4o vision.
- * Returns 'male' | 'female' | null (null if uncertain / no person visible).
+ * Detects gender and smile expression from a client selfie using GPT-4o vision.
+ * Combined into a single API call to save tokens and latency.
  */
-export async function detectGenderFromPhoto(
+export async function detectFaceAttributes(
   imageBase64: string,
   mimeType: string,
-): Promise<'male' | 'female' | null> {
+): Promise<FaceAttributes> {
   const dataUri = imageBase64.startsWith('data:')
     ? imageBase64
     : `data:${mimeType};base64,${imageBase64}`;
@@ -150,12 +166,12 @@ export async function detectGenderFromPhoto(
       messages: [
         {
           role: 'system',
-          content: `You analyze photos to determine the apparent gender of the person for a photography service. Respond ONLY with valid JSON: {"gender": "male"} or {"gender": "female"} or {"gender": null} if you cannot determine.`,
+          content: `You analyze photos for a photography service. Determine two things about the person:\n1. Apparent gender: "male" or "female" (or null if uncertain)\n2. Expression: "smiling" (visible smile, teeth showing, happy) or "neutral" (no smile, serious, composed) (or null if uncertain)\n\nRespond ONLY with valid JSON: {"gender": "male"|"female"|null, "smile": "smiling"|"neutral"|null}`,
         },
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'What is the apparent gender of the person in this photo?' },
+            { type: 'text', text: 'Analyze the person in this photo:' },
             { type: 'image_url', image_url: { url: dataUri, detail: 'low' } },
           ],
         },
@@ -168,10 +184,13 @@ export async function detectGenderFromPhoto(
     const raw = completion.choices[0]?.message?.content?.trim() ?? '';
     const parsed = JSON.parse(raw);
     const g = parsed.gender;
-    if (g === 'male' || g === 'female') return g;
-    return null;
+    const s = parsed.smile;
+    return {
+      gender: (g === 'male' || g === 'female') ? g : null,
+      smile: (s === 'smiling' || s === 'neutral') ? s : null,
+    };
   } catch (err) {
-    log.warn({ err }, 'Gender detection failed — returning null');
-    return null;
+    log.warn({ err }, 'Face attribute detection failed — returning nulls');
+    return { gender: null, smile: null };
   }
 }

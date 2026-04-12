@@ -81,12 +81,14 @@ export async function processImageGeneration(
       const styleDesc = (prefs.styleDescription as string) ?? undefined;
       // Skip gender filtering for couple shoots — templates should be UNISEX
       const detectedGender = isCoupleShot ? undefined : ((prefs.detectedGender as string) ?? undefined);
-      styleTemplateUrls = await pickStyleTemplatesFromDb(occasion, pkg.photos, styleDesc, detectedGender);
-      log.info({ templateCount: styleTemplateUrls.length, fromDb: true, detectedGender }, 'Usando style templates (DB → MinIO fallback)');
+      const detectedSmile = isCoupleShot ? undefined : ((prefs.detectedSmile as string) ?? undefined);
+      styleTemplateUrls = await pickStyleTemplatesFromDb(occasion, pkg.photos, styleDesc, detectedGender, detectedSmile);
+      log.info({ templateCount: styleTemplateUrls.length, fromDb: true, detectedGender, detectedSmile }, 'Usando style templates (DB → MinIO fallback)');
     }
     const hasStyleTemplate = styleTemplateUrls.length > 0;
 
     // Gerar uma variação de prompt por imagem — cada imagem do batch tem pose distinta
+    const detectedSmileForPrompt = isCoupleShot ? undefined : ((prefs.detectedSmile as string) ?? undefined);
     const prompts = await buildPromptVariations({
       occasion,
       occasionDetails: prefs.occasionDetails,
@@ -95,6 +97,7 @@ export async function processImageGeneration(
       graduationCourse: prefs.graduationCourse,
       hasStyleTemplate,
       isCoupleShot,
+      detectedSmile: detectedSmileForPrompt,
     }, pkg.photos);
 
     // Salvar prompt representativo (primeiro) no job

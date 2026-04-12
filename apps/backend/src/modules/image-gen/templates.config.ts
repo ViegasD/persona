@@ -67,6 +67,7 @@ export async function pickStyleTemplatesFromDb(
   count: number,
   styleDescription?: string,
   gender?: string,
+  smile?: string,
 ): Promise<string[]> {
   try {
     const occ = await prisma.occasion.findFirst({
@@ -78,6 +79,13 @@ export async function pickStyleTemplatesFromDb(
     const genderFilter = gender === 'male' || gender === 'female'
       ? { gender: { in: [gender === 'male' ? 'MALE' as const : 'FEMALE' as const, 'UNISEX' as const] } }
       : {};
+
+    // Build expression filter: match specific expression + ANY fallback
+    const expressionFilter = smile === 'smiling'
+      ? { expression: { in: ['SMILING' as const, 'ANY' as const] } }
+      : smile === 'neutral'
+        ? { expression: { in: ['NEUTRAL' as const, 'ANY' as const] } }
+        : {};
 
     let templates: Array<{ s3Key: string; tags: string[] }>;
 
@@ -94,6 +102,7 @@ export async function pickStyleTemplatesFromDb(
           isActive: true,
           tags: { hasSome: words },
           ...genderFilter,
+          ...expressionFilter,
         },
         select: { s3Key: true, tags: true },
       });
@@ -101,13 +110,13 @@ export async function pickStyleTemplatesFromDb(
       // If tag matching found nothing, fall back to all templates for this occasion
       if (templates.length === 0) {
         templates = await prisma.styleTemplate.findMany({
-          where: { occasionId: occ.id, isActive: true, ...genderFilter },
+          where: { occasionId: occ.id, isActive: true, ...genderFilter, ...expressionFilter },
           select: { s3Key: true, tags: true },
         });
       }
     } else {
       templates = await prisma.styleTemplate.findMany({
-        where: { occasionId: occ.id, isActive: true, ...genderFilter },
+        where: { occasionId: occ.id, isActive: true, ...genderFilter, ...expressionFilter },
         select: { s3Key: true, tags: true },
       });
     }

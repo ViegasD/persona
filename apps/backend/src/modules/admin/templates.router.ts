@@ -111,6 +111,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             scenePrompt: t.scenePrompt,
             tags: t.tags,
             gender: t.gender,
+            expression: t.expression,
             imageUrl,
             createdAt: t.createdAt,
           };
@@ -183,6 +184,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             scenePrompt: template.scenePrompt,
             tags: template.tags,
             gender: template.gender,
+            expression: template.expression,
             imageUrl: await getPresignedUrl(s3Key, 3600),
             createdAt: template.createdAt,
           });
@@ -194,9 +196,9 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
             .then(async (analysis) => {
               await prisma.styleTemplate.update({
                 where: { id: templateId },
-                data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender },
+                data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender, expression: analysis.expression },
               });
-              log.info({ templateId, s3Key, tagsCount: analysis.tags.length, gender: analysis.gender }, 'Vision analysis completed (background)');
+              log.info({ templateId, s3Key, tagsCount: analysis.tags.length, gender: analysis.gender, expression: analysis.expression }, 'Vision analysis completed (background)');
             })
             .catch((err) => {
               prisma.styleTemplate.update({
@@ -220,11 +222,16 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
   app.put(
     '/templates/:id',
     async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const { scenePrompt, tags, gender } = req.body as { scenePrompt?: string; tags?: string[]; gender?: string };
+      const { scenePrompt, tags, gender, expression } = req.body as { scenePrompt?: string; tags?: string[]; gender?: string; expression?: string };
 
       const validGenders = ['MALE', 'FEMALE', 'UNISEX'] as const;
       const genderUpdate = gender && validGenders.includes(gender as any)
         ? { gender: gender as (typeof validGenders)[number] }
+        : {};
+
+      const validExpressions = ['SMILING', 'NEUTRAL', 'ANY'] as const;
+      const expressionUpdate = expression && validExpressions.includes(expression as any)
+        ? { expression: expression as (typeof validExpressions)[number] }
         : {};
 
       const template = await prisma.styleTemplate.update({
@@ -233,6 +240,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
           ...(scenePrompt !== undefined && { scenePrompt: scenePrompt.trim() }),
           ...(tags !== undefined && { tags: tags.map((t) => t.toLowerCase().trim()) }),
           ...genderUpdate,
+          ...expressionUpdate,
         },
       });
 
@@ -299,7 +307,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
 
       const updated = await prisma.styleTemplate.update({
         where: { id: req.params.id },
-        data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender },
+        data: { scenePrompt: analysis.scenePrompt, tags: analysis.tags, gender: analysis.gender, expression: analysis.expression },
       });
 
       reply.send(updated);
@@ -352,6 +360,7 @@ export async function templatesRouter(app: FastifyInstance): Promise<void> {
               scenePrompt: analysis.scenePrompt,
               tags: analysis.tags,
               gender: analysis.gender,
+              expression: analysis.expression,
             },
           });
 

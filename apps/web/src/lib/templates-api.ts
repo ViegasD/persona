@@ -28,6 +28,7 @@ export interface AdminTemplate {
   scenePrompt: string;
   tags: string[];
   gender: 'MALE' | 'FEMALE' | 'UNISEX';
+  expression: 'SMILING' | 'NEUTRAL' | 'ANY';
   imageUrl: string | null;
   createdAt: string;
 }
@@ -91,7 +92,7 @@ export async function uploadTemplates(
   return data;
 }
 
-export async function updateTemplate(id: string, data: { scenePrompt?: string; tags?: string[]; gender?: string }) {
+export async function updateTemplate(id: string, data: { scenePrompt?: string; tags?: string[]; gender?: string; expression?: string }) {
   const res = await fetch(`${API_BASE}/api/admin/templates/${encodeURIComponent(id)}`, {
     method: 'PUT', headers: headers(), body: JSON.stringify(data),
   });

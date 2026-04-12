@@ -33,6 +33,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
   const [editPrompt, setEditPrompt] = useState('');
   const [editTags, setEditTags] = useState('');
   const [editGender, setEditGender] = useState<'MALE' | 'FEMALE' | 'UNISEX'>('UNISEX');
+  const [editExpression, setEditExpression] = useState<'SMILING' | 'NEUTRAL' | 'ANY'>('ANY');
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const queueItems = useUploadQueue(slug);
@@ -89,6 +90,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     setEditPrompt(t.scenePrompt);
     setEditTags(t.tags.join(', '));
     setEditGender(t.gender);
+    setEditExpression(t.expression);
   }
 
   async function saveEdit() {
@@ -96,9 +98,9 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     const id = editingId;
     try {
       const tags = editTags.split(',').map((t) => t.trim()).filter(Boolean);
-      await updateTemplateAction(id, { scenePrompt: editPrompt, tags, gender: editGender });
+      await updateTemplateAction(id, { scenePrompt: editPrompt, tags, gender: editGender, expression: editExpression });
       setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, scenePrompt: editPrompt, tags, gender: editGender } : t)),
+        prev.map((t) => (t.id === id ? { ...t, scenePrompt: editPrompt, tags, gender: editGender, expression: editExpression } : t)),
       );
       setEditingId(null);
     } catch (err) {
@@ -123,7 +125,7 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
     try {
       const updated = await regeneratePromptAction(id);
       setTemplates((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags, gender: updated.gender } : t)),
+        prev.map((t) => (t.id === id ? { ...t, scenePrompt: updated.scenePrompt, tags: updated.tags, gender: updated.gender, expression: updated.expression } : t)),
       );
     } catch (err) {
       alert(`Erro: ${err}`);
@@ -218,6 +220,15 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
                   {t.gender === 'MALE' ? '♂' : t.gender === 'FEMALE' ? '♀' : '⚥'}
                 </span>
 
+                {/* Expression badge */}
+                <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium backdrop-blur-sm ${
+                  t.expression === 'SMILING' ? 'bg-yellow-500/80 text-white' :
+                  t.expression === 'NEUTRAL' ? 'bg-slate-500/80 text-white' :
+                  'bg-gray-500/60 text-white'
+                }`}>
+                  {t.expression === 'SMILING' ? '😊' : t.expression === 'NEUTRAL' ? '😐' : '—'}
+                </span>
+
                 {/* Hover overlay with actions */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-end justify-center gap-1.5 p-2 opacity-0 group-hover:opacity-100">
                   <button
@@ -309,6 +320,25 @@ export function TemplateGrid({ slug, initial, occasionLabel }: Props) {
                   }`}
                 >
                   {g === 'MALE' ? '♂ Masculino' : g === 'FEMALE' ? '♀ Feminino' : '⚥ Unissex'}
+                </button>
+              ))}
+            </div>
+            <label className="block text-xs text-[var(--muted-foreground)] mt-3 mb-1">Expressão do template</label>
+            <div className="flex gap-2">
+              {(['SMILING', 'NEUTRAL', 'ANY'] as const).map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setEditExpression(e)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                    editExpression === e
+                      ? e === 'SMILING' ? 'bg-yellow-500 text-white border-yellow-500'
+                        : e === 'NEUTRAL' ? 'bg-slate-500 text-white border-slate-500'
+                        : 'bg-gray-500 text-white border-gray-500'
+                      : 'border-[var(--border)] hover:bg-[var(--muted)]'
+                  }`}
+                >
+                  {e === 'SMILING' ? '😊 Sorrindo' : e === 'NEUTRAL' ? '😐 Neutro' : '— Qualquer'}
                 </button>
               ))}
             </div>

@@ -49,6 +49,12 @@ enum TemplateGender {
   UNISEX
 }
 
+enum TemplateExpression {
+  SMILING
+  NEUTRAL
+  ANY
+}
+
 enum MessageDirection {
   INBOUND
   OUTBOUND
@@ -278,7 +284,8 @@ model StyleTemplate {
   s3Key       String         @map("s3_key")
   scenePrompt String         @map("scene_prompt") @db.Text
   tags        String[]       @default([])
-  gender      TemplateGender @default(UNISEX)
+  gender      TemplateGender     @default(UNISEX)
+  expression  TemplateExpression @default(ANY)
   isActive    Boolean        @default(true) @map("is_active")
 
   occasion Occasion @relation(fields: [occasionId], references: [id], onDelete: Cascade)
@@ -289,6 +296,7 @@ model StyleTemplate {
   @@index([occasionId])
   @@index([isActive])
   @@index([gender])
+  @@index([expression])
   @@map("style_templates")
 }
 

@@ -3,7 +3,7 @@ import { uploadFile, buildS3Key } from '../../shared/storage/s3.client.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { randomUUID } from 'crypto';
-import { detectGenderFromPhoto } from '../image-gen/vision.service.js';
+import { detectFaceAttributes } from '../image-gen/vision.service.js';
 
 const log = createChildLogger('media-handler');
 
@@ -50,26 +50,32 @@ export async function downloadAndStoreMedia(
 
   log.info({ s3Key, size: buffer.length, refImageId: refImage.id, leadSessionId }, '[MEDIA] ✅ ReferenceImage saved to DB');
 
-  // Fire-and-forget: detect gender from first face photo (skip couples)
+  // Fire-and-forget: detect gender + smile from first face photo (skip couples)
   const session = await prisma.leadSession.findUnique({ where: { id: leadSessionId } });
   const prefs = (session?.preferences as Record<string, unknown>) ?? {};
   const occasion = (prefs.occasion as string) ?? '';
   if (!prefs.detectedGender && occasion !== 'casal') {
-    detectGenderFromPhoto(base64Data, media.mimetype)
-      .then(async (gender) => {
-        if (gender) {
+    detectFaceAttributes(base64Data, media.mimetype)
+      .then(async (attrs) => {
+        if (attrs.gender || attrs.smile) {
           const cur = await prisma.leadSession.findUnique({ where: { id: leadSessionId } });
           const curPrefs = (cur?.preferences as Record<string, unknown>) ?? {};
           if (!curPrefs.detectedGender) {
             await prisma.leadSession.update({
               where: { id: leadSessionId },
-              data: { preferences: { ...curPrefs, detectedGender: gender } as any },
+              data: {
+                preferences: {
+                  ...curPrefs,
+                  ...(attrs.gender && { detectedGender: attrs.gender }),
+                  ...(attrs.smile && { detectedSmile: attrs.smile }),
+                } as any,
+              },
             });
-            log.info({ gender, leadSessionId }, '[MEDIA] Gender detected from selfie');
+            log.info({ gender: attrs.gender, smile: attrs.smile, leadSessionId }, '[MEDIA] Face attributes detected from selfie');
           }
         }
       })
-      .catch((err) => log.warn({ err }, '[MEDIA] Gender detection failed'));
+      .catch((err) => log.warn({ err }, '[MEDIA] Face attribute detection failed'));
   }
 
   return {

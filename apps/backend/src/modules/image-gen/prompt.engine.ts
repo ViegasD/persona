@@ -14,6 +14,8 @@ export interface PromptParams {
   // Template control
   hasStyleTemplate?: boolean;  // whether a style template image is appended to referenceImages
   isCoupleShot?: boolean;      // casal occasion — allows two people in output
+  // Expression control
+  detectedSmile?: string;      // 'smiling' | 'neutral' — detected from client selfie
 }
 
 /**
@@ -138,7 +140,14 @@ export function buildPrompt(params: PromptParams, sceneDescription?: string): st
     );
   }
 
-  // 6. Exclusion constraint
+  // 6. Expression guidance based on detected smile
+  if (params.detectedSmile === 'neutral') {
+    parts.push('The subject has a relaxed, natural expression — composed and confident, not smiling. Do not add a smile.');
+  } else if (params.detectedSmile === 'smiling') {
+    parts.push('The subject has a natural, warm smile — genuine and relaxed, matching their reference photos.');
+  }
+
+  // 7. Exclusion constraint
   if (params.isCoupleShot) {
     parts.push('Only the two people from the reference photos should appear — no other faces, people, or bystanders in the image.');
   } else {
