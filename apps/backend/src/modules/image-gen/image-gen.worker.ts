@@ -225,7 +225,16 @@ export async function processImageGeneration(
 
     const completeMsg = MESSAGES.generationComplete();
     await queueTextMessage(session.lead.phone, completeMsg);
-    await logOutboundMessage(session.leadId, completeMsg);
+
+    // Fetch generated image s3Keys so they appear in the admin chat
+    const generatedImages = await prisma.generatedImage.findMany({
+      where: { generationJobId },
+      orderBy: { sequence: 'asc' },
+      select: { s3Key: true },
+    });
+    await logOutboundMessage(session.leadId, completeMsg, 'text', undefined,
+      { generatedImages: generatedImages.map((g) => g.s3Key) },
+    );
 
     await trackEvent(session.leadId, 'IMAGES_GENERATED', {
       count: imageIds.length,

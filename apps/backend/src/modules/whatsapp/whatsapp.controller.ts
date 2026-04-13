@@ -113,12 +113,35 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
 
   const effectiveText = transcribedText ?? text;
 
+  // ── Download image BEFORE logging so s3Key is available as metadata ──
+  let imageS3Key: string | undefined;
+  if (mediaType === 'image') {
+    log.info({ phone, messageId: key.id }, '[WEBHOOK:IMAGE] Image detected — looking for session...');
+    const session = await prisma.leadSession.findFirst({
+      where: { leadId: lead.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (session) {
+      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:IMAGE] Session found — downloading media...');
+      try {
+        const result = await downloadAndStoreMedia(jid, key.id, key.fromMe, session.id);
+        imageS3Key = result.s3Key;
+        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:IMAGE] ✅ Image downloaded and stored');
+      } catch (err) {
+        log.error(err, '[WEBHOOK:IMAGE] ❌ Falha ao baixar mídia');
+      }
+    } else {
+      log.warn({ leadId: lead.id }, '[WEBHOOK:IMAGE] ⚠️ No session found — image will NOT be stored!');
+    }
+  }
+
   // Log da mensagem (use transcribed text for audio)
   await logInboundMessage(
     lead.id,
     effectiveText ?? `[${mediaType ?? 'unknown'}]`,
     mediaType === 'audio' && transcribedText ? 'text' : (mediaType ?? 'text'),
     key.id,
+    imageS3Key ? { s3Key: imageS3Key } : undefined,
   );
 
   log.info({ leadId: lead.id, direction: 'INBOUND', messageType: mediaType ?? 'text' }, '[WEBHOOK] Inbound message logged');
@@ -132,26 +155,6 @@ async function handleMessagesUpsert(body: unknown): Promise<void> {
   if (mediaType === 'audio' && !transcribedText) {
     log.info({ phone }, '[WEBHOOK] Audio transcription failed — skipping funnel');
     return;
-  }
-
-  // If image received, download and store it immediately (before debounce)
-  if (mediaType === 'image') {
-    log.info({ phone, messageId: key.id }, '[WEBHOOK:IMAGE] Image detected — looking for session...');
-    const session = await prisma.leadSession.findFirst({
-      where: { leadId: lead.id },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (session) {
-      log.info({ sessionId: session.id, funnelState: session.funnelState }, '[WEBHOOK:IMAGE] Session found — downloading media...');
-      try {
-        const result = await downloadAndStoreMedia(jid, key.id, key.fromMe, session.id);
-        log.info({ s3Key: result.s3Key, fileSize: result.fileSize, mimeType: result.mimeType }, '[WEBHOOK:IMAGE] ✅ Image downloaded and stored');
-      } catch (err) {
-        log.error(err, '[WEBHOOK:IMAGE] ❌ Falha ao baixar mídia');
-      }
-    } else {
-      log.warn({ leadId: lead.id }, '[WEBHOOK:IMAGE] ⚠️ No session found — image will NOT be stored!');
-    }
   }
 
   // Debounce: accumulate messages for 12s then process batch via LLM

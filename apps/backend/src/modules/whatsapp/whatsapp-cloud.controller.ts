@@ -148,26 +148,8 @@ export async function handleCloudWebhook(
 
         const effectiveText = transcribedText ?? text;
 
-        // Log inbound message (use transcribed text for audio)
-        await logInboundMessage(
-          lead.id,
-          effectiveText ?? `[${mediaType}]`,
-          mediaType === 'audio' && transcribedText ? 'text' : mediaType,
-          messageId,
-        );
-
-        // ── Skip funnel for non-actionable media (video, document, etc.) ──
-        if (mediaType !== 'text' && mediaType !== 'image' && mediaType !== 'audio') {
-          log.info({ phone, mediaType }, '[CLOUD WEBHOOK] Non-actionable media — skipping funnel');
-          continue;
-        }
-        // Audio that failed transcription — nothing useful for the funnel
-        if (mediaType === 'audio' && !transcribedText) {
-          log.info({ phone }, '[CLOUD WEBHOOK] Audio transcription failed — skipping funnel');
-          continue;
-        }
-
-        // Handle image uploads — download from Meta and store as reference
+        // ── Download image BEFORE logging so s3Key is available as metadata ──
+        let imageS3Key: string | undefined;
         if (mediaType === 'image' && msg.image?.id) {
           log.info({ phone, mediaId: msg.image.id, messageId }, '[CLOUD WEBHOOK:IMAGE] Image detected — downloading...');
           const session = await prisma.leadSession.findFirst({
@@ -200,6 +182,7 @@ export async function handleCloudWebhook(
               log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ ReferenceImage saved to DB');
               await uploadFile(s3Key, buffer, mimeType);
               log.info({ s3Key }, '[CLOUD WEBHOOK:IMAGE] ✅ S3 upload complete');
+              imageS3Key = s3Key;
 
               // Fire-and-forget: detect gender + smile from face photos (first photo only, skip couples)
               if (imageType === 'face') {
@@ -235,6 +218,26 @@ export async function handleCloudWebhook(
           } else {
             log.warn({ leadId: lead.id }, '[CLOUD WEBHOOK:IMAGE] ⚠️ No session found — image NOT stored');
           }
+        }
+
+        // Log inbound message (use transcribed text for audio)
+        await logInboundMessage(
+          lead.id,
+          effectiveText ?? `[${mediaType}]`,
+          mediaType === 'audio' && transcribedText ? 'text' : mediaType,
+          messageId,
+          imageS3Key ? { s3Key: imageS3Key } : undefined,
+        );
+
+        // ── Skip funnel for non-actionable media (video, document, etc.) ──
+        if (mediaType !== 'text' && mediaType !== 'image' && mediaType !== 'audio') {
+          log.info({ phone, mediaType }, '[CLOUD WEBHOOK] Non-actionable media — skipping funnel');
+          continue;
+        }
+        // Audio that failed transcription — nothing useful for the funnel
+        if (mediaType === 'audio' && !transcribedText) {
+          log.info({ phone }, '[CLOUD WEBHOOK] Audio transcription failed — skipping funnel');
+          continue;
         }
 
         // Mark as read + show typing indicator (fire-and-forget)

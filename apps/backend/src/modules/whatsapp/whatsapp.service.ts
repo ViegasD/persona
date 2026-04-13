@@ -59,6 +59,7 @@ export async function logOutboundMessage(
   content: string,
   messageType: string = 'text',
   whatsappMessageId?: string,
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   const msg = await prisma.conversationMessage.create({
     data: {
@@ -67,10 +68,11 @@ export async function logOutboundMessage(
       messageType,
       content,
       whatsappMessageId,
+      ...(metadata ? { metadata: metadata as any } : {}),
     },
   });
   publishEvent(`chat:${leadId}`, {
-    id: msg.id, leadId, direction: 'OUTBOUND', content, messageType, createdAt: msg.createdAt,
+    id: msg.id, leadId, direction: 'OUTBOUND', content, messageType, metadata: msg.metadata, createdAt: msg.createdAt,
   }).catch(() => {});
 }
 
@@ -95,7 +97,7 @@ export async function logInboundMessage(
     },
   });
   publishEvent(`chat:${leadId}`, {
-    id: msg.id, leadId, direction: 'INBOUND', content, messageType, createdAt: msg.createdAt,
+    id: msg.id, leadId, direction: 'INBOUND', content, messageType, metadata: msg.metadata, createdAt: msg.createdAt,
   }).catch(() => {});
 }
 

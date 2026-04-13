@@ -373,6 +373,12 @@ interface BubbleProps {
 function MessageBubble({ message, isFirstOfGroup, isLastOfGroup, leadInitial }: BubbleProps) {
   const isOutbound = message.direction === 'OUTBOUND';
 
+  const meta = (message.metadata ?? {}) as Record<string, unknown>;
+  const s3Key = meta.s3Key as string | undefined;
+  const generatedImages = meta.generatedImages as string[] | undefined;
+  const hasImage = message.messageType === 'image' && !!s3Key;
+  const hasGeneratedGrid = Array.isArray(generatedImages) && generatedImages.length > 0;
+
   // Chatwoot-style radius: rounded-xl base, smaller corner on the speaker's side
   const radiusClass = isOutbound
     ? `rounded-xl ${isLastOfGroup ? 'rounded-br-sm' : ''} ${!isFirstOfGroup ? 'rounded-tr-sm' : ''}`
@@ -395,17 +401,59 @@ function MessageBubble({ message, isFirstOfGroup, isLastOfGroup, leadInitial }: 
       )}
 
       <div
-        className={`max-w-lg px-4 py-2.5 text-sm ${radiusClass}`}
+        className={`max-w-lg text-sm ${radiusClass} overflow-hidden`}
         style={{
           background: isOutbound ? 'var(--primary)' : 'var(--background)',
           color: isOutbound ? 'var(--primary-foreground)' : 'var(--foreground)',
           boxShadow: '0 1px 2px rgba(0,0,0,.06)',
+          ...(hasImage || hasGeneratedGrid ? { padding: 0 } : { padding: '10px 16px' }),
         }}
       >
-        <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+        {/* Single inbound image */}
+        {hasImage && (
+          <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/manager/api/images/${s3Key}`}
+              alt="Foto enviada"
+              className="block w-full max-w-[280px] rounded-t-xl"
+              loading="lazy"
+            />
+            {message.content && message.content !== '[image]' && (
+              <p className="px-4 py-2 whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+            )}
+          </div>
+        )}
+
+        {/* Generated images grid */}
+        {hasGeneratedGrid && (
+          <div>
+            <div className={`grid gap-1 p-1 ${generatedImages.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {generatedImages.map((key) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  key={key}
+                  src={`/manager/api/images/${key}`}
+                  alt="Foto gerada"
+                  className="block w-full aspect-[3/4] object-cover rounded-md"
+                  loading="lazy"
+                />
+              ))}
+            </div>
+            {message.content && (
+              <p className="px-4 py-2 whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+            )}
+          </div>
+        )}
+
+        {/* Plain text */}
+        {!hasImage && !hasGeneratedGrid && (
+          <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+        )}
+
         {isLastOfGroup && (
           <p
-            className="text-[10px] mt-1 text-right"
+            className={`text-[10px] text-right ${hasImage || hasGeneratedGrid ? 'px-3 pb-2' : 'mt-1'}`}
             style={{ opacity: 0.55 }}
           >
             {fmtTime(message.createdAt)}

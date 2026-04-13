@@ -126,6 +126,7 @@ export interface ChatMessage {
   direction: 'INBOUND' | 'OUTBOUND';
   messageType: string;
   content: string;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 

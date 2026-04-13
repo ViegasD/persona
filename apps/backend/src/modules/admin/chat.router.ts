@@ -60,6 +60,7 @@ export async function chatRouter(app: FastifyInstance): Promise<void> {
         direction: true,
         messageType: true,
         content: true,
+        metadata: true,
         createdAt: true,
       },
     });
