@@ -33,11 +33,8 @@ export async function downloadAndStoreMedia(
 
   // Upload para S3
   const s3Key = buildS3Key(leadSessionId, 'references', filename);
-  log.info({ s3Key, bufferSize: buffer.length, mimetype: media.mimetype }, '[MEDIA] Uploading to S3/MinIO...');
-  await uploadFile(s3Key, buffer, media.mimetype);
-  log.info({ s3Key }, '[MEDIA] ✅ Upload to S3/MinIO complete');
 
-  // Salvar no banco
+  // Save DB record BEFORE S3 upload so photoCount is accurate when debounce fires
   const refImage = await prisma.referenceImage.create({
     data: {
       leadSessionId,
@@ -47,8 +44,11 @@ export async function downloadAndStoreMedia(
       fileSize: buffer.length,
     },
   });
-
   log.info({ s3Key, size: buffer.length, refImageId: refImage.id, leadSessionId }, '[MEDIA] ✅ ReferenceImage saved to DB');
+
+  log.info({ s3Key, bufferSize: buffer.length, mimetype: media.mimetype }, '[MEDIA] Uploading to S3/MinIO...');
+  await uploadFile(s3Key, buffer, media.mimetype);
+  log.info({ s3Key }, '[MEDIA] ✅ Upload to S3/MinIO complete');
 
   // Fire-and-forget: detect gender + smile from first face photo (skip couples)
   const session = await prisma.leadSession.findUnique({ where: { id: leadSessionId } });

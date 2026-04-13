@@ -186,7 +186,7 @@ export async function handleCloudWebhook(
               const folder = 'references' as const;
               const imageType = 'face';
               const s3Key = buildS3Key(session.id, folder, filename);
-              await uploadFile(s3Key, buffer, mimeType);
+              // Save DB record BEFORE S3 upload so photoCount is accurate when debounce fires
               await prisma.referenceImage.create({
                 data: {
                   leadSessionId: session.id,
@@ -197,7 +197,9 @@ export async function handleCloudWebhook(
                   type: imageType,
                 },
               });
-              log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ Image stored');
+              log.info({ s3Key, fileSize: buffer.length, mimeType, imageType }, '[CLOUD WEBHOOK:IMAGE] ✅ ReferenceImage saved to DB');
+              await uploadFile(s3Key, buffer, mimeType);
+              log.info({ s3Key }, '[CLOUD WEBHOOK:IMAGE] ✅ S3 upload complete');
 
               // Fire-and-forget: detect gender + smile from face photos (first photo only, skip couples)
               if (imageType === 'face') {
