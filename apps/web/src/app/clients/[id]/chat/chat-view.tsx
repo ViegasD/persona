@@ -376,8 +376,10 @@ function MessageBubble({ message, isFirstOfGroup, isLastOfGroup, leadInitial }: 
   const meta = (message.metadata ?? {}) as Record<string, unknown>;
   const s3Key = meta.s3Key as string | undefined;
   const generatedImages = meta.generatedImages as string[] | undefined;
+  const referenceImages = meta.referenceImages as string[] | undefined;
   const hasImage = message.messageType === 'image' && !!s3Key;
   const hasGeneratedGrid = Array.isArray(generatedImages) && generatedImages.length > 0;
+  const hasComparison = hasGeneratedGrid && Array.isArray(referenceImages) && referenceImages.length > 0;
 
   // Chatwoot-style radius: rounded-xl base, smaller corner on the speaker's side
   const radiusClass = isOutbound
@@ -401,12 +403,13 @@ function MessageBubble({ message, isFirstOfGroup, isLastOfGroup, leadInitial }: 
       )}
 
       <div
-        className={`max-w-lg text-sm ${radiusClass} overflow-hidden`}
+        className={`text-sm ${radiusClass} overflow-hidden`}
         style={{
           background: isOutbound ? 'var(--primary)' : 'var(--background)',
           color: isOutbound ? 'var(--primary-foreground)' : 'var(--foreground)',
           boxShadow: '0 1px 2px rgba(0,0,0,.06)',
           ...(hasImage || hasGeneratedGrid ? { padding: 0 } : { padding: '10px 16px' }),
+          ...(hasComparison ? { maxWidth: '95%' } : { maxWidth: '32rem' }),
         }}
       >
         {/* Single inbound image */}
@@ -425,20 +428,42 @@ function MessageBubble({ message, isFirstOfGroup, isLastOfGroup, leadInitial }: 
           </div>
         )}
 
-        {/* Generated images grid */}
+        {/* Generated images with reference comparison */}
         {hasGeneratedGrid && (
           <div>
-            <div className={`grid gap-1 p-1 ${generatedImages.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {generatedImages.map((key) => (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  key={key}
-                  src={`/manager/api/images/${key}`}
-                  alt="Foto gerada"
-                  className="block w-full aspect-[3/4] object-cover rounded-md"
-                  loading="lazy"
-                />
-              ))}
+            {hasComparison && (
+              <div className="p-2 pb-1">
+                <p className="text-[11px] font-medium mb-1.5 px-1" style={{ opacity: 0.7 }}>Fotos enviadas</p>
+                <div className="flex gap-1 overflow-x-auto">
+                  {referenceImages!.map((key) => (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      key={key}
+                      src={`/manager/api/images/${key}`}
+                      alt="Foto de referência"
+                      className="flex-shrink-0 w-20 h-20 object-cover rounded-md"
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="p-2 pt-1">
+              {hasComparison && (
+                <p className="text-[11px] font-medium mb-1.5 px-1" style={{ opacity: 0.7 }}>Fotos geradas</p>
+              )}
+              <div className={`grid gap-1 ${generatedImages!.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {generatedImages!.map((key) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    key={key}
+                    src={`/manager/api/images/${key}`}
+                    alt="Foto gerada"
+                    className="block w-full aspect-[3/4] object-cover rounded-md"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
             </div>
             {message.content && (
               <p className="px-4 py-2 whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>

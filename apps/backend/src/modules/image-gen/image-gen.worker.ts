@@ -232,8 +232,17 @@ export async function processImageGeneration(
       orderBy: { sequence: 'asc' },
       select: { s3Key: true },
     });
+    // Include reference photos for side-by-side comparison in admin chat
+    const referenceImages = await prisma.referenceImage.findMany({
+      where: { leadSessionId, type: 'face' },
+      orderBy: { createdAt: 'asc' },
+      select: { s3Key: true },
+    });
     await logOutboundMessage(session.leadId, completeMsg, 'text', undefined,
-      { generatedImages: generatedImages.map((g) => g.s3Key) },
+      {
+        generatedImages: generatedImages.map((g) => g.s3Key),
+        referenceImages: referenceImages.map((r) => r.s3Key),
+      },
     );
 
     await trackEvent(session.leadId, 'IMAGES_GENERATED', {
