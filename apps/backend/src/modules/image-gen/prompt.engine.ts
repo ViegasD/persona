@@ -140,11 +140,19 @@ export function buildPrompt(params: PromptParams, sceneDescription?: string): st
     );
   }
 
-  // 6. Expression guidance based on detected smile
+  // 6. Expression guidance — replicate the exact expression from the client's selfies
   if (params.detectedSmile === 'neutral') {
-    parts.push('The subject has a relaxed, natural expression — composed and confident, not smiling. Do not add a smile.');
+    parts.push(
+      'CRITICAL — EXPRESSION: The person in the reference photos has a neutral, non-smiling expression. ' +
+      'You MUST replicate this exact expression: mouth closed, relaxed lips, no smile whatsoever. ' +
+      'Do NOT add a smile, grin, or any upward curve of the lips. Keep the expression composed, serious, and confident — exactly as seen in the reference photos.',
+    );
   } else if (params.detectedSmile === 'smiling') {
-    parts.push('The subject has a natural, warm smile — genuine and relaxed, matching their reference photos.');
+    parts.push(
+      'CRITICAL — EXPRESSION: The person in the reference photos is smiling. ' +
+      'You MUST replicate this same smile: a natural, genuine, warm smile matching the intensity and style shown in the reference photos. ' +
+      'Do NOT make the expression neutral or serious. The smile should look authentic and relaxed, not forced or exaggerated.',
+    );
   }
 
   // 7. Exclusion constraint
