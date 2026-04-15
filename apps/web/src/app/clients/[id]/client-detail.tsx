@@ -201,6 +201,7 @@ function SessionCard({
   onRegenerate,
   onGenerate,
   onViewImage,
+  onViewRefImage,
 }: {
   session: AdminSession;
   approving: boolean;
