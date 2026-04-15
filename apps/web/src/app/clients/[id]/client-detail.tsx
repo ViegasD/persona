@@ -284,7 +284,28 @@ function SessionCard({
         )}
       </div>
 
-      {/* Image grid */}
+      {/* Reference photos (user selfies) */}
+      {session.referenceImages.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">
+            Fotos enviadas pelo cliente
+          </h4>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {session.referenceImages.map((img) => (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                key={img.id}
+                src={img.url}
+                alt="Foto de referência"
+                className="flex-shrink-0 w-24 h-24 object-cover rounded-lg border border-[var(--border)]"
+                loading="lazy"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Generated image grid */}
       {hasImages ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {session.generatedImages.map((image, index) => (

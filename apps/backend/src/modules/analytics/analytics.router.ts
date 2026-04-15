@@ -114,6 +114,12 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       ...lead,
       sessions: lead.sessions.map((session) => ({
         ...session,
+        referenceImages: session.referenceImages
+          .filter((img) => img.type === 'face')
+          .map((img) => ({
+            id: img.id,
+            url: imageUrl(img.s3Key),
+          })),
         generatedImages: session.generatedImages.map((img) => ({
           id: img.id,
           url: imageUrl(img.s3Key),

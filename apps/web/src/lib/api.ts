@@ -33,12 +33,18 @@ export interface AdminPayment {
   amount: number;
 }
 
+export interface AdminRefImage {
+  id: string;
+  url: string;
+}
+
 export interface AdminSession {
   id: string;
   funnelState: string;
   aiEnabled: boolean;
   preferences: Record<string, unknown>;
   metadata: Record<string, unknown>;
+  referenceImages: AdminRefImage[];
   generatedImages: AdminImage[];
   payments: AdminPayment[];
   createdAt: string;
