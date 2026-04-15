@@ -164,6 +164,12 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
           onRegenerate={handleRegenerate}
           onGenerate={() => handleGenerate(session.id)}
           onViewImage={(index) => openLightbox(session.generatedImages, index)}
+          onViewRefImage={(index) => {
+            const refAsAdmin = session.referenceImages.map((r, i) => ({
+              id: r.id, url: r.url, thumbnailUrl: null, sequence: i + 1, isApproved: false,
+            }));
+            openLightbox(refAsAdmin, index);
+          }}
         />
       ))}
 
@@ -204,6 +210,7 @@ function SessionCard({
   onRegenerate: (imageId: string) => void;
   onGenerate: () => void;
   onViewImage: (index: number) => void;
+  onViewRefImage: (index: number) => void;
 }) {
   const prefs = session.preferences as Record<string, string>;
   const meta = (session.metadata ?? {}) as Record<string, number>;
@@ -290,16 +297,24 @@ function SessionCard({
           <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">
             Fotos enviadas pelo cliente
           </h4>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {session.referenceImages.map((img) => (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {session.referenceImages.map((img, index) => (
+              <div
                 key={img.id}
-                src={img.url}
-                alt="Foto de referência"
-                className="flex-shrink-0 w-24 h-24 object-cover rounded-lg border border-[var(--border)]"
-                loading="lazy"
-              />
+                className="relative group rounded-lg overflow-hidden border border-[var(--border)] cursor-pointer"
+                onClick={() => onViewRefImage(index)}
+              >
+                <div className="aspect-[3/4] relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt={`Foto ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+              </div>
             ))}
           </div>
         </div>
