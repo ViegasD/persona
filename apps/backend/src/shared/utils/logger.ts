@@ -32,7 +32,7 @@ export const logger = pino({
   transport: env.NODE_ENV !== 'production'
     ? { target: 'pino-pretty', options: { colorize: true } }
     : undefined,
-  base: { service: 'ensaio-backend' },
+  base: { service: 'persona-backend' },
   timestamp: pino.stdTimeFunctions.isoTime,
 }, env.NODE_ENV === 'production' ? destination : undefined);
 

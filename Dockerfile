@@ -14,9 +14,9 @@ RUN pnpm install --frozen-lockfile
 COPY apps/backend ./apps/backend
 COPY apps/web ./apps/web
 
-RUN pnpm --filter @ensaio/backend prisma:generate
-RUN pnpm --filter @ensaio/backend build
-RUN pnpm --filter @ensaio/web build
+RUN pnpm --filter @persona/backend prisma:generate
+RUN pnpm --filter @persona/backend build
+RUN pnpm --filter @persona/web build
 
 # Copy static assets into standalone output
 RUN cp -r apps/web/public apps/web/.next/standalone/apps/web/public 2>/dev/null || true

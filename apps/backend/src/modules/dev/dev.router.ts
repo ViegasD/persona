@@ -216,7 +216,7 @@ export async function devRouter(app: FastifyInstance) {
       return reply.status(400).send({ error: 'No pending payment found' });
     }
 
-    const externalReference = `ensaio_${session.id}`;
+    const externalReference = `persona_${session.id}`;
     const fakePaymentId = payment.mercadopagoPaymentId ?? `dev_manual_${Date.now()}`;
 
     await handlePaymentApproved(

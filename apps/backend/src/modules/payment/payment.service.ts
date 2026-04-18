@@ -36,12 +36,12 @@ export async function initiatePixPayment(
 
   log.info({ packageId: prefs.packageId ?? 'DEFAULT', pkgId: pkg.id, price: finalPrice, photos: pkg.photos, priceOverride: priceOverride ?? null }, '[PAYMENT] Package resolved');
 
-  const externalReference = `ensaio_${sessionId}`;
+  const externalReference = `persona_${sessionId}`;
 
   log.info({ externalReference, amount: finalPrice }, '[PAYMENT] Calling Mercado Pago createPixPayment...');
   const { paymentId: mpPaymentId, qrCode } = await createPixPayment({
     amount: finalPrice,
-    description: `Ensaio fotográfico digital com ${pkg.photos} imagens profissionais`,
+    description: `Vídeo personalizado com ${pkg.photos} vídeo(s)`,
     externalReference,
     notificationUrl: `${env.API_BASE_URL}/api/webhooks/mercadopago`,
   });
@@ -93,7 +93,7 @@ export async function handlePaymentApproved(
   paidAt: string | null,
 ): Promise<void> {
   // Extrair sessionId do external_reference
-  const sessionId = externalReference.replace('ensaio_', '');
+  const sessionId = externalReference.replace('persona_', '');
 
   // Atualizar pagamento no banco (idempotente)
   const payment = await prisma.payment.findFirst({

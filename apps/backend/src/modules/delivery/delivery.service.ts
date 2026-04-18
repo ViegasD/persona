@@ -70,7 +70,7 @@ export async function deliverApprovedImages(
         mediatype: 'document',
         mimetype: 'image/jpeg',
         caption: `📸 Foto ${image.sequence}`,
-        fileName: `ensaio-foto-${image.sequence}.jpg`,
+        fileName: `persona-foto-${image.sequence}.jpg`,
       });
       deliveredImages++;
 

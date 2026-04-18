@@ -46,7 +46,7 @@ export const TRANSITIONS: Record<FunnelState, FunnelState[]> = {
   GALLERY_SENT: ['APPROVING'],
   APPROVING: ['DELIVERING'],
   DELIVERING: ['DELIVERED'],
-  DELIVERED: ['ENGAGING'],    // novo ensaio
+  DELIVERED: ['ENGAGING'],    // novo vídeo
   CHURNED: ['ENGAGING'],      // reativação
 };
 

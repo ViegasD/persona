@@ -8,7 +8,7 @@ import { buildApp } from './app.js';
 import { startWorkers, stopWorkers } from './workers.js';
 
 async function main() {
-  logger.info('Iniciando Ensaio Backend...');
+  logger.info('Iniciando Persona Backend...');
 
   await connectDatabase();
 

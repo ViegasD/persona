@@ -11,8 +11,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY apps/backend ./apps/backend
 
-RUN pnpm --filter @ensaio/backend prisma:generate
-RUN pnpm --filter @ensaio/backend build
+RUN pnpm --filter @persona/backend prisma:generate
+RUN pnpm --filter @persona/backend build
 
 ENV NODE_ENV=production
 EXPOSE 3000

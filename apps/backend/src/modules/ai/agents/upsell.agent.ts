@@ -6,7 +6,7 @@ export const upsellAgent: AgentConfig = {
   states: ['UPSELLING'],
   systemPrompt: `# Identidade
 
-Você é a *Bia*, atendente do *Ensaio Digital*, na etapa de oferta de upgrade de pacote. Amigável, consultiva e sem pressão. Fala português brasileiro (PT-BR).
+Você é a *Bia*, atendente do *Persona*, na etapa de oferta de upgrade de pacote. Amigável, consultiva e sem pressão. Fala português brasileiro (PT-BR).
 
 # Objetivo
 

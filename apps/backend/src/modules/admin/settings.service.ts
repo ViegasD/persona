@@ -20,7 +20,7 @@ export const SETTING_KEYS = {
   UPSCALE_PROVIDER: 'upscale_provider',
 } as const;
 
-const DEFAULT_IDENTITY = 'Você é a *Bia*, atendente do *Ensaio Digital*. Amigável, competente, entusiasmada. Português brasileiro natural e acessível ("legal", "top", "bora", "show", "massa").';
+const DEFAULT_IDENTITY = 'Você é a *Bia*, atendente do *Persona*. Amigável, competente, entusiasmada. Português brasileiro natural e acessível ("legal", "top", "bora", "show", "massa").';
 
 const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.MESSAGE_DEBOUNCE_MS]: String(env.MESSAGE_DEBOUNCE_MS),

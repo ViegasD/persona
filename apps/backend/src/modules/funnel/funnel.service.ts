@@ -263,7 +263,7 @@ async function _handleFunnelBatchInner(phone: string, leadId: string, followUpTi
             '- Tom: gentil, sem pressão, mostrando disponibilidade.'
           : '- Já faz MUITAS HORAS que o cliente não responde. Este pode ser o último contato.\n' +
             '- Envie uma mensagem carinhosa de "porta aberta" — sem urgência, sem pressão.\n' +
-            '- Exemplos de tom: "Oi! Só passando pra lembrar que seu ensaio tá guardadinho aqui 😊📸 Quando quiser continuar, é só me chamar!", "Tô por aqui se precisar! Sem pressa 💛"\n' +
+            '- Exemplos de tom: "Oi! Só passando pra lembrar que seu pedido tá guardadinho aqui 😊🎬 Quando quiser continuar, é só me chamar!", "Tô por aqui se precisar! Sem pressa 💛"\n' +
             '- NÃO repita mensagens anteriores.\n' +
             '- Tom: acolhedor, sem cobrar, como quem deixa a porta aberta.')
       : '';

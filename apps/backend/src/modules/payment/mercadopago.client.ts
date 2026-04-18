@@ -90,7 +90,7 @@ export async function createPixPayment(params: {
       external_reference: params.externalReference,
       notification_url: params.notificationUrl,
       payer: {
-        email: 'cliente@ensaiodigital.com.br',
+        email: 'cliente@persona.com.br',
       },
       date_of_expiration: expirationDate.toISOString(),
     },
