@@ -3,8 +3,8 @@ import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Ensaio Digital — Admin',
-  description: 'Painel administrativo para aprovação de imagens geradas.',
+  title: 'Vídeo Personalizado — Admin',
+  description: 'Painel administrativo para aprovação de vídeos personalizados.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,9 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
         <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)] px-6 py-3 flex items-center gap-6">
-          <h1 className="text-lg font-bold">📸 Ensaio Digital — Admin</h1>
+          <h1 className="text-lg font-bold">🎬 Vídeo Personalizado — Admin</h1>
           <nav className="flex gap-4 text-sm">
             <Link href="/" className="hover:underline">Clientes</Link>
+            <Link href="/characters" className="hover:underline">Personagens</Link>
             <Link href="/templates" className="hover:underline">Templates</Link>
             <Link href="/settings" className="hover:underline">Configurações</Link>
           </nav>

@@ -27,6 +27,14 @@ export interface AdminImage {
   isApproved: boolean;
 }
 
+export interface AdminVideo {
+  id: string;
+  url: string;
+  sequence: number;
+  isApproved: boolean;
+  durationSeconds: number | null;
+}
+
 export interface AdminPayment {
   id: string;
   status: string;
@@ -46,6 +54,7 @@ export interface AdminSession {
   metadata: Record<string, unknown>;
   referenceImages: AdminRefImage[];
   generatedImages: AdminImage[];
+  generatedVideos: AdminVideo[];
   payments: AdminPayment[];
   createdAt: string;
   updatedAt: string;

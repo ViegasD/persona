@@ -134,6 +134,7 @@ export function buildLeadContext(lead: {
   preferences: Record<string, unknown>;
   photoCount: number;
   styleRefCount?: number;
+  characterCatalog?: Array<{ name: string; slug: string; description?: string | null }>;
 }, portfolioUrl?: string): string {
   const prefs = session.preferences;
   const parts: string[] = [
@@ -148,33 +149,39 @@ export function buildLeadContext(lead: {
     if (pkg) parts.push(`  <pacote_label>${pkg.label}</pacote_label>`);
   }
   if (prefs.priceOverride) parts.push(`  <preco_final>R$ ${Number(prefs.priceOverride).toFixed(2).replace('.', ',')}</preco_final>`);
+
+  // Video-specific fields
+  if (prefs.characterId) parts.push(`  <personagem_id>${prefs.characterId}</personagem_id>`);
+  if (prefs.characterName) parts.push(`  <personagem>${prefs.characterName}</personagem>`);
+  if (prefs.messageType) {
+    parts.push(`  <tipo_mensagem>${prefs.messageType}</tipo_mensagem>`);
+    const occ = OCCASIONS[prefs.messageType as string];
+    if (occ) parts.push(`  <tipo_mensagem_label>${occ.label}</tipo_mensagem_label>`);
+  }
+  if (prefs.recipientName) parts.push(`  <nome_destinatario>${prefs.recipientName}</nome_destinatario>`);
+  if (prefs.recipientAge) parts.push(`  <idade_destinatario>${prefs.recipientAge}</idade_destinatario>`);
+  if (prefs.customMessage) parts.push(`  <mensagem_personalizada>${prefs.customMessage}</mensagem_personalizada>`);
+
+  // Legacy image fields (kept for backward compatibility)
   if (prefs.occasion) {
     parts.push(`  <ocasiao>${prefs.occasion}</ocasiao>`);
     const occ = OCCASIONS[prefs.occasion as string];
     if (occ) parts.push(`  <ocasiao_label>${occ.label}</ocasiao_label>`);
   }
-  if (prefs.occasionDetails) parts.push(`  <detalhes_ocasiao>${prefs.occasionDetails}</detalhes_ocasiao>`);
-  if (prefs.ageAtBirthday) parts.push(`  <idade_aniversario>${prefs.ageAtBirthday}</idade_aniversario>`);
-  if (prefs.profession) parts.push(`  <profissao>${prefs.profession}</profissao>`);
-  if (prefs.graduationCourse) parts.push(`  <curso_formatura>${prefs.graduationCourse}</curso_formatura>`);
-  parts.push(`  <fotos_enviadas>${session.photoCount}</fotos_enviadas>`);
-  const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
-  const minReached = session.photoCount >= minPhotos;
-  parts.push(`  <minimo_fotos>${minPhotos}</minimo_fotos>`);
-  parts.push(`  <minimo_atingido>${minReached ? 'sim' : 'nao'}</minimo_atingido>`);
-  if (session.styleRefCount !== undefined) {
-    parts.push(`  <fotos_inspiracao_enviadas>${session.styleRefCount}</fotos_inspiracao_enviadas>`);
-  }
-  if (prefs.promoShown) parts.push(`  <promo_mostrada>sim</promo_mostrada>`);
 
   parts.push('</lead_context>');
 
-  if (portfolioUrl) {
-    parts.push(`\n<portfolio_url>${portfolioUrl}</portfolio_url>`);
+  // Character catalog for conversation agent
+  if (session.characterCatalog && session.characterCatalog.length > 0) {
+    parts.push('\n<catalogo_personagens>');
+    session.characterCatalog.forEach((c, i) => {
+      parts.push(`  ${i + 1}. *${c.name}*${c.description ? ` — ${c.description}` : ''}`);
+    });
+    parts.push('</catalogo_personagens>');
   }
 
-  if (minReached) {
-    parts.push('\n⚠️ ATENÇÃO: O cliente JÁ enviou fotos suficientes. NÃO peça mais fotos.');
+  if (portfolioUrl) {
+    parts.push(`\n<portfolio_url>${portfolioUrl}</portfolio_url>`);
   }
 
   return parts.join('\n');

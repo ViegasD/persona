@@ -7,7 +7,10 @@ import { createChildLogger } from '../../shared/utils/logger.js';
 const log = createChildLogger('gallery-controller');
 
 const approveSchema = z.object({
-  imageIds: z.array(z.string().uuid()).min(1),
+  imageIds: z.array(z.string().uuid()).default([]),
+  videoIds: z.array(z.string().uuid()).default([]),
+}).refine((data) => data.imageIds.length > 0 || data.videoIds.length > 0, {
+  message: 'Selecione pelo menos uma imagem ou vídeo',
 });
 
 /**
@@ -69,7 +72,7 @@ export async function handleApproveImages(
     return;
   }
 
-  const result = await approveImages(sessionId, parsed.data.imageIds);
+  const result = await approveImages(sessionId, parsed.data.imageIds, parsed.data.videoIds);
 
   if (!result.success) {
     reply.status(400).send({ error: result.message });
@@ -99,6 +102,8 @@ export async function handleGetGalleryStatus(
     sessionId,
     hasApproved: data.hasApproved,
     imageCount: data.images.length,
-    approvedCount: data.images.filter((i) => i.isApproved).length,
+    videoCount: data.videos.length,
+    approvedCount: data.images.filter((i) => i.isApproved).length +
+      data.videos.filter((v) => v.isApproved).length,
   });
 }

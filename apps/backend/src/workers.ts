@@ -2,6 +2,7 @@ import { createChildLogger } from './shared/utils/logger.js';
 import { createWorker, QUEUE_NAMES } from './shared/queue/queues.js';
 import type {
   ImageGenerationJobData,
+  VideoGenerationJobData,
   DeliveryJobData,
   UpsellJobData,
   AnalyticsJobData,
@@ -9,6 +10,7 @@ import type {
   MessageBatchJobData,
 } from './shared/queue/queues.js';
 import { processImageGeneration } from './modules/image-gen/image-gen.worker.js';
+import { processVideoGeneration } from './modules/video-gen/video-gen.worker.js';
 import { processDelivery } from './modules/delivery/delivery.worker.js';
 import { processUpsell } from './modules/delivery/upsell.service.js';
 import { processAnalytics } from './modules/analytics/analytics.service.js';
@@ -27,6 +29,14 @@ export function startWorkers(): void {
     createWorker<ImageGenerationJobData>(
       QUEUE_NAMES.IMAGE_GENERATION,
       processImageGeneration,
+      { concurrency: 3, limiter: { max: 10, duration: 60_000 } },
+    ),
+  );
+
+  workers.push(
+    createWorker<VideoGenerationJobData>(
+      QUEUE_NAMES.VIDEO_GENERATION,
+      processVideoGeneration,
       { concurrency: 3, limiter: { max: 10, duration: 60_000 } },
     ),
   );

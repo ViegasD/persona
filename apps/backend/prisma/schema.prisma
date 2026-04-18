@@ -60,6 +60,11 @@ enum MessageDirection {
   OUTBOUND
 }
 
+enum GenerationJobType {
+  IMAGE
+  VIDEO
+}
+
 // ─── Models ─────────────────────────────────────────────────
 
 model Lead {
@@ -95,6 +100,7 @@ model LeadSession {
   referenceImages  ReferenceImage[]
   generationJobs   GenerationJob[]
   generatedImages  GeneratedImage[]
+  generatedVideos  GeneratedVideo[]
   approvalTokens   ApprovalToken[]
   payments         Payment[]
   deliveries       Delivery[]
@@ -127,7 +133,8 @@ model ReferenceImage {
 model GenerationJob {
   id            String             @id @default(uuid())
   leadSessionId String             @map("lead_session_id")
-  kieJobId      String?            @map("kie_job_id")
+  externalJobId String?            @map("external_job_id")
+  jobType       GenerationJobType  @default(IMAGE) @map("job_type")
   prompt        String             @db.Text
   status        GenerationJobStatus @default(QUEUED)
   costCredits   Decimal?           @map("cost_credits") @db.Decimal(10, 4)
@@ -137,12 +144,13 @@ model GenerationJob {
 
   leadSession     LeadSession      @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
   generatedImages GeneratedImage[]
+  generatedVideos GeneratedVideo[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([leadSessionId])
   @@index([status])
-  @@index([kieJobId])
+  @@index([externalJobId])
   @@map("generation_jobs")
 }
 
@@ -211,6 +219,7 @@ model Delivery {
   paymentId       String         @map("payment_id")
   status          DeliveryStatus @default(PENDING)
   imagesDelivered Int            @default(0) @map("images_delivered")
+  videosDelivered Int            @default(0) @map("videos_delivered")
   completedAt     DateTime?      @map("completed_at")
 
   leadSession LeadSession @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
@@ -309,4 +318,52 @@ model Setting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+// ─── Character Catalog ──────────────────────────────────────
+
+model Character {
+  id                   String   @id @default(uuid())
+  name                 String
+  slug                 String   @unique
+  description          String?  @db.Text
+  thumbnailS3Key       String?  @map("thumbnail_s3_key")
+  referenceImageS3Keys Json     @default("[]") @map("reference_image_s3_keys") @db.JsonB
+  tags                 String[] @default([])
+  gender               String?  // "male" | "female" | "neutral"
+  ageRange             String?  @map("age_range") // "child" | "teen" | "adult" | "senior"
+  personality          String?  @db.Text // prompt hint for video generation
+  isActive             Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("characters")
+}
+
+// ─── Generated Videos ───────────────────────────────────────
+
+model GeneratedVideo {
+  id              String  @id @default(uuid())
+  generationJobId String  @map("generation_job_id")
+  leadSessionId   String  @map("lead_session_id")
+  s3Key           String  @map("s3_key")
+  s3Url           String  @map("s3_url") // original xAI URL
+  thumbnailS3Key  String? @map("thumbnail_s3_key")
+  durationSeconds Int?    @map("duration_seconds")
+  aspectRatio     String? @map("aspect_ratio")
+  resolution      String?
+  isApproved      Boolean @default(false) @map("is_approved")
+  sequence        Int
+
+  generationJob GenerationJob @relation(fields: [generationJobId], references: [id], onDelete: Cascade)
+  leadSession   LeadSession   @relation(fields: [leadSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([leadSessionId])
+  @@index([generationJobId])
+  @@map("generated_videos")
 }

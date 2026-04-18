@@ -18,14 +18,10 @@ import { buildLeadContext } from '../ai/agents/base.js';
 import { extractionAgent, type ExtractionResult } from '../ai/agents/extraction.agent.js';
 import { conversationAgent, type ConversationResponse } from '../ai/agents/conversation.agent.js';
 import { getSetting, getSettingNumber, getAgentModel, SETTING_KEYS } from '../admin/settings.service.js';
-import { PACKAGES } from './packages.config.js';
+import { PACKAGES, OCCASIONS } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
-const VALID_OCCASIONS = new Set([
-  'aniversario', 'profissional', 'fim_de_curso', 'formatura',
-  'casal', 'gravidez', 'casual', 'infantil', 'pet', 'corporativo',
-  'familia', 'fitness', 'natalino',
-]);
+const VALID_MESSAGE_TYPES = new Set(Object.keys(OCCASIONS));
 
 const log = createChildLogger('funnel-v2');
 
@@ -99,15 +95,16 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     await prisma.leadSession.update({ where: { id: session.id }, data: { funnelState: state } });
   }
 
-  const photoCount = await prisma.referenceImage.count({
-    where: { leadSessionId: session.id, type: 'face' },
-  });
-  const styleRefCount = await prisma.referenceImage.count({
-    where: { leadSessionId: session.id, type: 'style' },
-  });
   let prefs = (session.preferences as Record<string, unknown>) ?? {};
 
-  log.info({ phone, state, leadId, sessionId: session.id, photoCount, prefs }, '[BATCH:CTX] Loaded context');
+  // Load active characters for catalog
+  const characterCatalog = await prisma.character.findMany({
+    where: { isActive: true },
+    select: { name: true, slug: true, personality: true },
+    orderBy: { name: 'asc' },
+  });
+
+  log.info({ phone, state, leadId, sessionId: session.id, prefs }, '[BATCH:CTX] Loaded context');
 
   // ─── AI disabled check ────────────────────────────────────
   if (!session.aiEnabled) {
@@ -171,7 +168,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
   let extraction: ExtractionResult | null = null;
   if (!isFollowUp && EXTRACTION_STATES.has(state)) {
     try {
-      extraction = await runExtraction(leadId, lead, session, prefs, photoCount, styleRefCount);
+      extraction = await runExtraction(leadId, lead, session, prefs, characterCatalog);
       if (extraction && Object.keys(extraction).length > 0) {
         log.info({ extraction }, '[EXTRACT] Data extracted');
         await applyExtractedData(session.id, lead.id, extraction);
@@ -229,7 +226,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     const agentIdentity = await getSetting(SETTING_KEYS.AGENT_IDENTITY);
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
-      { preferences: prefs, photoCount, styleRefCount },
+      { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map(c => ({ name: c.name, slug: c.slug, description: c.personality })) },
       portfolioUrl || undefined,
     );
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
@@ -293,10 +290,9 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
 
   // CONVERSATION: data confirmed + ready → create Pix
   if (state === FUNNEL_STATES.CONVERSATION && extraction?.dataConfirmed) {
-    const minPhotos = prefs.occasion === 'casal' ? 4 : 2;
     if (
       prefs.packageId && VALID_PACKAGE_IDS.has(prefs.packageId as string) &&
-      photoCount >= minPhotos && isOccasionDataComplete(prefs)
+      isVideoDataComplete(prefs)
     ) {
       try {
         log.info('[TRANSITION] CONVERSATION → AWAITING_PAYMENT (data confirmed)');
@@ -308,7 +304,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
         await logOutboundMessage(lead.id, errorMsg);
       }
     } else {
-      log.info({ prefs, photoCount }, '[TRANSITION] dataConfirmed but not ready yet');
+      log.info({ prefs }, '[TRANSITION] dataConfirmed but not ready yet');
     }
   }
 
@@ -318,7 +314,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     if (pkgId && VALID_PACKAGE_IDS.has(pkgId)) {
       log.info({ pkgId }, '[TRANSITION] DELIVERED → new session');
       const newPrefs: Record<string, unknown> = {};
-      for (const key of ['packageId', 'occasion', 'occasionDetails', 'ageAtBirthday', 'profession', 'graduationCourse']) {
+      for (const key of ['packageId', 'characterId', 'characterName', 'messageType', 'recipientName', 'recipientAge', 'customMessage']) {
         const val = (extraction as any)?.[key] ?? prefs[key];
         if (val !== undefined && val !== null) newPrefs[key] = val;
       }
@@ -349,8 +345,7 @@ async function runExtraction(
   lead: { name: string | null; phone: string },
   session: { id: string; createdAt: Date; updatedAt: Date; preferences: unknown },
   prefs: Record<string, unknown>,
-  photoCount: number,
-  styleRefCount: number,
+  characterCatalog: Array<{ name: string; slug: string; personality: string | null }>,
 ): Promise<ExtractionResult | null> {
   const historySince = session.createdAt;
   // Use last 6 messages for extraction (3 exchanges)
@@ -359,7 +354,7 @@ async function runExtraction(
 
   const leadContext = buildLeadContext(
     { name: lead.name, phone: lead.phone },
-    { preferences: prefs, photoCount, styleRefCount },
+    { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map(c => ({ name: c.name, slug: c.slug, description: c.personality })) },
   );
 
   const agentModel = await getAgentModel('extraction');
@@ -390,23 +385,8 @@ async function applyExtractedData(
     await trackEvent(leadId, 'QUALIFIED', { name: data.name });
   }
 
-  // Reclassify last uploaded image as style reference
-  if (data.reclassifyLastImageAsStyle === true) {
-    const lastImage = await prisma.referenceImage.findFirst({
-      where: { leadSessionId: sessionId, type: 'face' },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (lastImage) {
-      await prisma.referenceImage.update({
-        where: { id: lastImage.id },
-        data: { type: 'style' },
-      });
-      log.info({ imageId: lastImage.id }, '[DATA:RECLASSIFY] Image → style');
-    }
-  }
-
   // Build preference updates (exclude one-time signals)
-  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'reclassifyLastImageAsStyle', 'upgradeAccepted']);
+  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'upgradeAccepted']);
   const prefUpdates: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(data)) {
@@ -416,8 +396,8 @@ async function applyExtractedData(
       log.warn({ key, value }, '[DATA:VALIDATE] Invalid packageId — discarded');
       continue;
     }
-    if (key === 'occasion' && typeof value === 'string' && !VALID_OCCASIONS.has(value)) {
-      log.warn({ key, value }, '[DATA:VALIDATE] Unknown occasion — storing anyway');
+    if (key === 'messageType' && typeof value === 'string' && !VALID_MESSAGE_TYPES.has(value)) {
+      log.warn({ key, value }, '[DATA:VALIDATE] Unknown message type — storing anyway');
     }
 
     prefUpdates[key] = value;
@@ -435,12 +415,12 @@ async function applyExtractedData(
   const current = (session?.preferences as Record<string, unknown>) ?? {};
   const merged = { ...current, ...prefUpdates };
 
-  // Clean stale data when occasion changes
-  if (typeof prefUpdates.occasion === 'string' && current.occasion && prefUpdates.occasion !== current.occasion) {
-    for (const field of ['ageAtBirthday', 'profession', 'graduationCourse', 'occasionDetails']) {
+  // Clean stale data when message type changes
+  if (typeof prefUpdates.messageType === 'string' && current.messageType && prefUpdates.messageType !== current.messageType) {
+    for (const field of ['recipientAge', 'customMessage']) {
       delete merged[field];
     }
-    log.info({ old: current.occasion, new: prefUpdates.occasion }, '[DATA:CLEANUP] Occasion changed');
+    log.info({ old: current.messageType, new: prefUpdates.messageType }, '[DATA:CLEANUP] Message type changed');
   }
 
   // Clear priceOverride when package changes
@@ -466,12 +446,12 @@ async function applyExtractedData(
 
 // ─── Transition Helpers ─────────────────────────────────────
 
-function isOccasionDataComplete(prefs: Record<string, unknown>): boolean {
-  const occasion = prefs.occasion as string | undefined;
-  if (!occasion) return false;
-  if (occasion === 'aniversario') return !!prefs.ageAtBirthday;
-  if (occasion === 'profissional') return !!prefs.profession;
-  if (occasion === 'fim_de_curso' || occasion === 'formatura') return !!prefs.graduationCourse;
+function isVideoDataComplete(prefs: Record<string, unknown>): boolean {
+  if (!prefs.characterId) return false;
+  if (!prefs.messageType) return false;
+  if (!prefs.recipientName) return false;
+  // Birthday messages require age
+  if (prefs.messageType === 'aniversario' && !prefs.recipientAge) return false;
   return true;
 }
 

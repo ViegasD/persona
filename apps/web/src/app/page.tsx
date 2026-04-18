@@ -77,7 +77,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             const latestSession = lead.sessions[0];
             const prefs = (latestSession?.preferences ?? {}) as Record<string, string>;
             const imageCount = latestSession?.generatedImages?.length ?? 0;
-            const approvedCount = latestSession?.generatedImages?.filter((i) => i.isApproved).length ?? 0;
+            const videoCount = latestSession?.generatedVideos?.length ?? 0;
+            const approvedImages = latestSession?.generatedImages?.filter((i) => i.isApproved).length ?? 0;
+            const approvedVideos = latestSession?.generatedVideos?.filter((v) => v.isApproved).length ?? 0;
+            const totalContent = imageCount + videoCount;
+            const totalApproved = approvedImages + approvedVideos;
             const statusInfo = STATUS_LABELS[lead.status] ?? { label: lead.status, color: 'var(--muted-foreground)' };
 
             return (
@@ -97,15 +101,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     <div>
                       <p className="font-medium">{lead.name ?? lead.phone}</p>
                       <p className="text-sm text-[var(--muted-foreground)]">
-                        {lead.phone} · {prefs.occasion ?? '—'}
+                        {lead.phone} · {prefs.characterName ?? prefs.messageType ?? prefs.occasion ?? '—'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 text-sm">
-                    {imageCount > 0 && (
+                    {totalContent > 0 && (
                       <span className="text-[var(--muted-foreground)]">
-                        {approvedCount}/{imageCount} fotos
+                        {totalApproved}/{totalContent} {videoCount > 0 ? 'vídeos' : 'fotos'}
                       </span>
                     )}
                     <span

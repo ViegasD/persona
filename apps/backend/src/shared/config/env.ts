@@ -39,9 +39,16 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   OPENAI_VISION_MODEL: z.string().default('gpt-4o'),
 
-  // Kie.ai
-  KIE_API_URL: z.string().url(),
-  KIE_API_KEY: z.string(),
+  // Kie.ai (legacy — image generation)
+  KIE_API_URL: z.string().url().optional(),
+  KIE_API_KEY: z.string().optional(),
+
+  // xAI (video generation)
+  XAI_API_KEY: z.string().optional(),
+  XAI_API_URL: z.string().url().default('https://api.x.ai/v1'),
+  VIDEO_DURATION: z.coerce.number().default(10),
+  VIDEO_ASPECT_RATIO: z.string().default('9:16'),
+  VIDEO_RESOLUTION: z.enum(['480p', '720p']).default('720p'),
 
   // S3 / MinIO
   S3_ENDPOINT: z.string().optional(),

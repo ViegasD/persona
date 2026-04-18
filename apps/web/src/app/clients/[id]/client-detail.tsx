@@ -9,10 +9,12 @@ function fmtDate(iso: string) {
   return `${dd}/${mm}/${d.getUTCFullYear()}`;
 }
 import { useRouter } from 'next/navigation';
-import type { AdminLead, AdminSession, AdminImage } from '@/lib/api';
+import type { AdminLead, AdminSession, AdminImage, AdminVideo } from '@/lib/api';
 import { approveAllAction, regenerateAction, generateSessionAction } from '@/lib/actions';
 import { ImageCard } from '@/components/image-card';
+import { VideoCard } from '@/components/video-card';
 import { Lightbox } from '@/components/lightbox';
+import { VideoLightbox } from '@/components/video-lightbox';
 import Link from 'next/link';
 
 const STATE_LABELS: Record<string, string> = {
@@ -35,6 +37,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ images: AdminImage[]; index: number } | null>(null);
+  const [videoLightbox, setVideoLightbox] = useState<{ videos: AdminVideo[]; index: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleApproveAll = useCallback(
@@ -164,6 +167,7 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
           onRegenerate={handleRegenerate}
           onGenerate={() => handleGenerate(session.id)}
           onViewImage={(index) => openLightbox(session.generatedImages, index)}
+          onViewVideo={(index) => setVideoLightbox({ videos: session.generatedVideos ?? [], index })}
           onViewRefImage={(index) => {
             const refAsAdmin = session.referenceImages.map((r, i) => ({
               id: r.id, url: r.url, thumbnailUrl: null, sequence: i + 1, isApproved: false,
@@ -188,6 +192,14 @@ export function ClientDetail({ lead }: { lead: AdminLead }) {
           onNavigate={(index) => setLightbox((prev) => prev ? { ...prev, index } : null)}
         />
       )}
+      {videoLightbox && (
+        <VideoLightbox
+          videos={videoLightbox.videos}
+          currentIndex={videoLightbox.index}
+          onClose={() => setVideoLightbox(null)}
+          onNavigate={(index) => setVideoLightbox((prev) => prev ? { ...prev, index } : null)}
+        />
+      )}
     </div>
   );
 }
@@ -201,6 +213,7 @@ function SessionCard({
   onRegenerate,
   onGenerate,
   onViewImage,
+  onViewVideo,
   onViewRefImage,
 }: {
   session: AdminSession;
@@ -211,6 +224,7 @@ function SessionCard({
   onRegenerate: (imageId: string) => void;
   onGenerate: () => void;
   onViewImage: (index: number) => void;
+  onViewVideo: (index: number) => void;
   onViewRefImage: (index: number) => void;
 }) {
   const prefs = session.preferences as Record<string, string>;
@@ -218,12 +232,17 @@ function SessionCard({
   const expectedPhotos = meta.expectedPhotos ?? 0;
   const failedPhotos = meta.failedPhotos ?? 0;
   const hasImages = session.generatedImages.length > 0;
-  const allApproved = hasImages && session.generatedImages.every((i) => i.isApproved);
+  const hasVideos = (session.generatedVideos ?? []).length > 0;
+  const hasContent = hasImages || hasVideos;
+  const allImagesApproved = hasImages && session.generatedImages.every((i) => i.isApproved);
+  const allVideosApproved = hasVideos && (session.generatedVideos ?? []).every((v) => v.isApproved);
+  const allApproved = hasContent && (!hasImages || allImagesApproved) && (!hasVideos || allVideosApproved);
   const canApprove =
-    hasImages &&
+    hasContent &&
     !allApproved &&
     ['GALLERY_SENT', 'GENERATING', 'PAID', 'APPROVING'].includes(session.funnelState);
-  const canGenerate = !hasImages && session.funnelState === 'PAID';
+  const canGenerate = !hasContent && session.funnelState === 'PAID';
+  const totalContent = session.generatedImages.length + (session.generatedVideos ?? []).length;
 
   return (
     <div className="border border-[var(--border)] rounded-lg p-5 mb-4">
@@ -255,7 +274,10 @@ function SessionCard({
             </span>
           </div>
           <p className="text-sm text-[var(--muted-foreground)] mt-1">
-            {prefs.occasion && `Ocasião: ${prefs.occasion}`}
+            {prefs.characterName && `Personagem: ${prefs.characterName}`}
+            {prefs.messageType && ` · Tipo: ${prefs.messageType}`}
+            {prefs.recipientName && ` · Para: ${prefs.recipientName}`}
+            {!prefs.characterName && prefs.occasion && `Ocasião: ${prefs.occasion}`}
             {prefs.packageId && ` · Pacote: ${prefs.packageId}`}
             {` · ${fmtDate(session.createdAt)}`}
           </p>
@@ -269,7 +291,7 @@ function SessionCard({
               className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
               style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
             >
-              {generating ? 'Disparando...' : '▶ Gerar imagens'}
+              {generating ? 'Disparando...' : '▶ Gerar conteúdo'}
             </button>
           )}
 
@@ -280,7 +302,7 @@ function SessionCard({
               className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
               style={{ background: 'var(--success)', color: 'white' }}
             >
-              {approving ? 'Aprovando...' : `✓ Aprovar todas (${session.generatedImages.length})`}
+              {approving ? 'Aprovando...' : `✓ Aprovar tudo (${totalContent})`}
             </button>
           )}
         </div>
@@ -322,21 +344,46 @@ function SessionCard({
       )}
 
       {/* Generated image grid */}
-      {hasImages ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {session.generatedImages.map((image, index) => (
-            <ImageCard
-              key={image.id}
-              image={image}
-              regenerating={regenerating === image.id}
-              onRegenerate={() => onRegenerate(image.id)}
-              onView={() => onViewImage(index)}
-            />
-          ))}
+      {hasImages && (
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">
+            Imagens geradas
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {session.generatedImages.map((image, index) => (
+              <ImageCard
+                key={image.id}
+                image={image}
+                regenerating={regenerating === image.id}
+                onRegenerate={() => onRegenerate(image.id)}
+                onView={() => onViewImage(index)}
+              />
+            ))}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {/* Generated video grid */}
+      {hasVideos && (
+        <div className="mb-4">
+          <h4 className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">
+            Vídeos gerados
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {(session.generatedVideos ?? []).map((video, index) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onView={() => onViewVideo(index)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hasContent && (
         <p className="text-sm text-[var(--muted-foreground)] text-center py-8">
-          Nenhuma imagem gerada nesta sessão.
+          Nenhum conteúdo gerado nesta sessão.
         </p>
       )}
     </div>

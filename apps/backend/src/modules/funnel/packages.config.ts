@@ -1,21 +1,21 @@
 /**
- * Package definitions for the AI photo shoot service.
+ * Package definitions for the AI video service.
  */
 
 export interface Package {
   id: string;
-  photos: number;
+  photos: number;  // legacy — kept for backward compatibility
+  videos: number;  // number of videos in this package
   price: number;    // BRL
   label: string;    // Human-readable, used in prompts
   popular: boolean; // Highlighted in the offer
 }
 
 export const PACKAGES: Package[] = [
-  { id: 'pkg_1',  photos: 1,  price: 6.90,   label: '1 foto — R$ 6,90',    popular: false },
-  { id: 'pkg_2',  photos: 2,  price: 9.90,   label: '2 fotos — R$ 9,90',   popular: false },
-  { id: 'pkg_3',  photos: 3,  price: 13.90,  label: '3 fotos — R$ 13,90',  popular: false },
-  { id: 'pkg_5',  photos: 5,  price: 18.90,  label: '5 fotos — R$ 18,90',  popular: false },
-  { id: 'pkg_10', photos: 10, price: 34.90,  label: '10 fotos — R$ 34,90', popular: true },
+  { id: 'pkg_1',  photos: 0, videos: 1,  price: 9.90,   label: '1 vídeo — R$ 9,90',    popular: false },
+  { id: 'pkg_2',  photos: 0, videos: 2,  price: 14.90,  label: '2 vídeos — R$ 14,90',   popular: false },
+  { id: 'pkg_3',  photos: 0, videos: 3,  price: 19.90,  label: '3 vídeos — R$ 19,90',   popular: true },
+  { id: 'pkg_5',  photos: 0, videos: 5,  price: 29.90,  label: '5 vídeos — R$ 29,90',   popular: false },
 ];
 
 export function getPackageById(id: string): Package | undefined {
@@ -26,32 +26,35 @@ export function getPackageByPhotos(photos: number): Package | undefined {
   return PACKAGES.find((p) => p.photos === photos);
 }
 
+export function getPackageByVideos(videos: number): Package | undefined {
+  return PACKAGES.find((p) => p.videos === videos);
+}
+
 /**
  * Formats the packages list for display in system prompts.
  */
 export function formatPackagesForPrompt(): string {
   return PACKAGES
-    .filter((p) => p.id !== 'pkg_1') // pkg_1 is hidden — only offered when client asks to test
     .map((p) =>
-      `${p.popular ? '🎁' : '📦'} ${p.photos} fotos — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
+      `${p.popular ? '🎁' : '📦'} ${p.videos} vídeo${p.videos > 1 ? 's' : ''} — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
     ).join('\n');
 }
 
 /**
- * Known occasion types and their prompt keywords.
+ * Known message types and their prompt keywords for video generation.
  */
 export const OCCASIONS: Record<string, { label: string; promptHint: string }> = {
-  aniversario:   { label: 'Aniversário',   promptHint: 'birthday celebration, party decorations, balloons, birthday cake' },
-  profissional:  { label: 'Profissional',  promptHint: 'professional corporate headshot, business attire, clean background' },
-  fim_de_curso:  { label: 'Fim de Curso',  promptHint: 'graduation ceremony, academic cap and gown, diploma' },
-  casal:         { label: 'Casal',         promptHint: 'romantic couple portrait, warm intimate mood, soft lighting' },
-  gravidez:      { label: 'Gravidez',      promptHint: 'maternity photography, gentle pose, flowing dress, baby bump' },
-  casual:        { label: 'Casual',        promptHint: 'casual lifestyle photography, relaxed pose, natural setting' },
-  familia:       { label: 'Família',       promptHint: 'family portrait, warm colors, joyful expressions, group photo' },
-  infantil:      { label: 'Infantil',      promptHint: 'children photography, playful, colorful, fun setting' },
-  fitness:       { label: 'Fitness',       promptHint: 'fitness photography, athletic pose, gym or outdoor workout setting' },
-  natalino:      { label: 'Natal',         promptHint: 'Christmas themed portrait, festive decorations, red and green colors' },
-  pet:           { label: 'Com Pet',       promptHint: 'portrait with pet, pet and owner, heartwarming' },
+  aniversario:   { label: 'Aniversário',     promptHint: 'birthday celebration, festive, balloons, cake, party' },
+  parabens:      { label: 'Parabéns',        promptHint: 'congratulations, celebration, achievement, joy' },
+  motivacao:     { label: 'Motivação',        promptHint: 'motivation, encouragement, confidence, energy' },
+  natal:         { label: 'Natal',            promptHint: 'Christmas, holiday, festive, warm, cozy' },
+  'dia-das-maes':{ label: 'Dia das Mães',    promptHint: 'mothers day, love, gratitude, flowers, tenderness' },
+  'dia-dos-pais':{ label: 'Dia dos Pais',    promptHint: 'fathers day, pride, gratitude, warmth' },
+  casamento:     { label: 'Casamento',        promptHint: 'wedding congratulations, love, celebration, elegant' },
+  formatura:     { label: 'Formatura',        promptHint: 'graduation, achievement, pride, academic' },
+  boas_festas:   { label: 'Boas Festas',     promptHint: 'holiday greetings, festive, celebration, joy' },
+  amor:          { label: 'Declaração de Amor', promptHint: 'love declaration, romance, heartfelt, tender' },
+  personalizado: { label: 'Personalizado',    promptHint: 'custom message, personalized greeting' },
 };
 
 export function getOccasionPromptHint(occasion: string): string {

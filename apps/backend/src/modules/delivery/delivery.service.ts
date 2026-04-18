@@ -7,10 +7,10 @@ import { trackEvent } from '../analytics/analytics.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 
 const log = createChildLogger('delivery-service');
-const DELAY_BETWEEN_IMAGES_MS = 2000;
+const DELAY_BETWEEN_ITEMS_MS = 2000;
 
 /**
- * Envia imagens aprovadas via WhatsApp e atualiza status de entrega.
+ * Envia conteúdo aprovado (imagens e/ou vídeos) via WhatsApp e atualiza status de entrega.
  */
 export async function deliverApprovedImages(
   leadSessionId: string,
@@ -24,11 +24,18 @@ export async function deliverApprovedImages(
         where: { isApproved: true },
         orderBy: { sequence: 'asc' },
       },
+      generatedVideos: {
+        where: { isApproved: true },
+        orderBy: { sequence: 'asc' },
+      },
     },
   });
 
   if (!session) throw new Error('Sessão não encontrada');
-  if (session.generatedImages.length === 0) throw new Error('Nenhuma imagem aprovada');
+
+  const hasImages = session.generatedImages.length > 0;
+  const hasVideos = session.generatedVideos.length > 0;
+  if (!hasImages && !hasVideos) throw new Error('Nenhum conteúdo aprovado');
 
   // Criar registro de entrega
   const delivery = await prisma.delivery.create({
@@ -49,12 +56,12 @@ export async function deliverApprovedImages(
   await queueTextMessage(session.lead.phone, startMsg);
   await logOutboundMessage(session.leadId, startMsg);
 
-  let delivered = 0;
+  let deliveredImages = 0;
+  let deliveredVideos = 0;
 
+  // Deliver images
   for (const image of session.generatedImages) {
     try {
-      // Use the original Kie.ai HTTPS URL (stored in s3Url) for Cloud API leads,
-      // fall back to presigned S3 URL for Evolution API leads.
       const isCloud = session.lead.source === 'whatsapp-cloud';
       const url = isCloud && image.s3Url.startsWith('https://')
         ? image.s3Url
@@ -65,29 +72,56 @@ export async function deliverApprovedImages(
         caption: `📸 Foto ${image.sequence}`,
         fileName: `ensaio-foto-${image.sequence}.jpg`,
       });
-      delivered++;
+      deliveredImages++;
 
       await prisma.delivery.update({
         where: { id: delivery.id },
-        data: { imagesDelivered: delivered },
+        data: { imagesDelivered: deliveredImages },
       });
 
-      // Delay entre envios para não sobrecarregar
-      if (delivered < session.generatedImages.length) {
-        await sleep(DELAY_BETWEEN_IMAGES_MS);
+      if (deliveredImages < session.generatedImages.length || hasVideos) {
+        await sleep(DELAY_BETWEEN_ITEMS_MS);
       }
     } catch (err) {
       log.error({ imageId: image.id, err }, 'Falha ao enviar imagem');
     }
   }
 
+  // Deliver videos
+  for (const video of session.generatedVideos) {
+    try {
+      const url = await getPresignedUrl(video.s3Key, 3600);
+      await queueMediaMessage(session.lead.phone, url, {
+        mediatype: 'document',
+        mimetype: 'video/mp4',
+        caption: `🎬 Vídeo ${video.sequence}`,
+        fileName: `video-personalizado-${video.sequence}.mp4`,
+      });
+      deliveredVideos++;
+
+      await prisma.delivery.update({
+        where: { id: delivery.id },
+        data: { videosDelivered: deliveredVideos },
+      });
+
+      if (deliveredVideos < session.generatedVideos.length) {
+        await sleep(DELAY_BETWEEN_ITEMS_MS);
+      }
+    } catch (err) {
+      log.error({ videoId: video.id, err }, 'Falha ao enviar vídeo');
+    }
+  }
+
+  const totalDelivered = deliveredImages + deliveredVideos;
+
   // Finalizar entrega
   await prisma.delivery.update({
     where: { id: delivery.id },
     data: {
-      status: delivered > 0 ? 'COMPLETED' : 'FAILED',
+      status: totalDelivered > 0 ? 'COMPLETED' : 'FAILED',
       completedAt: new Date(),
-      imagesDelivered: delivered,
+      imagesDelivered: deliveredImages,
+      videosDelivered: deliveredVideos,
     },
   });
 
@@ -101,16 +135,18 @@ export async function deliverApprovedImages(
     data: { status: 'DELIVERED' },
   });
 
-  const doneMsg = MESSAGES.deliveryComplete(delivered);
+  const doneMsg = MESSAGES.deliveryComplete(totalDelivered);
   await queueTextMessage(session.lead.phone, doneMsg);
   await logOutboundMessage(session.leadId, doneMsg);
 
   await trackEvent(session.leadId, 'DELIVERY_COMPLETED', {
-    delivered,
-    total: session.generatedImages.length,
+    deliveredImages,
+    deliveredVideos,
+    totalImages: session.generatedImages.length,
+    totalVideos: session.generatedVideos.length,
   });
 
-  log.info({ leadSessionId, delivered }, 'Entrega concluída');
+  log.info({ leadSessionId, deliveredImages, deliveredVideos }, 'Entrega concluída');
 }
 
 function sleep(ms: number): Promise<void> {

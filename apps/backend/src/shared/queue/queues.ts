@@ -7,6 +7,7 @@ const log = createChildLogger('queues');
 // ─── Queue Names ────────────────────────────────────────────
 export const QUEUE_NAMES = {
   IMAGE_GENERATION: 'image-generation',
+  VIDEO_GENERATION: 'video-generation',
   DELIVERY: 'delivery',
   UPSELL: 'upsell',
   ANALYTICS: 'analytics',
@@ -37,6 +38,11 @@ export function getQueue(name: string): Queue {
 // ─── Type-safe Job Data ─────────────────────────────────────
 
 export interface ImageGenerationJobData {
+  leadSessionId: string;
+  generationJobId: string;
+}
+
+export interface VideoGenerationJobData {
   leadSessionId: string;
   generationJobId: string;
 }

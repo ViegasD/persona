@@ -18,6 +18,7 @@ import { devRouter } from './modules/dev/dev.router.js';
 import { templatesRouter } from './modules/admin/templates.router.js';
 import { settingsRouter } from './modules/admin/settings.router.js';
 import { chatRouter } from './modules/admin/chat.router.js';
+import { charactersRouter } from './modules/admin/characters.router.js';
 
 const log = createChildLogger('app');
 
@@ -72,6 +73,7 @@ export async function buildApp() {
   await app.register(templatesRouter, { prefix: '/api/admin' });
   await app.register(settingsRouter, { prefix: '/api/admin' });
   await app.register(chatRouter, { prefix: '/api/admin' });
+  await app.register(charactersRouter, { prefix: '/api/admin' });
   await app.register(imageProxyRouter, { prefix: '/api/internal/images' });
 
   // Dev routes — available in all environments (protected by API key in router)
