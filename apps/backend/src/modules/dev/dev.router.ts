@@ -154,7 +154,7 @@ export async function devRouter(app: FastifyInstance) {
     const generationJobs = session
       ? await prisma.generationJob.findMany({
           where: { leadSessionId: session.id },
-          select: { id: true, status: true, prompt: true, errorMessage: true, kieJobId: true, createdAt: true, completedAt: true },
+          select: { id: true, status: true, prompt: true, errorMessage: true, externalJobId: true, createdAt: true, completedAt: true },
           orderBy: { createdAt: 'desc' },
         })
       : [];

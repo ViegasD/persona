@@ -77,8 +77,8 @@ export class KieAiClient {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = env.KIE_API_URL;
-    this.apiKey = env.KIE_API_KEY;
+    this.baseUrl = env.KIE_API_URL ?? 'https://api.kie.ai';
+    this.apiKey = env.KIE_API_KEY ?? '';
   }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<KieApiResponse<T>> {

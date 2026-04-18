@@ -133,7 +133,7 @@ export async function processImageGeneration(
 
     await prisma.generationJob.update({
       where: { id: generationJobId },
-      data: { kieJobId: taskIds.join(',') },
+      data: { externalJobId: taskIds.join(',') },
     });
 
     log.info({ taskIds, count: taskIds.length }, 'Tasks enviadas ao Kie.ai');

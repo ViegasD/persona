@@ -108,7 +108,7 @@ export async function listObjects(prefix: string): Promise<string[]> {
  */
 export function buildS3Key(
   sessionId: string,
-  folder: 'references' | 'style-refs' | 'generated' | 'thumbnails',
+  folder: 'references' | 'style-refs' | 'generated' | 'thumbnails' | 'videos',
   filename: string,
 ): string {
   return `sessions/${sessionId}/${folder}/${filename}`;

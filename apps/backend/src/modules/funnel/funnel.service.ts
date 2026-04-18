@@ -468,10 +468,10 @@ async function handleTransition(
       await transitionState(sessionId, leadId, currentState, FUNNEL_STATES.COLLECTING_PHOTOS);
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'COLLECTING' } });
 
-      // Only send askPhotos if the user hasn't already sent reference photos during ENGAGING
+      // Only send photo prompt if the user hasn't already sent reference photos during ENGAGING
       const earlyPhotos = await prisma.referenceImage.count({ where: { leadSessionId: sessionId } });
       if (earlyPhotos === 0) {
-        const askMsg = MESSAGES.askPhotos();
+        const askMsg = 'Show! Agora me manda suas melhores fotos — uma de rosto e uma de corpo inteiro 📸';
         await queueTextMessage(phone, askMsg, { jobDelay: 2000 });
         await logOutboundMessage(leadId, askMsg);
       } else {
@@ -667,11 +667,11 @@ async function handleTransition(
         },
       });
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'COLLECTING' } });
-      const askMsg = MESSAGES.askPhotos();
+      const askMsg = 'Show! Agora me manda suas melhores fotos — uma de rosto e uma de corpo inteiro 📸';
       await queueTextMessage(phone, askMsg);
       await logOutboundMessage(leadId, askMsg);
       await trackEvent(leadId, 'NEW_SESSION_REQUESTED', { returning: true });
-      log.info('[TRANSITION:DELIVERED→COLLECTING_PHOTOS] Done — new session created, askPhotos sent');
+      log.info('[TRANSITION:DELIVERED→COLLECTING_PHOTOS] Done — new session created');
       break;
     }
 
@@ -742,13 +742,13 @@ async function handleFallback(phone: string, leadId: string, state: FunnelState)
       break;
     }
     case FUNNEL_STATES.COLLECTING_PHOTOS: {
-      const msg = MESSAGES.askPhotos();
+      const msg = 'Me manda suas fotos pra eu conseguir trabalhar! Uma de rosto e uma de corpo inteiro 📸';
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);
       break;
     }
     case FUNNEL_STATES.COLLECTING_STYLE_REFS: {
-      const msg = MESSAGES.askStyleRefs();
+      const msg = 'Envia fotos de inspiração pro estilo do seu vídeo! Do Pinterest, Instagram ou qualquer referência 🎨';
       await queueTextMessage(phone, msg);
       await logOutboundMessage(leadId, msg);
       break;
