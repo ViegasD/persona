@@ -2,20 +2,21 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { AdminCharacter } from '@/lib/characters-api';
-import { createCharacterAction, updateCharacterAction, deactivateCharacterAction, uploadCharacterImageAction } from '@/lib/character-actions';
+import { createCharacterAction, uploadCharacterImageAction } from '@/lib/character-actions';
 
 export function CharactersList({ initialCharacters }: { initialCharacters: AdminCharacter[] }) {
   const router = useRouter();
   const [characters] = useState(initialCharacters);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const [newName, setNewName] = useState('');
-  const [newPersonality, setNewPersonality] = useState('');
   const [newFranchise, setNewFranchise] = useState('');
+  const [newPersonality, setNewPersonality] = useState('');
   const [newGender, setNewGender] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
@@ -24,8 +25,12 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
     setCreating(true);
     setError(null);
     try {
-      const created = await createCharacterAction({ name: newName, personality: newPersonality || undefined, franchise: newFranchise || undefined, gender: newGender || undefined });
-      // Upload image if selected
+      const created = await createCharacterAction({
+        name: newName,
+        franchise: newFranchise || undefined,
+        personality: newPersonality || undefined,
+        gender: newGender || undefined,
+      });
       if (newImageFile && created?.id) {
         const buffer = await newImageFile.arrayBuffer();
         const base64 = Buffer.from(buffer).toString('base64');
@@ -37,8 +42,8 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
       }
       setShowCreate(false);
       setNewName('');
-      setNewPersonality('');
       setNewFranchise('');
+      setNewPersonality('');
       setNewGender('');
       setNewImageFile(null);
       router.refresh();
@@ -47,51 +52,60 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
     } finally {
       setCreating(false);
     }
-  }, [newName, newPersonality, newFranchise, newGender, newImageFile, router]);
+  }, [newName, newFranchise, newPersonality, newGender, newImageFile, router]);
 
-  const handleToggle = useCallback(async (id: string, isActive: boolean) => {
-    try {
-      if (isActive) {
-        await deactivateCharacterAction(id);
-      } else {
-        await updateCharacterAction(id, { isActive: true });
-      }
-      router.refresh();
-    } catch {
-      setError('Erro ao atualizar personagem');
-    }
-  }, [router]);
+  // Filter characters
+  const q = search.toLowerCase().trim();
+  const filtered = q
+    ? characters.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.franchise?.toLowerCase().includes(q)) ||
+          (c.personality?.toLowerCase().includes(q)),
+      )
+    : characters;
 
-  const handleImageUpload = useCallback(async (characterId: string, file: File) => {
-    setUploading(characterId);
-    setError(null);
-    try {
-      const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
-      await uploadCharacterImageAction(characterId, {
-        base64,
-        filename: file.name,
-        mimeType: file.type || 'image/jpeg',
-      });
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao enviar imagem');
-    } finally {
-      setUploading(null);
-    }
-  }, [router]);
+  // Group by franchise
+  const grouped = new Map<string, AdminCharacter[]>();
+  for (const c of filtered) {
+    const key = c.franchise || 'Sem franquia';
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(c);
+  }
+  const sortedGroups = [...grouped.entries()].sort(([a], [b]) => {
+    if (a === 'Sem franquia') return 1;
+    if (b === 'Sem franquia') return -1;
+    return a.localeCompare(b, 'pt-BR');
+  });
+
+  const activeCount = characters.filter((c) => c.isActive).length;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">🎭 Personagens</h2>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 rounded-lg text-sm font-medium"
-          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
-        >
-          + Novo Personagem
-        </button>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold">Personagens</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {activeCount} ativos de {characters.length} total
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar..."
+            className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] w-48"
+          />
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
+            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+          >
+            + Novo
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -102,9 +116,9 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
 
       {/* Create form */}
       {showCreate && (
-        <div className="border border-[var(--border)] rounded-lg p-5 mb-6">
-          <h3 className="font-semibold mb-3">Criar Personagem</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div className="border border-[var(--border)] rounded-lg p-5 mb-6 bg-[var(--card)]">
+          <h3 className="font-semibold mb-4">Criar Personagem</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <input
               type="text"
               value={newName}
@@ -114,19 +128,19 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
             />
             <input
               type="text"
+              value={newFranchise}
+              onChange={(e) => setNewFranchise(e.target.value)}
+              placeholder="Franquia (ex: Frozen)"
+              className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
+            />
+            <input
+              type="text"
               value={newGender}
               onChange={(e) => setNewGender(e.target.value)}
-              placeholder="Gênero (ex: masculino)"
+              placeholder="Gênero (ex: feminino)"
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
           </div>
-          <input
-            type="text"
-            value={newFranchise}
-            onChange={(e) => setNewFranchise(e.target.value)}
-            placeholder="Filme/Desenho (ex: Frozen, Patrulha Canina)"
-            className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] mb-3"
-          />
           <textarea
             value={newPersonality}
             onChange={(e) => setNewPersonality(e.target.value)}
@@ -134,10 +148,10 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
             rows={2}
             className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] mb-3"
           />
-          <div className="mb-3">
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--muted-foreground)]">
-              <span className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm">
-                {newImageFile ? `📷 ${newImageFile.name}` : '📷 Escolher imagem de referência'}
+          <div className="flex items-center gap-3">
+            <label className="cursor-pointer text-sm">
+              <span className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm inline-block">
+                {newImageFile ? `📷 ${newImageFile.name}` : '📷 Escolher imagem'}
               </span>
               <input
                 type="file"
@@ -146,8 +160,13 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
                 onChange={(e) => setNewImageFile(e.target.files?.[0] ?? null)}
               />
             </label>
-          </div>
-          <div className="flex gap-2">
+            <div className="flex-1" />
+            <button
+              onClick={() => setShowCreate(false)}
+              className="px-4 py-2 rounded-lg text-sm hover:bg-[var(--muted)] transition-colors"
+            >
+              Cancelar
+            </button>
             <button
               onClick={handleCreate}
               disabled={creating || !newName.trim()}
@@ -156,93 +175,62 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
             >
               {creating ? 'Criando...' : 'Criar'}
             </button>
-            <button
-              onClick={() => setShowCreate(false)}
-              className="px-4 py-2 rounded-lg text-sm"
-              style={{ background: 'var(--muted)' }}
-            >
-              Cancelar
-            </button>
           </div>
         </div>
       )}
 
-      {/* Character list */}
-      {characters.length === 0 ? (
+      {/* Character list grouped by franchise */}
+      {filtered.length === 0 ? (
         <p className="text-center text-[var(--muted-foreground)] py-16">
-          Nenhum personagem cadastrado.
+          {search ? 'Nenhum personagem encontrado.' : 'Nenhum personagem cadastrado.'}
         </p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {characters.map((char) => (
-            <div
-              key={char.id}
-              className="border border-[var(--border)] rounded-lg overflow-hidden"
-              style={{ opacity: char.isActive ? 1 : 0.5 }}
-            >
-              {/* Preview image */}
-              <div className="aspect-[4/3] bg-[var(--muted)] relative">
-                {char.previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={char.previewUrl}
-                    alt={char.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">🎭</div>
-                )}
-                {!char.isActive && (
-                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500 text-white">
-                    Inativo
-                  </div>
-                )}
-              </div>
+        <div className="space-y-8">
+          {sortedGroups.map(([franchise, chars]) => (
+            <div key={franchise}>
+              <h3 className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3 border-b border-[var(--border)] pb-2">
+                {franchise} <span className="font-normal">({chars.length})</span>
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                {chars.map((char) => (
+                  <Link
+                    key={char.id}
+                    href={`/characters/${char.id}`}
+                    className="group border border-[var(--border)] rounded-lg overflow-hidden hover:border-[var(--primary)] hover:shadow-md transition-all"
+                    style={{ opacity: char.isActive ? 1 : 0.45 }}
+                  >
+                    {/* Image */}
+                    <div className="aspect-square bg-[var(--muted)] relative">
+                      {char.previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={char.previewUrl}
+                          alt={char.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl text-[var(--muted-foreground)]">
+                          🎭
+                        </div>
+                      )}
+                      {!char.isActive && (
+                        <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500 text-white">
+                          OFF
+                        </div>
+                      )}
+                    </div>
 
-              {/* Info */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold">{char.name}</h3>
-                  <span className="text-xs text-[var(--muted-foreground)]">{char.referenceImageCount} imgs</span>
-                </div>
-                {char.franchise && (
-                  <p className="text-xs font-medium text-[var(--primary)] mb-1">{char.franchise}</p>
-                )}
-                {char.personality && (
-                  <p className="text-sm text-[var(--muted-foreground)] line-clamp-2 mb-2">{char.personality}</p>
-                )}
-                {char.gender && (
-                  <p className="text-xs text-[var(--muted-foreground)]">{char.gender}</p>
-                )}
-                <div className="flex gap-2 mt-3">
-                  <label
-                    className="px-3 py-1 rounded text-xs font-medium cursor-pointer"
-                    style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
-                  >
-                    {uploading === char.id ? 'Enviando...' : '📷 Upload Imagem'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={uploading === char.id}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(char.id, file);
-                        e.target.value = '';
-                      }}
-                    />
-                  </label>
-                  <button
-                    onClick={() => handleToggle(char.id, char.isActive)}
-                    className="px-3 py-1 rounded text-xs font-medium"
-                    style={{
-                      background: char.isActive ? 'var(--error)' : 'var(--success)',
-                      color: 'white',
-                    }}
-                  >
-                    {char.isActive ? 'Desativar' : 'Ativar'}
-                  </button>
-                </div>
+                    {/* Info */}
+                    <div className="p-2.5">
+                      <p className="font-medium text-sm truncate group-hover:text-[var(--primary)] transition-colors">
+                        {char.name}
+                      </p>
+                      {char.gender && (
+                        <p className="text-[11px] text-[var(--muted-foreground)] truncate">{char.gender}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           ))}

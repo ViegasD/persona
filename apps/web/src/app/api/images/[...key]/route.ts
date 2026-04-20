@@ -10,7 +10,7 @@ export async function GET(
   const { key } = await params;
   const s3Key = key.join('/');
 
-  if (!s3Key.startsWith('sessions/')) {
+  if (!s3Key.startsWith('sessions/') && !s3Key.startsWith('characters/')) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
