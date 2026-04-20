@@ -393,24 +393,47 @@ async function applyExtractedData(
   if (data.characterChoice) {
     const characters = await prisma.character.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, franchise: true },
       orderBy: { name: 'asc' },
     });
     const choice = data.characterChoice.toLowerCase().trim();
-    let match = characters.find((c: { id: string; name: string; slug: string }) =>
+
+    // 1. Exact match by name or slug
+    let match = characters.find((c) =>
       c.name.toLowerCase() === choice || c.slug.toLowerCase() === choice,
     );
+
+    // 2. Match by number
     if (!match) {
       const num = parseInt(choice, 10);
       if (!isNaN(num) && num >= 1 && num <= characters.length) {
         match = characters[num - 1];
       }
     }
+
+    // 3. Partial name match
     if (!match) {
-      match = characters.find((c: { id: string; name: string; slug: string }) =>
+      match = characters.find((c) =>
         c.name.toLowerCase().includes(choice) || choice.includes(c.name.toLowerCase()),
       );
     }
+
+    // 4. Match by franchise — if only one character in that franchise, auto-select
+    if (!match) {
+      const franchiseMatches = characters.filter((c) =>
+        c.franchise && (
+          c.franchise.toLowerCase() === choice ||
+          c.franchise.toLowerCase().includes(choice) ||
+          choice.includes(c.franchise.toLowerCase())
+        ),
+      );
+      if (franchiseMatches.length === 1) {
+        match = franchiseMatches[0];
+      }
+      // If multiple characters in franchise, don't auto-select — the conversation agent
+      // will list them for the client to choose
+    }
+
     if (match) {
       prefUpdates.characterId = match.id;
       prefUpdates.characterName = match.name;

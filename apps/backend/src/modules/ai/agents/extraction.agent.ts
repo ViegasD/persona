@@ -48,8 +48,10 @@ Se o usuário disser apenas um número (ex: "6", "3", "1"), interprete como quan
 "o mais popular" / "o do meio" → "pkg_3"
 
 ## characterChoice (string)
-O personagem que o cliente escolheu. Pode ser o nome, número, ou slug do personagem.
+O personagem que o cliente escolheu. Pode ser o nome, número, slug ou franquia do personagem.
 "quero o número 2" → "2", "a Princesa Luna" → "Princesa Luna", "o super-herói" → "super-herói"
+Se o cliente disser uma franquia/tema com apenas um personagem possível, use o nome da franquia: "quero bluey" → "Bluey"
+Se o cliente disser uma franquia com múltiplos personagens (ex: "quero patrulha canina"), NÃO extraia characterChoice — deixe o conversation agent listar as opções primeiro.
 
 ## messageType (string)
 Tipo de mensagem/ocasião do vídeo.
