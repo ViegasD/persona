@@ -161,6 +161,7 @@ export function buildLeadContext(lead: {
   if (prefs.recipientName) parts.push(`  <nome_destinatario>${prefs.recipientName}</nome_destinatario>`);
   if (prefs.recipientAge) parts.push(`  <idade_destinatario>${prefs.recipientAge}</idade_destinatario>`);
   if (prefs.customMessage) parts.push(`  <mensagem_personalizada>${prefs.customMessage}</mensagem_personalizada>`);
+  if (prefs.autoMessage) parts.push(`  <mensagem_auto>sim</mensagem_auto>`);
 
   // Legacy image fields (kept for backward compatibility)
   if (prefs.occasion) {

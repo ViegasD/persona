@@ -5,16 +5,24 @@
  */
 export const MESSAGES = {
   // ─── Boas-vindas / Engajamento ───────────────────────────
-  welcome: (_name: string | null) =>
-    `Olá, tudo bem? 🎬\n\n` +
-    `Aqui a gente cria *vídeos personalizados* com personagens incríveis pra surpreender quem você ama! ✨\n\n` +
-    `🎂 Aniversário • 🎉 Parabéns • 💪 Motivação • 🎄 Natal • 💐 Dia das Mães • e mais!\n\n` +
-    `📦 *Pacotes:*\n` +
-    `🎥 1 vídeo — R$ 9,90\n` +
-    `🎥 2 vídeos — R$ 14,90\n` +
-    `🎥 3 vídeos — R$ 19,90 ⭐ mais popular\n` +
-    `🎥 5 vídeos — R$ 29,90\n\n` +
-    `Pra começar, me diz: qual personagem você quer no vídeo? 🎭`,
+  welcome: (_name: string | null, characterNames?: string[]) => {
+    let msg = `Olá! 🎬✨\n\n` +
+      `Aqui a gente cria *vídeos personalizados* com os personagens favoritos da criançada! É o presente perfeito! 🎁\n\n` +
+      `*Como funciona:*\n` +
+      `1️⃣ Você escolhe o personagem\n` +
+      `2️⃣ A gente cria um vídeo com uma mensagem especial\n` +
+      `3️⃣ Você recebe e envia pra quem quiser!\n\n` +
+      `📦 *Pacotes:*\n` +
+      `🎥 1 vídeo — R$ 9,90\n` +
+      `🎥 2 vídeos — R$ 14,90\n` +
+      `🎥 3 vídeos — R$ 19,90 ⭐ mais popular\n` +
+      `🎥 5 vídeos — R$ 29,90\n\n`;
+    if (characterNames && characterNames.length > 0) {
+      msg += `🎭 *Personagens disponíveis:*\n` + characterNames.join(', ') + `\n\n`;
+    }
+    msg += `Me fala, qual o *nome da criança* que vai receber esse presente? 😊`;
+    return msg;
+  },
 
   // Fallback for follow-up messages (no re-introduction)
   engagementFollowUp: () =>

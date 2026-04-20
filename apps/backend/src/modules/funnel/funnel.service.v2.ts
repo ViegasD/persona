@@ -149,7 +149,8 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     });
     if (outboundCount === 0) {
       log.info('[WELCOME] First contact — sending static welcome');
-      const welcomeMsg = MESSAGES.welcome(lead.name);
+      const characterNames = characterCatalog.map((c: { name: string }) => c.name);
+      const welcomeMsg = MESSAGES.welcome(lead.name, characterNames);
       await queueTextMessage(phone, welcomeMsg);
       await logOutboundMessage(lead.id, welcomeMsg);
       return;
@@ -226,7 +227,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     const agentIdentity = await getSetting(SETTING_KEYS.AGENT_IDENTITY);
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
-      { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map(c => ({ name: c.name, slug: c.slug, description: c.personality })) },
+      { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map((c: { name: string; slug: string; personality: string | null }) => ({ name: c.name, slug: c.slug, description: c.personality })) },
       portfolioUrl || undefined,
     );
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
@@ -386,8 +387,39 @@ async function applyExtractedData(
   }
 
   // Build preference updates (exclude one-time signals)
-  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'upgradeAccepted']);
+  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'upgradeAccepted', 'characterChoice']);
   const prefUpdates: Record<string, unknown> = {};
+
+  // Resolve character choice to actual character entity
+  if (data.characterChoice) {
+    const characters = await prisma.character.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: 'asc' },
+    });
+    const choice = data.characterChoice.toLowerCase().trim();
+    let match = characters.find((c: { id: string; name: string; slug: string }) =>
+      c.name.toLowerCase() === choice || c.slug.toLowerCase() === choice,
+    );
+    if (!match) {
+      const num = parseInt(choice, 10);
+      if (!isNaN(num) && num >= 1 && num <= characters.length) {
+        match = characters[num - 1];
+      }
+    }
+    if (!match) {
+      match = characters.find((c: { id: string; name: string; slug: string }) =>
+        c.name.toLowerCase().includes(choice) || choice.includes(c.name.toLowerCase()),
+      );
+    }
+    if (match) {
+      prefUpdates.characterId = match.id;
+      prefUpdates.characterName = match.name;
+      log.info({ choice: data.characterChoice, resolved: match.name }, '[DATA:CHARACTER] Resolved');
+    } else {
+      log.warn({ choice: data.characterChoice }, '[DATA:CHARACTER] Could not resolve');
+    }
+  }
 
   for (const [key, value] of Object.entries(data)) {
     if (SIGNAL_KEYS.has(key) || value === null || value === undefined) continue;
@@ -405,8 +437,8 @@ async function applyExtractedData(
 
   // Handle upgrade acceptance → force packageId to pkg_10
   if (data.upgradeAccepted === true && !prefUpdates.packageId) {
-    prefUpdates.packageId = 'pkg_10';
-    log.info('[DATA:UPGRADE] Customer accepted upsell → pkg_10');
+    prefUpdates.packageId = 'pkg_3';
+    log.info('[DATA:UPGRADE] Customer accepted upsell → pkg_3');
   }
 
   if (Object.keys(prefUpdates).length === 0) return;
@@ -429,12 +461,10 @@ async function applyExtractedData(
     log.info({ old: current.packageId, new: prefUpdates.packageId }, '[DATA:CLEANUP] Package changed');
   }
 
-  // Apply promo pricing for pkg_10 ONLY when earned via upsell/promo
-  // (upgradeAccepted = customer accepted upsell, promoShown = promo was presented)
-  if (merged.packageId === 'pkg_10' && !merged.priceOverride) {
-    if (data.upgradeAccepted === true || merged.promoShown === true) {
-      merged.priceOverride = 29.90;
-      log.info('[DATA:PROMO] Applied promo price 29.90 for pkg_10');
+  // Apply promo pricing for pkg_3 when earned via upsell
+  if (merged.packageId === 'pkg_3' && !merged.priceOverride) {
+    if (data.upgradeAccepted === true) {
+      log.info('[DATA:PROMO] Upsell accepted for pkg_3');
     }
   }
 
@@ -448,10 +478,8 @@ async function applyExtractedData(
 
 function isVideoDataComplete(prefs: Record<string, unknown>): boolean {
   if (!prefs.characterId) return false;
-  if (!prefs.messageType) return false;
   if (!prefs.recipientName) return false;
-  // Birthday messages require age
-  if (prefs.messageType === 'aniversario' && !prefs.recipientAge) return false;
+  if (!prefs.customMessage && !prefs.autoMessage) return false;
   return true;
 }
 

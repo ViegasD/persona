@@ -12,6 +12,7 @@ export interface ExtractionResult {
   recipientName?: string;      // who the video is for
   recipientAge?: string;       // age of recipient (for birthday)
   customMessage?: string;      // specific message details
+  autoMessage?: boolean;        // user wants auto-generated message
   dataConfirmed?: boolean;
   changePackage?: boolean;
   regenerateQr?: boolean;
@@ -72,6 +73,13 @@ Idade do destinatário (para aniversário). "vai fazer 8 anos" → "8", "é o ni
 Detalhes específicos da mensagem que o cliente quer no vídeo.
 "quero que diga que a mamãe ama muito" → "que a mamãe ama muito"
 "menciona que ele adora dinossauros" → "ele adora dinossauros"
+"feliz aniversário pro João, a mamãe te ama" → "feliz aniversário pro João, a mamãe te ama"
+
+## autoMessage (boolean)
+true quando o cliente diz que quer que a gente crie a mensagem do vídeo (não quer enviar texto personalizado).
+"vocês fazem" / "pode criar" / "tanto faz" / "faz vocês mesmos" / "pode ser" / "deixa com vocês" → true
+NÃO extraia se o cliente mandou um texto personalizado (nesse caso extraia customMessage).
+Só extraia se o assistente acabou de perguntar sobre o texto do vídeo.
 
 ## dataConfirmed (boolean)
 true SOMENTE quando o cliente confirma EXPLICITAMENTE o resumo dos dados:
