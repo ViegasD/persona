@@ -16,24 +16,36 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
   const [newName, setNewName] = useState('');
   const [newPersonality, setNewPersonality] = useState('');
   const [newGender, setNewGender] = useState('');
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
   const handleCreate = useCallback(async () => {
     if (!newName.trim()) return;
     setCreating(true);
     setError(null);
     try {
-      await createCharacterAction({ name: newName, personality: newPersonality || undefined, gender: newGender || undefined });
+      const created = await createCharacterAction({ name: newName, personality: newPersonality || undefined, gender: newGender || undefined });
+      // Upload image if selected
+      if (newImageFile && created?.id) {
+        const buffer = await newImageFile.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        await uploadCharacterImageAction(created.id, {
+          base64,
+          filename: newImageFile.name,
+          mimeType: newImageFile.type || 'image/jpeg',
+        });
+      }
       setShowCreate(false);
       setNewName('');
       setNewPersonality('');
       setNewGender('');
+      setNewImageFile(null);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao criar personagem');
     } finally {
       setCreating(false);
     }
-  }, [newName, newPersonality, newGender, router]);
+  }, [newName, newPersonality, newGender, newImageFile, router]);
 
   const handleToggle = useCallback(async (id: string, isActive: boolean) => {
     try {
@@ -113,6 +125,19 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
             rows={2}
             className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] mb-3"
           />
+          <div className="mb-3">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--muted-foreground)]">
+              <span className="px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm">
+                {newImageFile ? `📷 ${newImageFile.name}` : '📷 Escolher imagem de referência'}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setNewImageFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleCreate}

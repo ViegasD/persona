@@ -18,11 +18,10 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     });
 
-    const result = await Promise.all(
-      characters.map(async (c) => {
+    const result = characters.map((c) => {
         const refKeys = (c.referenceImageS3Keys as string[]) ?? [];
         const previewUrl = refKeys.length > 0
-          ? await getPresignedUrl(refKeys[0], 3600)
+          ? `/api/images/${refKeys[0]}`
           : null;
         return {
           id: c.id,
@@ -37,8 +36,7 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
           previewUrl,
           createdAt: c.createdAt,
         };
-      }),
-    );
+    });
 
     reply.send(result);
   });

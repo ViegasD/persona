@@ -15,7 +15,7 @@ export async function imageProxyRouter(app: FastifyInstance): Promise<void> {
   app.get('/*', async (request: FastifyRequest, reply: FastifyReply) => {
     const key = (request.params as Record<string, string>)['*'];
 
-    if (!key || !key.startsWith('sessions/')) {
+    if (!key || !(key.startsWith('sessions/') || key.startsWith('characters/'))) {
       log.warn({ key }, '[PROXY] Forbidden key prefix');
       reply.status(403).send({ error: 'Forbidden' });
       return;
