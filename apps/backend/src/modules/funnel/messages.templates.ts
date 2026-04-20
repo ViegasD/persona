@@ -5,24 +5,45 @@
  */
 export const MESSAGES = {
   // ─── Boas-vindas / Engajamento ───────────────────────────
-  welcome: (_name: string | null, characterNames?: string[]) => {
-    let msg = `Olá! 🎬✨\n\n` +
-      `Aqui a gente cria *vídeos personalizados* com os personagens favoritos da criançada! É o presente perfeito! 🎁\n\n` +
-      `*Como funciona:*\n` +
-      `1️⃣ Você escolhe o personagem\n` +
-      `2️⃣ A gente cria um vídeo com uma mensagem especial\n` +
-      `3️⃣ Você recebe e envia pra quem quiser!\n\n` +
-      `📦 *Pacotes:*\n` +
-      `🎥 1 vídeo — R$ 9,90\n` +
-      `🎥 2 vídeos — R$ 14,90\n` +
-      `🎥 3 vídeos — R$ 19,90 ⭐ mais popular\n` +
-      `🎥 5 vídeos — R$ 29,90\n\n`;
-    if (characterNames && characterNames.length > 0) {
-      msg += `🎭 *Personagens disponíveis:*\n` + characterNames.join(', ') + `\n\n`;
-    }
-    msg += `Me fala, qual o *nome da criança* que vai receber esse presente? 😊`;
-    return msg;
-  },
+  welcome: (_name: string | null) =>
+    `Olá! 🎬✨\n\n` +
+    `Aqui a gente cria *vídeos personalizados com personagens incríveis* — um presente único pra crianças! 🎁\n\n` +
+    `*Como funciona:*\n` +
+    `1️⃣ Você escolhe o tema/personagem\n` +
+    `2️⃣ A gente cria um vídeo com uma mensagem especial\n` +
+    `3️⃣ Você recebe pronto pra enviar 💛\n\n` +
+    `📦 *Planos:*\n\n` +
+    `✨ *Plano Teste — R$ 14,90*\n` +
+    `• 1 vídeo personalizado\n` +
+    `• 1 personagem (entre 5 opções aleatórias)\n` +
+    `• Alta qualidade + sem marca d'água\n` +
+    `_Só pra sentir a magia antes de se apaixonar 💜_\n\n` +
+    `⭐ *Plano Surpresa — R$ 24,90 (mais escolhido)*\n` +
+    `• 3 vídeos diferentes\n` +
+    `• Todos os personagens liberados (K-pop, Disney, heróis e mais!)\n` +
+    `• Novos personagens todo dia\n` +
+    `• Suporte prioritário via WhatsApp\n\n` +
+    `🎁 *Plano Completo — R$ 34,90*\n` +
+    `• 6 vídeos diferentes\n` +
+    `• Todos os personagens liberados\n` +
+    `• Novos personagens todo dia\n` +
+    `• Suporte prioritário via WhatsApp\n\n` +
+    `🎭 *Temas disponíveis:*\n\n` +
+    `👑 Princesas & Contos mágicos\n` +
+    `(Cinderela, Elsa, Anna, Ariel, Rapunzel, Bela…)\n\n` +
+    `🦸‍♂️ Heróis & Aventura\n` +
+    `(Sonic, Hércules, Aladdin, Buzz Lightyear…)\n\n` +
+    `🐾 Patrulha Canina & Amigos\n` +
+    `(Chase, Marshall, Skye, Rubble, Zuma…)\n\n` +
+    `🧸 Clássicos Disney & Amigos fofos\n` +
+    `(Mickey, Minnie, Pooh, Stitch, Nemo, Dory…)\n\n` +
+    `🏎️ Carros & Ação\n` +
+    `(Relâmpago McQueen, Mate…)\n\n` +
+    `🧙‍♂️ Fantasia & Contos épicos\n` +
+    `(Shrek, Gato de Botas, Peter Pan, Sininho…)\n\n` +
+    `🎤 Estrelas & Música\n` +
+    `(Guerreiras do K-pop 💃✨)\n\n` +
+    `💬 Me fala, qual o *nome da criança* que vai receber esse presente? 😊`,
 
   // Fallback for follow-up messages (no re-introduction)
   engagementFollowUp: () =>

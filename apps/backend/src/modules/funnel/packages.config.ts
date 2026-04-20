@@ -12,10 +12,9 @@ export interface Package {
 }
 
 export const PACKAGES: Package[] = [
-  { id: 'pkg_1',  photos: 0, videos: 1,  price: 9.90,   label: '1 vídeo — R$ 9,90',    popular: false },
-  { id: 'pkg_2',  photos: 0, videos: 2,  price: 14.90,  label: '2 vídeos — R$ 14,90',   popular: false },
-  { id: 'pkg_3',  photos: 0, videos: 3,  price: 19.90,  label: '3 vídeos — R$ 19,90',   popular: true },
-  { id: 'pkg_5',  photos: 0, videos: 5,  price: 29.90,  label: '5 vídeos — R$ 29,90',   popular: false },
+  { id: 'pkg_1',  photos: 0, videos: 1,  price: 14.90,  label: 'Plano Teste — 1 vídeo — R$ 14,90',      popular: false },
+  { id: 'pkg_3',  photos: 0, videos: 3,  price: 24.90,  label: 'Plano Surpresa — 3 vídeos — R$ 24,90',  popular: true },
+  { id: 'pkg_6',  photos: 0, videos: 6,  price: 34.90,  label: 'Plano Completo — 6 vídeos — R$ 34,90',  popular: false },
 ];
 
 export function getPackageById(id: string): Package | undefined {
@@ -35,9 +34,11 @@ export function getPackageByVideos(videos: number): Package | undefined {
  */
 export function formatPackagesForPrompt(): string {
   return PACKAGES
-    .map((p) =>
-      `${p.popular ? '🎁' : '📦'} ${p.videos} vídeo${p.videos > 1 ? 's' : ''} — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais popular)' : ''}`,
-    ).join('\n');
+    .map((p) => {
+      const icon = p.popular ? '⭐' : p.videos === 1 ? '✨' : '🎁';
+      const name = p.id === 'pkg_1' ? 'Plano Teste' : p.id === 'pkg_3' ? 'Plano Surpresa' : 'Plano Completo';
+      return `${icon} *${name}* — ${p.videos} vídeo${p.videos > 1 ? 's' : ''} — R$ ${p.price.toFixed(2).replace('.', ',')}${p.popular ? ' (mais escolhido)' : ''}`;
+    }).join('\n');
 }
 
 /**

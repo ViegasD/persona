@@ -149,8 +149,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     });
     if (outboundCount === 0) {
       log.info('[WELCOME] First contact — sending static welcome');
-      const characterNames = characterCatalog.map((c: { name: string }) => c.name);
-      const welcomeMsg = MESSAGES.welcome(lead.name, characterNames);
+      const welcomeMsg = MESSAGES.welcome(lead.name);
       await queueTextMessage(phone, welcomeMsg);
       await logOutboundMessage(lead.id, welcomeMsg);
       return;
@@ -435,7 +434,7 @@ async function applyExtractedData(
     prefUpdates[key] = value;
   }
 
-  // Handle upgrade acceptance → force packageId to pkg_10
+  // Handle upgrade acceptance → force packageId to pkg_3 (Plano Surpresa)
   if (data.upgradeAccepted === true && !prefUpdates.packageId) {
     prefUpdates.packageId = 'pkg_3';
     log.info('[DATA:UPGRADE] Customer accepted upsell → pkg_3');

@@ -40,11 +40,12 @@ Retorne APENAS um objeto JSON com os campos que você consegue extrair com confi
 Nome do cliente. "Sou a Maria" → "Maria", "Me chamo João" → "João"
 
 ## packageId (string)
-Mapeie para: "pkg_1" | "pkg_2" | "pkg_3" | "pkg_5"
-"1 vídeo" / "quero testar" → "pkg_1"
-"2" / "2 vídeos" → "pkg_2", "3" / "3 vídeos" → "pkg_3", "5" / "5 vídeos" → "pkg_5"
-Se o usuário disser apenas um número (ex: "5", "3"), interprete como quantidade de vídeos do pacote.
-"o mais popular" / "o de 3" → "pkg_3"
+Mapeie para: "pkg_1" | "pkg_3" | "pkg_6"
+"1 vídeo" / "quero testar" / "teste" / "plano teste" → "pkg_1"
+"3" / "3 vídeos" / "surpresa" / "plano surpresa" / "o mais escolhido" → "pkg_3"
+"6" / "6 vídeos" / "completo" / "plano completo" → "pkg_6"
+Se o usuário disser apenas um número (ex: "6", "3", "1"), interprete como quantidade de vídeos do pacote.
+"o mais popular" / "o do meio" → "pkg_3"
 
 ## characterChoice (string)
 O personagem que o cliente escolheu. Pode ser o nome, número, ou slug do personagem.
