@@ -3,38 +3,37 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminCharacter } from '@/lib/characters-api';
-import { createCharacterAction, updateCharacterAction, deactivateCharacterAction } from '@/lib/character-actions';
+import { createCharacterAction, updateCharacterAction, deactivateCharacterAction, uploadCharacterImageAction } from '@/lib/character-actions';
 
 export function CharactersList({ initialCharacters }: { initialCharacters: AdminCharacter[] }) {
   const router = useRouter();
   const [characters] = useState(initialCharacters);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [newName, setNewName] = useState('');
   const [newPersonality, setNewPersonality] = useState('');
   const [newGender, setNewGender] = useState('');
-  const [newAgeRange, setNewAgeRange] = useState('');
 
   const handleCreate = useCallback(async () => {
     if (!newName.trim()) return;
     setCreating(true);
     setError(null);
     try {
-      await createCharacterAction({ name: newName, personality: newPersonality || undefined, gender: newGender || undefined, ageRange: newAgeRange || undefined });
+      await createCharacterAction({ name: newName, personality: newPersonality || undefined, gender: newGender || undefined });
       setShowCreate(false);
       setNewName('');
       setNewPersonality('');
       setNewGender('');
-      setNewAgeRange('');
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao criar personagem');
     } finally {
       setCreating(false);
     }
-  }, [newName, newPersonality, newGender, newAgeRange, router]);
+  }, [newName, newPersonality, newGender, router]);
 
   const handleToggle = useCallback(async (id: string, isActive: boolean) => {
     try {
@@ -46,6 +45,25 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
       router.refresh();
     } catch {
       setError('Erro ao atualizar personagem');
+    }
+  }, [router]);
+
+  const handleImageUpload = useCallback(async (characterId: string, file: File) => {
+    setUploading(characterId);
+    setError(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      await uploadCharacterImageAction(characterId, {
+        base64,
+        filename: file.name,
+        mimeType: file.type || 'image/jpeg',
+      });
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao enviar imagem');
+    } finally {
+      setUploading(null);
     }
   }, [router]);
 
@@ -85,13 +103,6 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
               value={newGender}
               onChange={(e) => setNewGender(e.target.value)}
               placeholder="Gênero (ex: masculino)"
-              className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
-            />
-            <input
-              type="text"
-              value={newAgeRange}
-              onChange={(e) => setNewAgeRange(e.target.value)}
-              placeholder="Faixa etária (ex: criança, adulto)"
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
           </div>
@@ -163,11 +174,27 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
                 {char.personality && (
                   <p className="text-sm text-[var(--muted-foreground)] line-clamp-2 mb-2">{char.personality}</p>
                 )}
-                <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                  {char.gender && <span>{char.gender}</span>}
-                  {char.ageRange && <span>· {char.ageRange}</span>}
-                </div>
+                {char.gender && (
+                  <p className="text-xs text-[var(--muted-foreground)]">{char.gender}</p>
+                )}
                 <div className="flex gap-2 mt-3">
+                  <label
+                    className="px-3 py-1 rounded text-xs font-medium cursor-pointer"
+                    style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                  >
+                    {uploading === char.id ? 'Enviando...' : '📷 Upload Imagem'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading === char.id}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(char.id, file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                   <button
                     onClick={() => handleToggle(char.id, char.isActive)}
                     className="px-3 py-1 rounded text-xs font-medium"
