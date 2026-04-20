@@ -15,6 +15,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
 
   const [newName, setNewName] = useState('');
   const [newPersonality, setNewPersonality] = useState('');
+  const [newFranchise, setNewFranchise] = useState('');
   const [newGender, setNewGender] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
 
@@ -23,7 +24,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
     setCreating(true);
     setError(null);
     try {
-      const created = await createCharacterAction({ name: newName, personality: newPersonality || undefined, gender: newGender || undefined });
+      const created = await createCharacterAction({ name: newName, personality: newPersonality || undefined, franchise: newFranchise || undefined, gender: newGender || undefined });
       // Upload image if selected
       if (newImageFile && created?.id) {
         const buffer = await newImageFile.arrayBuffer();
@@ -37,6 +38,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
       setShowCreate(false);
       setNewName('');
       setNewPersonality('');
+      setNewFranchise('');
       setNewGender('');
       setNewImageFile(null);
       router.refresh();
@@ -45,7 +47,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
     } finally {
       setCreating(false);
     }
-  }, [newName, newPersonality, newGender, newImageFile, router]);
+  }, [newName, newPersonality, newFranchise, newGender, newImageFile, router]);
 
   const handleToggle = useCallback(async (id: string, isActive: boolean) => {
     try {
@@ -118,6 +120,13 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
           </div>
+          <input
+            type="text"
+            value={newFranchise}
+            onChange={(e) => setNewFranchise(e.target.value)}
+            placeholder="Filme/Desenho (ex: Frozen, Patrulha Canina)"
+            className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] mb-3"
+          />
           <textarea
             value={newPersonality}
             onChange={(e) => setNewPersonality(e.target.value)}
@@ -196,6 +205,9 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
                   <h3 className="font-semibold">{char.name}</h3>
                   <span className="text-xs text-[var(--muted-foreground)]">{char.referenceImageCount} imgs</span>
                 </div>
+                {char.franchise && (
+                  <p className="text-xs font-medium text-[var(--primary)] mb-1">{char.franchise}</p>
+                )}
                 {char.personality && (
                   <p className="text-sm text-[var(--muted-foreground)] line-clamp-2 mb-2">{char.personality}</p>
                 )}

@@ -100,7 +100,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
   // Load active characters for catalog
   const characterCatalog = await prisma.character.findMany({
     where: { isActive: true },
-    select: { name: true, slug: true, personality: true },
+    select: { name: true, slug: true, personality: true, franchise: true },
     orderBy: { name: 'asc' },
   });
 
@@ -226,7 +226,7 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     const agentIdentity = await getSetting(SETTING_KEYS.AGENT_IDENTITY);
     const leadContext = buildLeadContext(
       { name: lead.name, phone: lead.phone },
-      { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map((c: { name: string; slug: string; personality: string | null }) => ({ name: c.name, slug: c.slug, description: c.personality })) },
+      { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map((c: { name: string; slug: string; personality: string | null; franchise: string | null }) => ({ name: c.name, slug: c.slug, description: c.personality, franchise: c.franchise })) },
       portfolioUrl || undefined,
     );
     const stateContext = `\n--- ESTADO ATUAL: ${state} ---`;
@@ -345,7 +345,7 @@ async function runExtraction(
   lead: { name: string | null; phone: string },
   session: { id: string; createdAt: Date; updatedAt: Date; preferences: unknown },
   prefs: Record<string, unknown>,
-  characterCatalog: Array<{ name: string; slug: string; personality: string | null }>,
+  characterCatalog: Array<{ name: string; slug: string; personality: string | null; franchise: string | null }>,
 ): Promise<ExtractionResult | null> {
   const historySince = session.createdAt;
   // Use last 6 messages for extraction (3 exchanges)
@@ -354,7 +354,7 @@ async function runExtraction(
 
   const leadContext = buildLeadContext(
     { name: lead.name, phone: lead.phone },
-    { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map(c => ({ name: c.name, slug: c.slug, description: c.personality })) },
+    { preferences: prefs, photoCount: 0, characterCatalog: characterCatalog.map(c => ({ name: c.name, slug: c.slug, description: c.personality, franchise: c.franchise })) },
   );
 
   const agentModel = await getAgentModel('extraction');

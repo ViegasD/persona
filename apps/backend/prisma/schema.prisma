@@ -333,6 +333,7 @@ model Character {
   gender               String?  // "male" | "female" | "neutral"
   ageRange             String?  @map("age_range") // "child" | "teen" | "adult" | "senior"
   personality          String?  @db.Text // prompt hint for video generation
+  franchise            String?  // movie/show/theme e.g. "Frozen", "Patrulha Canina"
   isActive             Boolean  @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at")

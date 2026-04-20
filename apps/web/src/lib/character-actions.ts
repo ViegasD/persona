@@ -12,6 +12,7 @@ export async function createCharacterAction(data: {
   name: string;
   slug?: string;
   personality?: string;
+  franchise?: string;
   tags?: string[];
   gender?: string;
   ageRange?: string;
@@ -24,6 +25,7 @@ export async function updateCharacterAction(
   data: {
     name?: string;
     personality?: string;
+    franchise?: string;
     tags?: string[];
     gender?: string;
     ageRange?: string;

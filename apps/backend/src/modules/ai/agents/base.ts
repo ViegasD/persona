@@ -134,7 +134,7 @@ export function buildLeadContext(lead: {
   preferences: Record<string, unknown>;
   photoCount: number;
   styleRefCount?: number;
-  characterCatalog?: Array<{ name: string; slug: string; description?: string | null }>;
+  characterCatalog?: Array<{ name: string; slug: string; description?: string | null; franchise?: string | null }>;
 }, portfolioUrl?: string): string {
   const prefs = session.preferences;
   const parts: string[] = [
@@ -176,7 +176,8 @@ export function buildLeadContext(lead: {
   if (session.characterCatalog && session.characterCatalog.length > 0) {
     parts.push('\n<catalogo_personagens>');
     session.characterCatalog.forEach((c, i) => {
-      parts.push(`  ${i + 1}. *${c.name}*${c.description ? ` — ${c.description}` : ''}`);
+      const details = [c.franchise, c.description].filter(Boolean).join(' — ');
+      parts.push(`  ${i + 1}. *${c.name}*${details ? ` (${details})` : ''}`);
     });
     parts.push('</catalogo_personagens>');
   }

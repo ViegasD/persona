@@ -28,6 +28,7 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
           name: c.name,
           slug: c.slug,
           personality: c.personality,
+          franchise: c.franchise,
           tags: c.tags,
           gender: c.gender,
           ageRange: c.ageRange,
@@ -66,10 +67,11 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
 
   /** POST /api/admin/characters — create a new character */
   app.post('/characters', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { name, slug, personality, tags, gender, ageRange } = req.body as {
+    const { name, slug, personality, franchise, tags, gender, ageRange } = req.body as {
       name: string;
       slug?: string;
       personality?: string;
+      franchise?: string;
       tags?: string[];
       gender?: string;
       ageRange?: string;
@@ -91,6 +93,7 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
         name: name.trim(),
         slug: sanitizedSlug,
         personality: personality?.trim() || null,
+        franchise: franchise?.trim() || null,
         tags: tags ?? [],
         gender: gender?.trim() || null,
         ageRange: ageRange?.trim() || null,
@@ -109,9 +112,10 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
     const character = await prisma.character.findUnique({ where: { id: req.params.id } });
     if (!character) return reply.status(404).send({ error: 'Personagem não encontrado' });
 
-    const { name, personality, tags, gender, ageRange, isActive } = req.body as {
+    const { name, personality, franchise, tags, gender, ageRange, isActive } = req.body as {
       name?: string;
       personality?: string;
+      franchise?: string;
       tags?: string[];
       gender?: string;
       ageRange?: string;
@@ -123,6 +127,7 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
       data: {
         ...(name !== undefined ? { name: name.trim() } : {}),
         ...(personality !== undefined ? { personality: personality.trim() || null } : {}),
+        ...(franchise !== undefined ? { franchise: franchise.trim() || null } : {}),
         ...(tags !== undefined ? { tags } : {}),
         ...(gender !== undefined ? { gender: gender.trim() || null } : {}),
         ...(ageRange !== undefined ? { ageRange: ageRange.trim() || null } : {}),

@@ -16,6 +16,7 @@ export interface AdminCharacter {
   name: string;
   slug: string;
   personality: string | null;
+  franchise: string | null;
   tags: string[];
   gender: string | null;
   ageRange: string | null;
@@ -30,6 +31,7 @@ export interface AdminCharacterDetail {
   name: string;
   slug: string;
   personality: string | null;
+  franchise: string | null;
   tags: string[];
   gender: string | null;
   ageRange: string | null;
@@ -63,6 +65,7 @@ export async function createCharacter(data: {
   name: string;
   slug?: string;
   personality?: string;
+  franchise?: string;
   tags?: string[];
   gender?: string;
   ageRange?: string;
@@ -81,6 +84,7 @@ export async function updateCharacter(
   data: {
     name?: string;
     personality?: string;
+    franchise?: string;
     tags?: string[];
     gender?: string;
     ageRange?: string;
