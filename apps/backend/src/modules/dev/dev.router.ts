@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../shared/database/prisma.js';
 import { handleFunnelBatch } from '../funnel/funnel.service.v2.js';
-import { handlePaymentApproved, triggerImageGeneration } from '../payment/payment.service.js';
+import { handlePaymentApproved, triggerVideoGeneration } from '../payment/payment.service.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { env } from '../../shared/config/env.js';
 
@@ -268,7 +268,7 @@ export async function devRouter(app: FastifyInstance) {
       return reply.status(400).send({ error: 'No approved payment found' });
     }
 
-    await triggerImageGeneration(session.id);
+    await triggerVideoGeneration(session.id);
 
     log.info({ phone, sessionId: session.id }, 'Dev: generation retried');
 

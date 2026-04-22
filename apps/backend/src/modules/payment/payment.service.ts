@@ -3,7 +3,7 @@ import { env } from '../../shared/config/env.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { createPixPayment } from './mercadopago.client.js';
 import { uploadFile, getPresignedUrl } from '../../shared/storage/s3.client.js';
-import { getQueue, QUEUE_NAMES, type ImageGenerationJobData } from '../../shared/queue/queues.js';
+import { getQueue, QUEUE_NAMES, type VideoGenerationJobData } from '../../shared/queue/queues.js';
 import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
@@ -144,24 +144,21 @@ export async function handlePaymentApproved(
   await queueTextMessage(session.lead.phone, confirmMsg);
   await logOutboundMessage(session.leadId, confirmMsg);
 
-  // Disparar geração de imagens
-  await triggerImageGeneration(sessionId);
+  // Disparar geração de vídeos
+  await triggerVideoGeneration(sessionId);
 
   log.info({ sessionId, paymentId: payment.id }, 'Pagamento aprovado, geração iniciada');
 }
 
 /**
- * Enfileira job de geração de imagens (SOMENTE após pagamento aprovado).
+ * Enfileira job de geração de vídeos (SOMENTE após pagamento aprovado).
  */
-export async function triggerImageGeneration(sessionId: string): Promise<void> {
-  // Criar job de geração no banco
+export async function triggerVideoGeneration(sessionId: string): Promise<void> {
   const session = await prisma.leadSession.findUnique({
     where: { id: sessionId },
   });
 
   if (!session) return;
-
-  const prefs = session.preferences as Record<string, string>;
 
   const generationJob = await prisma.generationJob.create({
     data: {
@@ -171,14 +168,13 @@ export async function triggerImageGeneration(sessionId: string): Promise<void> {
     },
   });
 
-  // Estado permanece PAID — o worker muda para GENERATING após submissão bem-sucedida ao Kie.ai
+  // Estado permanece PAID — o worker muda para GENERATING após submissão bem-sucedida ao Veo
 
-  // Enfileirar no BullMQ
-  const queue = getQueue(QUEUE_NAMES.IMAGE_GENERATION);
+  const queue = getQueue(QUEUE_NAMES.VIDEO_GENERATION);
   await queue.add('generate', {
     leadSessionId: sessionId,
     generationJobId: generationJob.id,
-  } satisfies ImageGenerationJobData);
+  } satisfies VideoGenerationJobData);
 
-  log.info({ sessionId, generationJobId: generationJob.id }, 'Job de geração enfileirado');
+  log.info({ sessionId, generationJobId: generationJob.id }, 'Job de geração de vídeo enfileirado');
 }

@@ -4,8 +4,7 @@ import { getFunnelMetrics, getCostMetrics } from './analytics.service.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 import { trackEvent } from './analytics.service.js';
-import { getQueue, QUEUE_NAMES, type DeliveryJobData, type ImageGenerationJobData } from '../../shared/queue/queues.js';
-import { buildPrompt } from '../image-gen/prompt.engine.js';
+import { getQueue, QUEUE_NAMES, type DeliveryJobData, type VideoGenerationJobData } from '../../shared/queue/queues.js';
 
 /** Build a relative image URL served by the Next.js admin panel. */
 function imageUrl(s3Key: string): string {
@@ -221,25 +220,21 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
       }
 
       const session = image.leadSession;
-      const prefs = session.preferences as Record<string, string>;
 
-      // Criar novo job de geração para 1 imagem
+      // Criar novo job de geração (worker lê prefs do session)
       const genJob = await prisma.generationJob.create({
         data: {
           leadSessionId: session.id,
-          prompt: buildPrompt({
-            occasion: prefs.occasion ?? 'casual',
-            occasionDetails: prefs.occasionDetails,
-          }),
+          prompt: '',
           status: 'QUEUED',
         },
       });
 
-      const queue = getQueue(QUEUE_NAMES.IMAGE_GENERATION);
+      const queue = getQueue(QUEUE_NAMES.VIDEO_GENERATION);
       await queue.add('regenerate', {
         leadSessionId: session.id,
         generationJobId: genJob.id,
-      } satisfies ImageGenerationJobData);
+      } satisfies VideoGenerationJobData);
 
       await trackEvent(session.leadId, 'IMAGE_REGENERATED', {
         imageId,
@@ -280,21 +275,19 @@ export async function analyticsRouter(app: FastifyInstance): Promise<void> {
         return;
       }
 
-      const prefs = session.preferences as Record<string, string>;
-
       const genJob = await prisma.generationJob.create({
         data: {
           leadSessionId: session.id,
-          prompt: `[manual-retry] occasion:${prefs.occasion ?? 'casual'}`,
+          prompt: '[manual-retry]',
           status: 'QUEUED',
         },
       });
 
-      const queue = getQueue(QUEUE_NAMES.IMAGE_GENERATION);
+      const queue = getQueue(QUEUE_NAMES.VIDEO_GENERATION);
       await queue.add('manual-generate', {
         leadSessionId: session.id,
         generationJobId: genJob.id,
-      } satisfies ImageGenerationJobData);
+      } satisfies VideoGenerationJobData);
 
       await trackEvent(session.leadId, 'GENERATION_MANUAL_RETRY', {
         generationJobId: genJob.id,

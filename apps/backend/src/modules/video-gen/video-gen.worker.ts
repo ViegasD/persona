@@ -1,12 +1,12 @@
-import type { Job } from 'bullmq';
+﻿import type { Job } from 'bullmq';
 import type { VideoGenerationJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
 import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
-import { xaiVideo, XaiApiError } from './xai-video.client.js';
-import { buildVideoPromptVariations } from './video-prompt.engine.js';
+import { veo, VeoApiError } from './veo.client.js';
+import { buildVideoPromptVariations, type PerVideoPromptInput } from './video-prompt.engine.js';
 import { processGeneratedVideos } from './video-result.processor.js';
 import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
@@ -14,12 +14,24 @@ import { MESSAGES } from '../funnel/messages.templates.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
 
 const log = createChildLogger('video-gen-worker');
-const POLL_INTERVAL_MS = 5_000;
-const MAX_POLL_ATTEMPTS = 120; // 10 minutes max
+const POLL_INTERVAL_MS = 10_000;
+const MAX_POLL_ATTEMPTS = 90; // ~15 min max
+
+/** Per-video preference shape (what the funnel collects per requested video). */
+interface VideoSpec {
+  characterId: string;
+  script: string;
+}
 
 /**
- * Worker that processes video generation jobs via xAI Grok Imagine Video.
- * Flow: load character → build prompt → submit to xAI → poll → download → S3 → gallery
+ * Worker that generates videos via Google Veo (Gemini API).
+ *
+ * Inputs come from the lead session preferences:
+ *   prefs.videos: VideoSpec[]   (one entry per video the user purchased)
+ *
+ * For backward compatibility, if `prefs.videos` is missing we fall back to
+ * a single video built from `prefs.characterId` + `prefs.customMessage`,
+ * repeated `package.videos` times.
  */
 export async function processVideoGeneration(
   job: Job<VideoGenerationJobData>,
@@ -38,94 +50,109 @@ export async function processVideoGeneration(
     throw new Error('Session not found');
   }
 
-  // Verify payment
   const payment = await prisma.payment.findFirst({
     where: { leadSessionId, status: 'APPROVED' },
   });
 
   if (!payment) {
-    log.error({ leadSessionId }, 'No approved payment found — aborting generation');
+    log.error({ leadSessionId }, 'No approved payment found â€” aborting generation');
     throw new Error('Payment not found');
   }
 
   try {
-    // Update status
     await prisma.generationJob.update({
       where: { id: generationJobId },
       data: { status: 'PROCESSING', startedAt: new Date() },
     });
 
-    const prefs = session.preferences as Record<string, string>;
-    const pkg = getPackageById(prefs.packageId) ?? PACKAGES[PACKAGES.length - 1];
+    const prefs = (session.preferences as Record<string, unknown>) ?? {};
+    const pkg = getPackageById(prefs.packageId as string) ?? PACKAGES[PACKAGES.length - 1];
+    const expectedCount = pkg.videos ?? 1;
 
-    // Load character
-    const characterId = prefs.characterId;
-    if (!characterId) {
-      throw new Error('No character selected in session preferences');
+    // Build the list of videos to generate.
+    const specs = await resolveVideoSpecs(prefs, expectedCount);
+    if (specs.length === 0) {
+      throw new Error('No video specs available â€” missing character or script in session preferences');
     }
 
-    const character = await prisma.character.findUnique({
-      where: { id: characterId },
+    // Load characters for all specs (de-duped).
+    const characterIds = [...new Set(specs.map((s) => s.characterId))];
+    const characters = await prisma.character.findMany({
+      where: { id: { in: characterIds } },
     });
+    const charById = new Map(characters.map((c) => [c.id, c]));
 
-    if (!character) {
-      throw new Error(`Character ${characterId} not found`);
+    // Build prompt + reference image for each video.
+    const promptInputs: PerVideoPromptInput[] = [];
+    const imageBuffers: Array<{ base64: string; mimeType: string } | null> = [];
+
+    for (const spec of specs) {
+      const character = charById.get(spec.characterId);
+      if (!character) throw new Error(`Character ${spec.characterId} not found`);
+
+      promptInputs.push({
+        characterName: character.name,
+        characterPersonality: character.personality ?? undefined,
+        script: spec.script,
+      });
+
+      // Use the first reference image as image-to-video starting frame.
+      const refKeys = (character.referenceImageS3Keys as string[]) ?? [];
+      if (refKeys.length === 0) {
+        log.warn({ characterId: character.id }, 'Character has no reference images â€” generating text-to-video');
+        imageBuffers.push(null);
+      } else {
+        const url = await getPresignedUrl(refKeys[0], 600);
+        const res = await fetch(url);
+        if (!res.ok) {
+          log.warn({ characterId: character.id, refKey: refKeys[0], status: res.status }, 'Failed to download reference image');
+          imageBuffers.push(null);
+        } else {
+          const buf = Buffer.from(await res.arrayBuffer());
+          imageBuffers.push({
+            base64: buf.toString('base64'),
+            mimeType: res.headers.get('content-type') ?? 'image/jpeg',
+          });
+        }
+      }
     }
 
-    // Get presigned URLs for character reference images
-    const refKeys = character.referenceImageS3Keys as string[];
-    if (refKeys.length === 0) {
-      throw new Error(`Character ${character.name} has no reference images`);
-    }
+    const prompts = buildVideoPromptVariations(promptInputs);
 
-    const referenceUrls = await Promise.all(
-      refKeys.map((key) => getPresignedUrl(key, 3600)),
-    );
-
-    log.info(
-      { characterName: character.name, refCount: referenceUrls.length },
-      'Character reference images loaded',
-    );
-
-    // Build prompt variations
-    const videoCount = pkg.videos ?? 1;
-    const prompts = buildVideoPromptVariations({
-      characterName: character.name,
-      characterPersonality: character.personality ?? undefined,
-      messageType: prefs.messageType ?? 'default',
-      recipientName: prefs.recipientName ?? '',
-      recipientAge: prefs.recipientAge,
-      customMessage: prefs.customMessage,
-      referenceImageCount: referenceUrls.length,
-    }, videoCount);
-
-    // Save representative prompt
     await prisma.generationJob.update({
       where: { id: generationJobId },
       data: { prompt: prompts[0] },
     });
 
-    // Submit to xAI — 1 request per video
-    const taskPromises = prompts.map((prompt) =>
-      xaiVideo.submitGeneration({
-        prompt,
-        referenceImageUrls: referenceUrls,
-        duration: env.VIDEO_DURATION,
-        aspectRatio: env.VIDEO_ASPECT_RATIO,
-        resolution: env.VIDEO_RESOLUTION,
-      }),
+    // Submit all videos to Veo in parallel.
+    const submissions = await Promise.all(
+      prompts.map((prompt, i) =>
+        veo.submitGeneration({
+          prompt,
+          imageBase64: imageBuffers[i]?.base64,
+          imageMimeType: imageBuffers[i]?.mimeType,
+        }).catch((err) => {
+          log.error({ err, index: i }, 'Veo submit failed for video');
+          return null;
+        }),
+      ),
     );
-    const xaiTasks = await Promise.all(taskPromises);
-    const requestIds = xaiTasks.map((t) => t.requestId);
+
+    const operationNames = submissions
+      .map((s) => s?.operationName)
+      .filter((n): n is string => typeof n === 'string');
+
+    if (operationNames.length === 0) {
+      throw new Error('All Veo submissions failed');
+    }
 
     await prisma.generationJob.update({
       where: { id: generationJobId },
-      data: { externalJobId: requestIds.join(',') },
+      data: { externalJobId: operationNames.join(',') },
     });
 
-    log.info({ requestIds, count: requestIds.length }, 'Tasks submitted to xAI');
+    log.info({ operationNames, count: operationNames.length }, 'Veo operations submitted');
 
-    // Transition to GENERATING
     await prisma.leadSession.update({
       where: { id: leadSessionId },
       data: { funnelState: FUNNEL_STATES.GENERATING },
@@ -135,50 +162,24 @@ export async function processVideoGeneration(
       data: { status: 'GENERATING' },
     });
 
-    // Send progress message
     const progressMsg = MESSAGES.generationProgress();
     await queueTextMessage(session.lead.phone, progressMsg);
     await logOutboundMessage(session.leadId, progressMsg);
 
-    // Poll all tasks
-    const completedVideos = await pollVideoTasks(requestIds);
+    const completed = await pollVideoOperations(operationNames);
 
-    // Auto-retry failed tasks (one round)
-    const failedCount = videoCount - completedVideos.length;
-    if (failedCount > 0 && completedVideos.length > 0) {
-      log.warn({ expected: videoCount, got: completedVideos.length, retrying: failedCount }, 'Some tasks failed — retrying');
-      const retryTasks = await Promise.all(
-        Array.from({ length: failedCount }, (_, i) => {
-          const originalIndex = completedVideos.length + i;
-          return xaiVideo.submitGeneration({
-            prompt: prompts[originalIndex % prompts.length],
-            referenceImageUrls: referenceUrls,
-            duration: env.VIDEO_DURATION,
-            aspectRatio: env.VIDEO_ASPECT_RATIO,
-            resolution: env.VIDEO_RESOLUTION,
-          });
-        }),
-      );
-      const retryIds = retryTasks.map((t) => t.requestId);
-      log.info({ retryIds }, 'Retry tasks submitted to xAI');
-      const retryResults = await pollVideoTasks(retryIds);
-      completedVideos.push(...retryResults);
+    const failed = expectedCount - completed.length;
+    if (completed.length === 0) {
+      throw new Error('No videos returned by Veo');
+    }
+    if (failed > 0) {
+      log.warn({ expected: expectedCount, delivered: completed.length, failed }, 'Partial generation');
     }
 
-    const totalFailed = videoCount - completedVideos.length;
-    if (completedVideos.length === 0) {
-      throw new Error('No videos returned by xAI');
-    }
-
-    if (totalFailed > 0) {
-      log.warn({ expected: videoCount, delivered: completedVideos.length, failed: totalFailed }, 'Partial generation — some videos could not be generated');
-    }
-
-    // Process and store videos
     const videoIds = await processGeneratedVideos(
-      completedVideos.map((v) => ({
-        videoUrl: v.videoUrl!,
-        durationSeconds: v.durationSeconds,
+      completed.map((c) => ({
+        videoUri: c.videoUri!,
+        durationSeconds: env.VIDEO_DURATION,
         aspectRatio: env.VIDEO_ASPECT_RATIO,
         resolution: env.VIDEO_RESOLUTION,
       })),
@@ -186,25 +187,20 @@ export async function processVideoGeneration(
       leadSessionId,
     );
 
-    // Update job status
     await prisma.generationJob.update({
       where: { id: generationJobId },
-      data: {
-        status: 'COMPLETED',
-        completedAt: new Date(),
-      },
+      data: { status: 'COMPLETED', completedAt: new Date() },
     });
 
-    // Transition to GALLERY_SENT
     await prisma.leadSession.update({
       where: { id: leadSessionId },
       data: {
         funnelState: FUNNEL_STATES.GALLERY_SENT,
         metadata: {
           ...(session.metadata as Record<string, unknown>),
-          expectedVideos: videoCount,
-          deliveredVideos: completedVideos.length,
-          failedVideos: totalFailed,
+          expectedVideos: expectedCount,
+          deliveredVideos: completed.length,
+          failedVideos: failed,
         },
       },
     });
@@ -215,19 +211,17 @@ export async function processVideoGeneration(
     });
 
     await trackEvent(session.leadId, 'VIDEOS_GENERATED', {
-      count: completedVideos.length,
-      expected: videoCount,
-      failed: totalFailed,
+      count: completed.length,
+      expected: expectedCount,
+      failed,
       generationJobId,
     });
 
-    // Notify client
-    const doneMsg = MESSAGES.generationComplete?.() ?? '✅ Seus vídeos ficaram prontos! Em breve enviaremos para aprovação.';
+    const doneMsg = MESSAGES.generationComplete?.() ?? 'âœ… Seus vÃ­deos ficaram prontos! Em breve enviaremos para aprovaÃ§Ã£o.';
     await queueTextMessage(session.lead.phone, doneMsg);
     await logOutboundMessage(session.leadId, doneMsg);
 
-    log.info({ leadSessionId, videoCount: completedVideos.length, generationJobId }, 'Video generation completed');
-
+    log.info({ leadSessionId, videoCount: completed.length, generationJobId, videoIds }, 'Video generation completed');
   } catch (error) {
     log.error({ leadSessionId, generationJobId, error }, 'Video generation failed');
 
@@ -240,7 +234,6 @@ export async function processVideoGeneration(
       },
     });
 
-    // Notify admin / track
     await trackEvent(session.leadId, 'VIDEO_GENERATION_FAILED', {
       generationJobId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -251,47 +244,79 @@ export async function processVideoGeneration(
 }
 
 /**
- * Polls xAI video tasks until completion or timeout.
+ * Resolve the per-video specs from session preferences. Supports:
+ *   - prefs.videos: [{ characterId, script }, ...]   (new format)
+ *   - prefs.characterId + prefs.customMessage         (legacy fallback, single script repeated)
  */
-async function pollVideoTasks(
-  requestIds: string[],
-): Promise<Array<{ requestId: string; videoUrl: string; durationSeconds?: number }>> {
-  const completed: Array<{ requestId: string; videoUrl: string; durationSeconds?: number }> = [];
-  const pending = new Set(requestIds);
+async function resolveVideoSpecs(
+  prefs: Record<string, unknown>,
+  expectedCount: number,
+): Promise<VideoSpec[]> {
+  const rawVideos = prefs.videos;
+  if (Array.isArray(rawVideos) && rawVideos.length > 0) {
+    const specs: VideoSpec[] = [];
+    for (const v of rawVideos) {
+      if (
+        v &&
+        typeof v === 'object' &&
+        typeof (v as VideoSpec).characterId === 'string' &&
+        typeof (v as VideoSpec).script === 'string' &&
+        (v as VideoSpec).script.trim().length > 0
+      ) {
+        specs.push({
+          characterId: (v as VideoSpec).characterId,
+          script: (v as VideoSpec).script,
+        });
+      }
+    }
+    if (specs.length > 0) return specs;
+  }
+
+  // Legacy fallback: single character + customMessage repeated for the package count.
+  const characterId = typeof prefs.characterId === 'string' ? prefs.characterId : null;
+  const script = typeof prefs.customMessage === 'string' ? prefs.customMessage : null;
+
+  if (!characterId || !script || script.trim().length === 0) return [];
+
+  return Array.from({ length: expectedCount }, () => ({ characterId, script }));
+}
+
+async function pollVideoOperations(
+  operationNames: string[],
+): Promise<Array<{ operationName: string; videoUri: string }>> {
+  const completed: Array<{ operationName: string; videoUri: string }> = [];
+  const pending = new Set(operationNames);
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS && pending.size > 0; attempt++) {
     await sleep(POLL_INTERVAL_MS);
 
-    for (const requestId of [...pending]) {
+    for (const op of [...pending]) {
       try {
-        const result = await xaiVideo.getStatus(requestId);
-
-        if (result.status === 'done' && result.videoUrl) {
-          completed.push({
-            requestId,
-            videoUrl: result.videoUrl,
-            durationSeconds: result.durationSeconds,
-          });
-          pending.delete(requestId);
-          log.debug({ requestId, attempt }, 'Video task completed');
-        } else if (result.status === 'failed' || result.status === 'expired') {
-          pending.delete(requestId);
-          log.warn({ requestId, status: result.status, error: result.error }, 'Video task failed/expired');
+        const result = await veo.getStatus(op);
+        if (result.status === 'done' && result.videoUri) {
+          completed.push({ operationName: op, videoUri: result.videoUri });
+          pending.delete(op);
+          log.debug({ operationName: op, attempt }, 'Veo operation completed');
+        } else if (result.status === 'failed') {
+          pending.delete(op);
+          log.warn({ operationName: op, error: result.error }, 'Veo operation failed');
         }
-        // 'pending' → continue polling
-      } catch (error) {
-        log.error({ requestId, attempt, error }, 'Error polling xAI task');
-        // Don't remove from pending — will retry on next attempt
+      } catch (err) {
+        if (err instanceof VeoApiError) {
+          log.error({ operationName: op, code: err.code, attempt }, 'Veo poll error (retrying)');
+        } else {
+          log.error({ operationName: op, attempt, err }, 'Veo poll error (retrying)');
+        }
       }
     }
 
     if (pending.size > 0) {
-      log.debug({ pending: pending.size, completed: completed.length, attempt }, 'Video polling progress');
+      log.debug({ pending: pending.size, completed: completed.length, attempt }, 'Polling progress');
     }
   }
 
   if (pending.size > 0) {
-    log.warn({ timedOut: [...pending] }, 'Some video tasks timed out');
+    log.warn({ timedOut: [...pending] }, 'Some Veo operations timed out');
   }
 
   return completed;

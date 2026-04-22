@@ -1,19 +1,21 @@
-import { prisma } from '../../shared/database/prisma.js';
+﻿import { prisma } from '../../shared/database/prisma.js';
 import { uploadFile, buildS3Key, getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
+import { veo } from './veo.client.js';
 import { randomUUID } from 'crypto';
 
 const log = createChildLogger('video-result-processor');
 
 interface VideoResult {
-  videoUrl: string;
+  videoUri: string;
   durationSeconds?: number;
   aspectRatio?: string;
   resolution?: string;
 }
 
 /**
- * Downloads generated videos from xAI temporary URLs and stores them in S3.
+ * Downloads generated videos from Veo (Gemini File API URIs) and stores
+ * them in S3.
  */
 export async function processGeneratedVideos(
   videos: VideoResult[],
@@ -23,29 +25,20 @@ export async function processGeneratedVideos(
   const videoIds: string[] = [];
 
   for (let i = 0; i < videos.length; i++) {
-    const { videoUrl, durationSeconds, aspectRatio, resolution } = videos[i];
+    const { videoUri, durationSeconds, aspectRatio, resolution } = videos[i];
     try {
-      // Download video from xAI CDN
-      const response = await fetch(videoUrl);
-      if (!response.ok) {
-        log.error({ url: videoUrl, status: response.status }, 'Failed to download generated video');
-        continue;
-      }
-
-      const buffer = Buffer.from(await response.arrayBuffer());
+      const buffer = await veo.downloadVideo(videoUri);
       const filename = `${randomUUID()}.mp4`;
 
-      // Upload to S3
       const s3Key = buildS3Key(leadSessionId, 'videos', filename);
       await uploadFile(s3Key, buffer, 'video/mp4');
 
-      // Create DB record
       const video = await prisma.generatedVideo.create({
         data: {
           generationJobId,
           leadSessionId,
           s3Key,
-          s3Url: videoUrl,
+          s3Url: videoUri,
           thumbnailS3Key: null,
           durationSeconds: durationSeconds ?? null,
           aspectRatio: aspectRatio ?? null,
@@ -58,7 +51,7 @@ export async function processGeneratedVideos(
       videoIds.push(video.id);
       log.debug({ videoId: video.id, sequence: i + 1, durationSeconds }, 'Video processed');
     } catch (error) {
-      log.error({ url: videoUrl, error }, 'Error processing individual video');
+      log.error({ uri: videoUri, error }, 'Error processing individual video');
     }
   }
 

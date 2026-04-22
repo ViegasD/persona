@@ -43,12 +43,14 @@ const envSchema = z.object({
   KIE_API_URL: z.string().url().optional(),
   KIE_API_KEY: z.string().optional(),
 
-  // xAI (video generation)
-  XAI_API_KEY: z.string().optional(),
-  XAI_API_URL: z.string().url().default('https://api.x.ai/v1'),
-  VIDEO_DURATION: z.coerce.number().default(10),
-  VIDEO_ASPECT_RATIO: z.string().default('9:16'),
-  VIDEO_RESOLUTION: z.enum(['480p', '720p']).default('720p'),
+  // Google Veo (video generation)
+  GOOGLE_API_KEY: z.string().optional(),
+  GOOGLE_API_URL: z.string().url().default('https://generativelanguage.googleapis.com/v1beta'),
+  VEO_MODEL: z.string().default('veo-3.1-generate-preview'),
+  VIDEO_DURATION: z.coerce.number().default(8),
+  VIDEO_ASPECT_RATIO: z.enum(['16:9', '9:16']).default('9:16'),
+  VIDEO_RESOLUTION: z.enum(['720p', '1080p']).default('720p'),
+  VIDEO_PERSON_GENERATION: z.enum(['allow_all', 'allow_adult', 'dont_allow']).default('allow_all'),
 
   // S3 / MinIO
   S3_ENDPOINT: z.string().optional(),
