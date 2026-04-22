@@ -143,16 +143,19 @@ export function buildLeadContext(lead: {
     `  <telefone>${lead.phone}</telefone>`,
   ];
 
+  let pkgVideoCount = 0;
   if (prefs.packageId) {
     const pkg = getPackageById(prefs.packageId as string);
     parts.push(`  <pacote>${prefs.packageId}</pacote>`);
-    if (pkg) parts.push(`  <pacote_label>${pkg.label}</pacote_label>`);
+    if (pkg) {
+      parts.push(`  <pacote_label>${pkg.label}</pacote_label>`);
+      pkgVideoCount = pkg.videos;
+      parts.push(`  <pacote_total_videos>${pkg.videos}</pacote_total_videos>`);
+    }
   }
   if (prefs.priceOverride) parts.push(`  <preco_final>R$ ${Number(prefs.priceOverride).toFixed(2).replace('.', ',')}</preco_final>`);
 
-  // Video-specific fields
-  if (prefs.characterId) parts.push(`  <personagem_id>${prefs.characterId}</personagem_id>`);
-  if (prefs.characterName) parts.push(`  <personagem>${prefs.characterName}</personagem>`);
+  // Shared (across all videos in the order)
   if (prefs.messageType) {
     parts.push(`  <tipo_mensagem>${prefs.messageType}</tipo_mensagem>`);
     const occ = OCCASIONS[prefs.messageType as string];
@@ -160,8 +163,36 @@ export function buildLeadContext(lead: {
   }
   if (prefs.recipientName) parts.push(`  <nome_destinatario>${prefs.recipientName}</nome_destinatario>`);
   if (prefs.recipientAge) parts.push(`  <idade_destinatario>${prefs.recipientAge}</idade_destinatario>`);
-  if (prefs.customMessage) parts.push(`  <mensagem_personalizada>${prefs.customMessage}</mensagem_personalizada>`);
-  if (prefs.autoMessage) parts.push(`  <mensagem_auto>sim</mensagem_auto>`);
+
+  // Per-video state
+  const videos = Array.isArray(prefs.videos) ? (prefs.videos as Array<Record<string, unknown>>) : [];
+  if (pkgVideoCount > 0 || videos.length > 0) {
+    const total = Math.max(pkgVideoCount, videos.length);
+    parts.push('  <videos>');
+    let pending = 0;
+    let nextSlot = 0;
+    for (let i = 0; i < total; i++) {
+      const v = videos[i] ?? {};
+      const personagem = (v.characterName as string) ?? '';
+      const mensagem = (v.customMessage as string) ?? '';
+      const auto = v.autoMessage === true;
+      const complete = !!personagem && (!!mensagem || auto);
+      if (!complete) {
+        pending++;
+        if (!nextSlot) nextSlot = i + 1;
+      }
+      const attrs = [
+        `idx="${i + 1}"`,
+        `personagem="${personagem}"`,
+        `mensagem="${auto ? '[gerada pela equipe]' : mensagem}"`,
+        `completo="${complete ? 'sim' : 'nao'}"`,
+      ];
+      parts.push(`    <video ${attrs.join(' ')} />`);
+    }
+    parts.push('  </videos>');
+    parts.push(`  <videos_pendentes>${pending}</videos_pendentes>`);
+    if (nextSlot > 0) parts.push(`  <proximo_video>${nextSlot}</proximo_video>`);
+  }
 
   // Legacy image fields (kept for backward compatibility)
   if (prefs.occasion) {

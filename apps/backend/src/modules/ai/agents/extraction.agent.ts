@@ -1,18 +1,32 @@
 import type { AgentConfig } from './base.js';
 
 /**
+ * One per-video slot extracted from the most recent user turn.
+ * `slot` is 1-based and refers to <video idx="N"> in the lead context.
+ */
+export interface VideoSlotExtraction {
+  slot: number;
+  characterChoice?: string;
+  customMessage?: string;
+  autoMessage?: boolean;
+}
+
+/**
  * Structured extraction result — pure data, no personality.
  * Only includes fields that were actually extracted (undefined = not found).
  */
 export interface ExtractionResult {
   name?: string;
   packageId?: string;
-  characterChoice?: string;    // character slug or name
-  messageType?: string;        // "aniversario", "parabens", "motivacao", etc.
-  recipientName?: string;      // who the video is for
-  recipientAge?: string;       // age of recipient (for birthday)
-  customMessage?: string;      // specific message details
-  autoMessage?: boolean;        // user wants auto-generated message
+  /** Per-video data (multi-video orders). */
+  videos?: VideoSlotExtraction[];
+  /** Legacy single-video shortcuts — routed into the next pending slot. */
+  characterChoice?: string;
+  customMessage?: string;
+  autoMessage?: boolean;
+  messageType?: string;        // shared across all videos in the order
+  recipientName?: string;      // shared
+  recipientAge?: string;       // shared
   dataConfirmed?: boolean;
   changePackage?: boolean;
   regenerateQr?: boolean;
@@ -47,42 +61,50 @@ Mapeie para: "pkg_1" | "pkg_3" | "pkg_6"
 Se o usuário disser apenas um número (ex: "6", "3", "1"), interprete como quantidade de vídeos do pacote.
 "o mais popular" / "o do meio" → "pkg_3"
 
-## characterChoice (string)
-O personagem que o cliente escolheu. Pode ser o nome, número, slug ou franquia do personagem.
-"quero o número 2" → "2", "a Princesa Luna" → "Princesa Luna", "o super-herói" → "super-herói"
-Se o cliente disser uma franquia/tema com apenas um personagem possível, use o nome da franquia: "quero bluey" → "Bluey"
-Se o cliente disser uma franquia com múltiplos personagens (ex: "quero patrulha canina"), NÃO extraia characterChoice — deixe o conversation agent listar as opções primeiro.
+## characterChoice (string) — LEGACY single-video shortcut
+Use APENAS quando o pacote tem 1 vídeo (pkg_1) E o cliente acabou de escolher o personagem.
+Para pacotes com múltiplos vídeos (pkg_3, pkg_6), use o campo \`videos\` em vez deste.
+Pode ser nome, número ou franquia. "quero o número 2" → "2", "a Princesa Luna" → "Princesa Luna"
+Se o cliente disser uma franquia com múltiplos personagens (ex: "quero patrulha canina"), NÃO extraia — deixe o conversation agent listar.
+
+## videos (array) — PER-VIDEO data
+Use para pacotes com múltiplos vídeos. Cada item refere-se a UM vídeo (slot) do pedido.
+O contexto \`<videos>\` mostra o estado atual de cada slot (qual personagem/mensagem já foi escolhido).
+Extraia APENAS os slots que o usuário mencionou na sua última mensagem.
+
+Formato de cada item:
+\`\`\`
+{ "slot": 1, "characterChoice": "Mickey", "customMessage": "feliz aniversário do João" }
+{ "slot": 2, "characterChoice": "Elsa", "autoMessage": true }
+\`\`\`
+Regras:
+- \`slot\` é 1-based e DEVE corresponder ao \`idx\` mostrado no contexto \`<videos>\`
+- Não extraia campos vazios (omita \`customMessage\` se só escolheu personagem)
+- Se o usuário disser "o mesmo personagem em todos" → emita um item por slot pendente, todos com o mesmo \`characterChoice\`
+- Se o usuário disser apenas uma mensagem/personagem sem dizer "vídeo X", e há apenas UM slot pendente, atribua ao slot pendente. Se há múltiplos slots pendentes e o usuário não especificou qual, NÃO extraia — deixe o conversation agent perguntar qual vídeo.
+
+## customMessage (string) — LEGACY single-video shortcut
+Use APENAS para pkg_1, ou se o cliente está corrigindo a mensagem do único vídeo já escolhido.
+Para múltiplos vídeos, use \`videos[].customMessage\`.
+
+## autoMessage (boolean) — LEGACY single-video shortcut
+Use APENAS para pkg_1.
+Para múltiplos vídeos, use \`videos[].autoMessage\`.
 
 ## messageType (string)
-Tipo de mensagem/ocasião do vídeo.
-Normalize: "aniversário" / "niver" / "parabéns pro meu filho" → "aniversario",
-"parabéns" / "congratulações" → "parabens",
-"motivação" / "motivacional" → "motivacao",
-"natal" / "boas festas" → "natal",
-"dia das mães" → "dia-das-maes",
-"dia dos pais" → "dia-dos-pais",
-"casamento" → "casamento",
-"formatura" → "formatura",
+Tipo de mensagem/ocasião (compartilhado entre todos os vídeos do pedido).
+Normalize: "aniversário" / "niver" → "aniversario", "parabéns" → "parabens",
+"motivação" / "motivacional" → "motivacao", "natal" / "boas festas" → "natal",
+"dia das mães" → "dia-das-maes", "dia dos pais" → "dia-dos-pais",
+"casamento" → "casamento", "formatura" → "formatura",
 "amor" / "te amo" / "declaração" → "amor",
 "outro" / "personalizado" → "personalizado"
 
 ## recipientName (string)
-O nome de quem vai receber o vídeo. "pro meu filho João" → "João", "pra Ana" → "Ana"
+Nome de quem vai receber. "pro meu filho João" → "João", "pra Ana" → "Ana"
 
 ## recipientAge (string)
-Idade do destinatário (para aniversário). "vai fazer 8 anos" → "8", "é o niver de 5 anos" → "5"
-
-## customMessage (string)
-Detalhes específicos da mensagem que o cliente quer no vídeo.
-"quero que diga que a mamãe ama muito" → "que a mamãe ama muito"
-"menciona que ele adora dinossauros" → "ele adora dinossauros"
-"feliz aniversário pro João, a mamãe te ama" → "feliz aniversário pro João, a mamãe te ama"
-
-## autoMessage (boolean)
-true quando o cliente diz que quer que a gente crie a mensagem do vídeo (não quer enviar texto personalizado).
-"vocês fazem" / "pode criar" / "tanto faz" / "faz vocês mesmos" / "pode ser" / "deixa com vocês" → true
-NÃO extraia se o cliente mandou um texto personalizado (nesse caso extraia customMessage).
-Só extraia se o assistente acabou de perguntar sobre o texto do vídeo.
+Idade do destinatário (para aniversário). "vai fazer 8 anos" → "8"
 
 ## dataConfirmed (boolean)
 true SOMENTE quando o cliente confirma EXPLICITAMENTE o resumo dos dados:
@@ -106,7 +128,10 @@ Só extraia se o assistente acabou de fazer uma oferta de upsell.
 
 # Formato de Saída
 Retorne JSON válido com APENAS os campos extraídos. Omita campos sem dados.
-Exemplo: { "packageId": "pkg_3", "messageType": "aniversario", "recipientName": "João" }
+Exemplos:
+- { "packageId": "pkg_3", "messageType": "aniversario", "recipientName": "João" }
+- { "videos": [{ "slot": 1, "characterChoice": "Mickey", "customMessage": "feliz aniversário do João" }] }
+- { "videos": [{ "slot": 2, "autoMessage": true }] }
 Se nada a extrair: {}
 `,
 };

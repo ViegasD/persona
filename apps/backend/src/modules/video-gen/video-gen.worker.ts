@@ -3,7 +3,7 @@ import type { VideoGenerationJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
 import { getPresignedUrl } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
-import { getPackageById, PACKAGES } from '../funnel/packages.config.js';
+import { getPackageById, PACKAGES, OCCASIONS } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { veo, VeoApiError } from './veo.client.js';
 import { buildVideoPromptVariations, type PerVideoPromptInput } from './video-prompt.engine.js';
@@ -12,6 +12,7 @@ import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.servi
 import { trackEvent } from '../analytics/analytics.service.js';
 import { MESSAGES } from '../funnel/messages.templates.js';
 import { FUNNEL_STATES } from '../funnel/funnel.state-machine.v2.js';
+import { callLlm } from '../ai/llm.client.js';
 
 const log = createChildLogger('video-gen-worker');
 const POLL_INTERVAL_MS = 10_000;
@@ -245,40 +246,130 @@ export async function processVideoGeneration(
 
 /**
  * Resolve the per-video specs from session preferences. Supports:
- *   - prefs.videos: [{ characterId, script }, ...]   (new format)
- *   - prefs.characterId + prefs.customMessage         (legacy fallback, single script repeated)
+ *   - prefs.videos: [{ characterId, customMessage?, autoMessage? }, ...]   (current format)
+ *   - prefs.characterId + prefs.customMessage                              (legacy fallback)
+ *
+ * For slots with autoMessage:true (no customMessage), generate a script
+ * via OpenAI using the recipient + occasion context.
  */
 async function resolveVideoSpecs(
   prefs: Record<string, unknown>,
   expectedCount: number,
 ): Promise<VideoSpec[]> {
-  const rawVideos = prefs.videos;
-  if (Array.isArray(rawVideos) && rawVideos.length > 0) {
-    const specs: VideoSpec[] = [];
-    for (const v of rawVideos) {
-      if (
-        v &&
-        typeof v === 'object' &&
-        typeof (v as VideoSpec).characterId === 'string' &&
-        typeof (v as VideoSpec).script === 'string' &&
-        (v as VideoSpec).script.trim().length > 0
-      ) {
-        specs.push({
-          characterId: (v as VideoSpec).characterId,
-          script: (v as VideoSpec).script,
-        });
-      }
-    }
-    if (specs.length > 0) return specs;
+  const recipientName = (prefs.recipientName as string) ?? '';
+  const recipientAge = (prefs.recipientAge as string) ?? '';
+  const messageType = (prefs.messageType as string) ?? 'default';
+
+  // Pull raw slot data
+  const rawVideos = Array.isArray(prefs.videos) ? (prefs.videos as Array<Record<string, unknown>>) : [];
+  const fromSlots: Array<{ characterId: string; script?: string; autoMessage: boolean }> = [];
+
+  for (const v of rawVideos) {
+    if (!v || typeof v.characterId !== 'string') continue;
+    const customMessage = typeof v.customMessage === 'string' ? v.customMessage.trim() : '';
+    const autoMessage = v.autoMessage === true || customMessage.length === 0;
+    fromSlots.push({
+      characterId: v.characterId,
+      script: customMessage || undefined,
+      autoMessage,
+    });
   }
 
-  // Legacy fallback: single character + customMessage repeated for the package count.
-  const characterId = typeof prefs.characterId === 'string' ? prefs.characterId : null;
-  const script = typeof prefs.customMessage === 'string' ? prefs.customMessage : null;
+  let candidates = fromSlots;
 
-  if (!characterId || !script || script.trim().length === 0) return [];
+  // Legacy fallback: single character + customMessage repeated for the package count
+  if (candidates.length === 0) {
+    const characterId = typeof prefs.characterId === 'string' ? prefs.characterId : null;
+    const customMessage = typeof prefs.customMessage === 'string' ? prefs.customMessage.trim() : '';
+    if (characterId) {
+      candidates = Array.from({ length: expectedCount }, () => ({
+        characterId,
+        script: customMessage || undefined,
+        autoMessage: customMessage.length === 0,
+      }));
+    }
+  }
 
-  return Array.from({ length: expectedCount }, () => ({ characterId, script }));
+  if (candidates.length === 0) return [];
+
+  // Generate scripts for any slot that needs one
+  const characterIds = [...new Set(candidates.map((c) => c.characterId))];
+  const characters = await prisma.character.findMany({ where: { id: { in: characterIds } } });
+  const charById = new Map(characters.map((c) => [c.id, c]));
+
+  const specs: VideoSpec[] = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    let script = c.script;
+    if (!script && c.autoMessage) {
+      const character = charById.get(c.characterId);
+      script = await generateAutoScript({
+        characterName: character?.name ?? 'Character',
+        characterPersonality: character?.personality ?? null,
+        recipientName,
+        recipientAge,
+        messageType,
+        videoIndex: i + 1,
+        totalVideos: candidates.length,
+      });
+    }
+    if (script && script.trim().length > 0) {
+      specs.push({ characterId: c.characterId, script: script.trim() });
+    } else {
+      log.warn({ slot: i + 1 }, 'Slot has no script and auto-script generation failed');
+    }
+  }
+
+  return specs;
+}
+
+/**
+ * Use the LLM to write a 60-100 word Portuguese script for the character
+ * to speak. Returned as plain text (no quotes, no stage directions).
+ */
+async function generateAutoScript(params: {
+  characterName: string;
+  characterPersonality: string | null;
+  recipientName: string;
+  recipientAge: string;
+  messageType: string;
+  videoIndex: number;
+  totalVideos: number;
+}): Promise<string> {
+  const occasionLabel = OCCASIONS[params.messageType]?.label ?? params.messageType;
+  const ageHint = params.recipientAge ? ` (${params.recipientAge} anos)` : '';
+  const variationHint = params.totalVideos > 1
+    ? ` Este é o vídeo ${params.videoIndex} de ${params.totalVideos} — faça uma versão única e diferente dos outros.`
+    : '';
+  const personalityHint = params.characterPersonality
+    ? `\nPersonalidade do personagem: ${params.characterPersonality}.`
+    : '';
+
+  const prompt = `Escreva uma fala curta (60-100 palavras) em português brasileiro para o personagem "${params.characterName}" falar diretamente para ${params.recipientName}${ageHint}.
+Ocasião: ${occasionLabel}.${personalityHint}${variationHint}
+
+A fala deve ser:
+- Calorosa, natural e direcionada à pessoa pelo nome
+- No estilo do personagem (vocabulário, jeito de falar)
+- Sem indicações de cena ou narração, apenas o que o personagem diz
+- Sem aspas no início ou fim
+
+Responda APENAS com a fala, nada mais.`;
+
+  try {
+    const { content } = await callLlm(
+      [
+        { role: 'system', content: 'You are a screenwriter for short character video greetings.' },
+        { role: 'user', content: prompt },
+      ],
+      { agentName: 'auto-script', model: env.OPENAI_MODEL },
+    );
+    return content.trim().replace(/^"|"$/g, '');
+  } catch (err) {
+    log.error({ err, character: params.characterName }, 'Failed to generate auto script');
+    // Minimal fallback so we still produce something
+    return `Oi ${params.recipientName}! Aqui é ${params.characterName}, e eu vim mandar um recadinho muito especial pra você! Te desejo tudo de bom hoje e sempre. Um beijão!`;
+  }
 }
 
 async function pollVideoOperations(

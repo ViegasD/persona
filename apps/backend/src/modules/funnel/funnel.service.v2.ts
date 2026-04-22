@@ -18,7 +18,7 @@ import { buildLeadContext } from '../ai/agents/base.js';
 import { extractionAgent, type ExtractionResult } from '../ai/agents/extraction.agent.js';
 import { conversationAgent, type ConversationResponse } from '../ai/agents/conversation.agent.js';
 import { getSetting, getSettingNumber, getAgentModel, SETTING_KEYS } from '../admin/settings.service.js';
-import { PACKAGES, OCCASIONS } from './packages.config.js';
+import { PACKAGES, OCCASIONS, getPackageById } from './packages.config.js';
 
 const VALID_PACKAGE_IDS = new Set(PACKAGES.map((p) => p.id));
 const VALID_MESSAGE_TYPES = new Set(Object.keys(OCCASIONS));
@@ -314,7 +314,10 @@ async function _handleBatchInner(phone: string, leadId: string, followUpTier?: n
     if (pkgId && VALID_PACKAGE_IDS.has(pkgId)) {
       log.info({ pkgId }, '[TRANSITION] DELIVERED → new session');
       const newPrefs: Record<string, unknown> = {};
-      for (const key of ['packageId', 'characterId', 'characterName', 'messageType', 'recipientName', 'recipientAge', 'customMessage']) {
+      // Carry over only the package and (optionally) the recipient + occasion.
+      // Per-video character/script choices are NOT carried — the customer
+      // gets a fresh slate for the new order.
+      for (const key of ['packageId', 'messageType', 'recipientName', 'recipientAge']) {
         const val = (extraction as any)?.[key] ?? prefs[key];
         if (val !== undefined && val !== null) newPrefs[key] = val;
       }
@@ -385,63 +388,19 @@ async function applyExtractedData(
     await trackEvent(leadId, 'QUALIFIED', { name: data.name });
   }
 
-  // Build preference updates (exclude one-time signals)
-  const SIGNAL_KEYS = new Set(['name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'upgradeAccepted', 'characterChoice']);
+  // Build preference updates (exclude one-time signals + handled-separately keys)
+  const SIGNAL_KEYS = new Set([
+    'name', 'newSession', 'changePackage', 'regenerateQr', 'dataConfirmed', 'upgradeAccepted',
+    'characterChoice', 'customMessage', 'autoMessage', 'videos',
+  ]);
   const prefUpdates: Record<string, unknown> = {};
 
-  // Resolve character choice to actual character entity
-  if (data.characterChoice) {
-    const characters = await prisma.character.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, slug: true, franchise: true },
-      orderBy: { name: 'asc' },
-    });
-    const choice = data.characterChoice.toLowerCase().trim();
-
-    // 1. Exact match by name or slug
-    let match = characters.find((c) =>
-      c.name.toLowerCase() === choice || c.slug.toLowerCase() === choice,
-    );
-
-    // 2. Match by number
-    if (!match) {
-      const num = parseInt(choice, 10);
-      if (!isNaN(num) && num >= 1 && num <= characters.length) {
-        match = characters[num - 1];
-      }
-    }
-
-    // 3. Partial name match
-    if (!match) {
-      match = characters.find((c) =>
-        c.name.toLowerCase().includes(choice) || choice.includes(c.name.toLowerCase()),
-      );
-    }
-
-    // 4. Match by franchise — if only one character in that franchise, auto-select
-    if (!match) {
-      const franchiseMatches = characters.filter((c) =>
-        c.franchise && (
-          c.franchise.toLowerCase() === choice ||
-          c.franchise.toLowerCase().includes(choice) ||
-          choice.includes(c.franchise.toLowerCase())
-        ),
-      );
-      if (franchiseMatches.length === 1) {
-        match = franchiseMatches[0];
-      }
-      // If multiple characters in franchise, don't auto-select — the conversation agent
-      // will list them for the client to choose
-    }
-
-    if (match) {
-      prefUpdates.characterId = match.id;
-      prefUpdates.characterName = match.name;
-      log.info({ choice: data.characterChoice, resolved: match.name }, '[DATA:CHARACTER] Resolved');
-    } else {
-      log.warn({ choice: data.characterChoice }, '[DATA:CHARACTER] Could not resolve');
-    }
-  }
+  // Load characters once for any choice resolution we need
+  const characters = await prisma.character.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, slug: true, franchise: true },
+    orderBy: { name: 'asc' },
+  });
 
   for (const [key, value] of Object.entries(data)) {
     if (SIGNAL_KEYS.has(key) || value === null || value === undefined) continue;
@@ -463,16 +422,92 @@ async function applyExtractedData(
     log.info('[DATA:UPGRADE] Customer accepted upsell → pkg_3');
   }
 
-  if (Object.keys(prefUpdates).length === 0) return;
-
+  // Load existing session to merge per-video state
   const session = await prisma.leadSession.findUnique({ where: { id: sessionId } });
   const current = (session?.preferences as Record<string, unknown>) ?? {};
-  const merged = { ...current, ...prefUpdates };
+  const merged: Record<string, unknown> = { ...current, ...prefUpdates };
 
-  // Clean stale data when message type changes
+  // Determine the current video count from the (possibly updated) packageId
+  const pkgId = (merged.packageId ?? current.packageId) as string | undefined;
+  const pkg = pkgId ? getPackageById(pkgId) : undefined;
+  const totalVideos = pkg?.videos ?? 0;
+
+  // Initialize / resize the videos array to match the package size
+  let videos = Array.isArray(current.videos)
+    ? (current.videos as Array<Record<string, unknown>>).map((v) => ({ ...v }))
+    : [];
+
+  // Migrate legacy single-video prefs into slot 1 (one-time)
+  if (
+    videos.length === 0 &&
+    (current.characterId || current.customMessage || current.autoMessage)
+  ) {
+    videos.push({
+      characterId: current.characterId,
+      characterName: current.characterName,
+      customMessage: current.customMessage,
+      autoMessage: current.autoMessage === true ? true : undefined,
+    });
+  }
+
+  if (totalVideos > 0) {
+    if (videos.length < totalVideos) {
+      while (videos.length < totalVideos) videos.push({});
+    } else if (videos.length > totalVideos) {
+      videos = videos.slice(0, totalVideos);
+    }
+  }
+
+  // Apply per-slot extraction (data.videos)
+  if (Array.isArray(data.videos)) {
+    for (const slotData of data.videos) {
+      if (!slotData || typeof slotData.slot !== 'number') continue;
+      const idx = slotData.slot - 1;
+      if (idx < 0 || idx >= videos.length) {
+        log.warn({ slot: slotData.slot, totalVideos }, '[DATA:VIDEO] Slot out of range — ignored');
+        continue;
+      }
+      applyVideoSlot(videos[idx], slotData, characters);
+    }
+  }
+
+  // Legacy/shortcut top-level fields → route into the next pending slot
+  const legacyShortcut = {
+    characterChoice: data.characterChoice,
+    customMessage: data.customMessage,
+    autoMessage: data.autoMessage,
+  };
+  if (legacyShortcut.characterChoice || legacyShortcut.customMessage || legacyShortcut.autoMessage !== undefined) {
+    const targetIdx = videos.findIndex((v) => !isSlotComplete(v));
+    if (targetIdx >= 0) {
+      applyVideoSlot(videos[targetIdx], {
+        slot: targetIdx + 1,
+        characterChoice: legacyShortcut.characterChoice,
+        customMessage: legacyShortcut.customMessage,
+        autoMessage: legacyShortcut.autoMessage,
+      }, characters);
+    } else if (videos.length > 0) {
+      // No pending slot — treat as a correction to the last filled slot
+      applyVideoSlot(videos[videos.length - 1], {
+        slot: videos.length,
+        characterChoice: legacyShortcut.characterChoice,
+        customMessage: legacyShortcut.customMessage,
+        autoMessage: legacyShortcut.autoMessage,
+      }, characters);
+    }
+  }
+
+  if (videos.length > 0) merged.videos = videos;
+
+  // Clean stale data when message type changes (drop per-video custom messages too)
   if (typeof prefUpdates.messageType === 'string' && current.messageType && prefUpdates.messageType !== current.messageType) {
-    for (const field of ['recipientAge', 'customMessage']) {
-      delete merged[field];
+    delete merged.recipientAge;
+    delete merged.customMessage;
+    if (Array.isArray(merged.videos)) {
+      merged.videos = (merged.videos as Array<Record<string, unknown>>).map((v) => ({
+        characterId: v.characterId,
+        characterName: v.characterName,
+      }));
     }
     log.info({ old: current.messageType, new: prefUpdates.messageType }, '[DATA:CLEANUP] Message type changed');
   }
@@ -483,11 +518,16 @@ async function applyExtractedData(
     log.info({ old: current.packageId, new: prefUpdates.packageId }, '[DATA:CLEANUP] Package changed');
   }
 
-  // Apply promo pricing for pkg_3 when earned via upsell
-  if (merged.packageId === 'pkg_3' && !merged.priceOverride) {
-    if (data.upgradeAccepted === true) {
-      log.info('[DATA:PROMO] Upsell accepted for pkg_3');
-    }
+  // Drop legacy top-level character/message fields once we have a videos array
+  if (Array.isArray(merged.videos) && (merged.videos as unknown[]).length > 0) {
+    delete merged.characterId;
+    delete merged.characterName;
+    delete merged.customMessage;
+    delete merged.autoMessage;
+  }
+
+  if (data.upgradeAccepted === true) {
+    log.info('[DATA:PROMO] Upsell accepted for pkg_3');
   }
 
   await prisma.leadSession.update({
@@ -496,13 +536,85 @@ async function applyExtractedData(
   });
 }
 
+/** Resolve a character choice string to a character entity (4-step matcher). */
+function resolveCharacter(
+  choice: string,
+  characters: Array<{ id: string; name: string; slug: string; franchise: string | null }>,
+): { id: string; name: string } | null {
+  const lower = choice.toLowerCase().trim();
+
+  // 1. Exact match by name or slug
+  let match = characters.find((c) => c.name.toLowerCase() === lower || c.slug.toLowerCase() === lower);
+
+  // 2. Match by number
+  if (!match) {
+    const num = parseInt(lower, 10);
+    if (!isNaN(num) && num >= 1 && num <= characters.length) match = characters[num - 1];
+  }
+
+  // 3. Partial name match
+  if (!match) {
+    match = characters.find((c) => c.name.toLowerCase().includes(lower) || lower.includes(c.name.toLowerCase()));
+  }
+
+  // 4. Franchise match — auto-select only if a single character belongs to the franchise
+  if (!match) {
+    const franchiseMatches = characters.filter((c) =>
+      c.franchise && (
+        c.franchise.toLowerCase() === lower ||
+        c.franchise.toLowerCase().includes(lower) ||
+        lower.includes(c.franchise.toLowerCase())
+      ),
+    );
+    if (franchiseMatches.length === 1) match = franchiseMatches[0];
+  }
+
+  return match ? { id: match.id, name: match.name } : null;
+}
+
+/** Apply a per-slot extraction onto an existing video slot object. */
+function applyVideoSlot(
+  slot: Record<string, unknown>,
+  data: { slot: number; characterChoice?: string; customMessage?: string; autoMessage?: boolean },
+  characters: Array<{ id: string; name: string; slug: string; franchise: string | null }>,
+): void {
+  if (data.characterChoice) {
+    const resolved = resolveCharacter(data.characterChoice, characters);
+    if (resolved) {
+      slot.characterId = resolved.id;
+      slot.characterName = resolved.name;
+      log.info({ slot: data.slot, choice: data.characterChoice, resolved: resolved.name }, '[DATA:VIDEO] Character resolved');
+    } else {
+      log.warn({ slot: data.slot, choice: data.characterChoice }, '[DATA:VIDEO] Character not resolved');
+    }
+  }
+  if (typeof data.customMessage === 'string' && data.customMessage.trim()) {
+    slot.customMessage = data.customMessage.trim();
+    delete slot.autoMessage;
+  } else if (data.autoMessage === true) {
+    slot.autoMessage = true;
+    delete slot.customMessage;
+  }
+}
+
+function isSlotComplete(slot: Record<string, unknown>): boolean {
+  if (!slot.characterId) return false;
+  if (!slot.customMessage && slot.autoMessage !== true) return false;
+  return true;
+}
+
 // ─── Transition Helpers ─────────────────────────────────────
 
 function isVideoDataComplete(prefs: Record<string, unknown>): boolean {
-  if (!prefs.characterId) return false;
   if (!prefs.recipientName) return false;
-  if (!prefs.customMessage && !prefs.autoMessage) return false;
-  return true;
+  const pkgId = prefs.packageId as string | undefined;
+  if (!pkgId) return false;
+  const pkg = getPackageById(pkgId);
+  if (!pkg) return false;
+
+  const videos = Array.isArray(prefs.videos) ? (prefs.videos as Array<Record<string, unknown>>) : [];
+  if (videos.length !== pkg.videos) return false;
+  return videos.every(isSlotComplete);
 }
 
 async function transitionState(
