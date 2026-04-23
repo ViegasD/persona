@@ -624,9 +624,12 @@ function applyVideoSlot(
   characters: Array<{ id: string; name: string; slug: string; franchise: string | null }>,
 ): void {
   // Normalise to an array (legacy single-choice fallback).
+  // Also split joined strings like "Mickey e Minnie" / "Mickey, Minnie" / "Mickey + Minnie".
+  const splitChoice = (raw: string): string[] =>
+    raw.split(/\s*(?:,| e | & |\+|\/)\s*/i).map((s) => s.trim()).filter((s) => s.length > 0);
   const choices = Array.isArray(data.characterChoices) && data.characterChoices.length > 0
-    ? data.characterChoices
-    : (data.characterChoice ? [data.characterChoice] : []);
+    ? data.characterChoices.flatMap(splitChoice)
+    : (data.characterChoice ? splitChoice(data.characterChoice) : []);
 
   if (choices.length > 0) {
     const resolvedIds: string[] = [];

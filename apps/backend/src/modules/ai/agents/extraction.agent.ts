@@ -65,8 +65,9 @@ Mapeie para: "pkg_1" | "pkg_3" | "pkg_5" | "pkg_aniv_1"
 Se o usuário disser apenas um número (ex: "5", "3", "1"), interprete como quantidade de vídeos do pacote.
 "o mais popular" / "o do meio" → "pkg_3"
 
-## characterChoice (string) — LEGACY single-video shortcut
-Use APENAS quando o pacote tem 1 vídeo (pkg_aniv_1) E o cliente acabou de escolher o personagem.
+## characterChoice (string) — LEGACY single-character shortcut
+Use APENAS quando o pacote tem 1 vídeo (pkg_aniv_1) E o cliente escolheu UM Único personagem.
+Se o cliente escolher MÚLTIPLOS personagens (ex: "Mickey e Minnie"), SEMPRE use \`videos[].characterChoices\` em vez deste campo, mesmo que o pacote tenha 1 vídeo.
 NUNCA use para pkg_1 — esse pacote tem personagem aleatório, o cliente não escolhe.
 Para pacotes com múltiplos vídeos (pkg_3, pkg_5), use o campo \`videos\` em vez deste.
 Pode ser nome, número ou franquia. "quero o número 2" → "2", "a Princesa Luna" → "Princesa Luna"
