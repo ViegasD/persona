@@ -368,8 +368,8 @@ async function resolveVideoSpecs(
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     let script = c.script;
+    const speaker = charById.get(c.characterIds[0]);
     if (!script && c.autoMessage) {
-      const speaker = charById.get(c.characterIds[0]);
       script = await generateAutoScript({
         characterDescription: speaker?.description ?? null,
         characterPersonality: speaker?.personality ?? null,
@@ -378,6 +378,18 @@ async function resolveVideoSpecs(
         messageType,
         videoIndex: i + 1,
         totalVideos: candidates.length,
+      });
+    } else if (script && countWords(script) < MIN_SCRIPT_WORDS) {
+      // Custom message is too short to fill the ~8s clip — extend it while
+      // preserving the user's exact wording. Veo quality drops dramatically
+      // when the spoken line is too short (awkward silence, lip-flap drift).
+      script = await extendCustomScript({
+        userMessage: script,
+        characterDescription: speaker?.description ?? null,
+        characterPersonality: speaker?.personality ?? null,
+        recipientName,
+        recipientAge,
+        messageType,
       });
     }
     if (script && script.trim().length > 0) {
@@ -538,6 +550,18 @@ async function persistFrameCacheUpdates(
 }
 
 /**
+ * Minimum spoken-word count for a video script. Veo clips are ~8s and
+ * Brazilian-Portuguese speech runs ~7–8 words/sec, so anything under
+ * ~50 words leaves dead air at the end (lip-flap, awkward pauses, model
+ * filling with random gestures). 60 is our safe floor.
+ */
+const MIN_SCRIPT_WORDS = 60;
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
  * Use the LLM to write a 60-100 word Portuguese script for the character
  * to speak. Returned as plain text (no quotes, no stage directions).
  *
@@ -596,6 +620,73 @@ async function generateAutoScript(params: {
   log.error({ archetype }, '[AUTO_SCRIPT] All attempts failed — using fallback template');
   // Minimal fallback so we still produce something coherent.
   return `Oi ${params.recipientName}! Vim mandar um recadinho muito especial pra você hoje. Saiba que você é incrível e merece tudo de bom. Te desejo muita alegria, saúde e momentos felizes. Um beijão enorme!`;
+}
+
+/**
+ * Extend a short user-provided custom message to fill the ~8s Veo clip
+ * (~60–100 words). The user's exact wording, names, and intent MUST be
+ * preserved — we only add natural greeting/closing lines around it in the
+ * character's voice. Retries up to 3 times on empty/failed output and
+ * falls back to padding the original message if all attempts fail.
+ */
+async function extendCustomScript(params: {
+  userMessage: string;
+  characterDescription: string | null;
+  characterPersonality: string | null;
+  recipientName: string;
+  recipientAge: string;
+  messageType: string;
+}): Promise<string> {
+  const occasionLabel = OCCASIONS[params.messageType]?.label ?? params.messageType;
+  const ageHint = params.recipientAge ? ` (${params.recipientAge} anos)` : '';
+  const archetype = params.characterDescription?.trim() || 'um personagem infantil carismático';
+  const personalityBlock = params.characterPersonality?.trim()
+    ? `\n\nPersonalidade:\n${params.characterPersonality.trim()}`
+    : '';
+
+  const prompt = `Você é roteirista de uma fala curta (60–100 palavras) em português brasileiro para ${archetype} falar diretamente para ${params.recipientName}${ageHint} num vídeo de ${occasionLabel.toLowerCase()}.${personalityBlock}
+
+O cliente já escreveu a mensagem que deseja transmitir. Sua tarefa é EXPANDIR essa mensagem para preencher o vídeo de ~8 segundos, MANTENDO INTACTAS as palavras-chave, nomes e intenção original do cliente.
+
+Mensagem original do cliente (DEVE aparecer integralmente, sem alterar nomes ou frases-chave):
+"""
+${params.userMessage}
+"""
+
+Como expandir:
+- Comece com uma saudação curta no estilo do personagem direcionada a ${params.recipientName}
+- Inclua a mensagem original do cliente de forma natural no meio da fala (pode reformular conectivos, mas NÃO altere nomes próprios nem o sentido)
+- Termine com uma despedida calorosa coerente com a ocasião
+- Total: 60 a 100 palavras
+- Tom natural, falado, sem narração ou indicações de cena
+- Sem aspas no início ou fim
+- Apenas o texto da fala`;
+
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { content } = await callLlm(
+        [
+          { role: 'system', content: 'You are a screenwriter for short character video greetings in Brazilian Portuguese. Always preserve the user\'s original wording.' },
+          { role: 'user', content: prompt },
+        ],
+        { agentName: 'extend-script', model: env.OPENAI_MODEL },
+      );
+      const cleaned = content.trim().replace(/^["“]+|["”]+$/g, '').trim();
+      if (cleaned.length > 0 && countWords(cleaned) >= MIN_SCRIPT_WORDS - 10) {
+        if (attempt > 1) log.info({ attempt }, '[EXTEND_SCRIPT] succeeded on retry');
+        return cleaned;
+      }
+      log.warn({ attempt, words: cleaned ? countWords(cleaned) : 0 }, '[EXTEND_SCRIPT] output too short or empty — retrying');
+    } catch (err) {
+      log.warn({ err, attempt }, '[EXTEND_SCRIPT] LLM call failed — retrying');
+    }
+  }
+
+  log.error({ recipientName: params.recipientName }, '[EXTEND_SCRIPT] All attempts failed — padding original message');
+  // Fallback: pad the user's message with a generic intro and outro so it
+  // still fills the clip while preserving their words verbatim.
+  return `Oi ${params.recipientName}! Vim aqui só pra você. ${params.userMessage} Te desejo muita alegria, momentos felizes e tudo de melhor. Um beijão enorme, viu? Até a próxima!`;
 }
 
 async function pollVideoOperations(
