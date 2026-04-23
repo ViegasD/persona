@@ -432,6 +432,12 @@ async function applyExtractedData(
   const pkg = pkgId ? getPackageById(pkgId) : undefined;
   const totalVideos = pkg?.videos ?? 0;
 
+  // Enforce occasion lock — packages like pkg_aniv_1 force messageType to a fixed value
+  if (pkg?.occasionLock && merged.messageType !== pkg.occasionLock) {
+    log.info({ pkgId, lock: pkg.occasionLock }, '[DATA:OCCASION_LOCK] Forcing messageType');
+    merged.messageType = pkg.occasionLock;
+  }
+
   // Initialize / resize the videos array to match the package size
   let videos = Array.isArray(current.videos)
     ? (current.videos as Array<Record<string, unknown>>).map((v) => ({ ...v }))
@@ -443,8 +449,8 @@ async function applyExtractedData(
     (current.characterId || current.customMessage || current.autoMessage)
   ) {
     videos.push({
-      characterId: current.characterId,
-      characterName: current.characterName,
+      characterIds: [current.characterId],
+      characterNames: typeof current.characterName === 'string' ? [current.characterName] : [],
       customMessage: current.customMessage,
       autoMessage: current.autoMessage === true ? true : undefined,
     });
@@ -455,6 +461,20 @@ async function applyExtractedData(
       while (videos.length < totalVideos) videos.push({});
     } else if (videos.length > totalVideos) {
       videos = videos.slice(0, totalVideos);
+    }
+  }
+
+  // Random-character packages: auto-fill any empty slot with a randomly picked active character.
+  // The customer never chooses for these packages — the system picks for them.
+  if (pkg?.randomCharacter && characters.length > 0) {
+    for (const v of videos) {
+      const hasIds = Array.isArray(v.characterIds) && (v.characterIds as unknown[]).length > 0;
+      const hasLegacyId = typeof v.characterId === 'string' && v.characterId.length > 0;
+      if (hasIds || hasLegacyId) continue;
+      const pick = characters[Math.floor(Math.random() * characters.length)];
+      v.characterIds = [pick.id];
+      v.characterNames = [pick.name];
+      log.info({ pkgId, characterId: pick.id, name: pick.name }, '[DATA:RANDOM_CHAR] Auto-assigned random character');
     }
   }
 
@@ -505,8 +525,9 @@ async function applyExtractedData(
     delete merged.customMessage;
     if (Array.isArray(merged.videos)) {
       merged.videos = (merged.videos as Array<Record<string, unknown>>).map((v) => ({
-        characterId: v.characterId,
-        characterName: v.characterName,
+        characterIds: Array.isArray(v.characterIds) ? v.characterIds : (typeof v.characterId === 'string' ? [v.characterId] : []),
+        characterNames: Array.isArray(v.characterNames) ? v.characterNames : (typeof v.characterName === 'string' ? [v.characterName] : []),
+        // Drop messages and cached frame — message type changed, so the scene differs.
       }));
     }
     log.info({ old: current.messageType, new: prefUpdates.messageType }, '[DATA:CLEANUP] Message type changed');
@@ -516,6 +537,21 @@ async function applyExtractedData(
   if (typeof prefUpdates.packageId === 'string' && current.packageId && prefUpdates.packageId !== current.packageId) {
     delete merged.priceOverride;
     log.info({ old: current.packageId, new: prefUpdates.packageId }, '[DATA:CLEANUP] Package changed');
+  }
+
+  // Invalidate cached composite frames when the recipient name changes
+  // (the name is rendered into the frame, e.g. on a birthday cake).
+  if (
+    typeof prefUpdates.recipientName === 'string' &&
+    current.recipientName &&
+    prefUpdates.recipientName !== current.recipientName &&
+    Array.isArray(merged.videos)
+  ) {
+    merged.videos = (merged.videos as Array<Record<string, unknown>>).map((v) => {
+      const { frameKey: _f, frameS3Key: _s, ...rest } = v;
+      return rest;
+    });
+    log.info({ old: current.recipientName, new: prefUpdates.recipientName }, '[DATA:CLEANUP] Recipient name changed — composite frames invalidated');
   }
 
   // Drop legacy top-level character/message fields once we have a videos array
@@ -572,22 +608,65 @@ function resolveCharacter(
   return match ? { id: match.id, name: match.name } : null;
 }
 
+/** Maximum number of characters that can be composited into a single video. */
+const MAX_CHARACTERS_PER_SLOT = 3;
+
 /** Apply a per-slot extraction onto an existing video slot object. */
 function applyVideoSlot(
   slot: Record<string, unknown>,
-  data: { slot: number; characterChoice?: string; customMessage?: string; autoMessage?: boolean },
+  data: {
+    slot: number;
+    characterChoices?: string[];
+    characterChoice?: string;
+    customMessage?: string;
+    autoMessage?: boolean;
+  },
   characters: Array<{ id: string; name: string; slug: string; franchise: string | null }>,
 ): void {
-  if (data.characterChoice) {
-    const resolved = resolveCharacter(data.characterChoice, characters);
-    if (resolved) {
-      slot.characterId = resolved.id;
-      slot.characterName = resolved.name;
-      log.info({ slot: data.slot, choice: data.characterChoice, resolved: resolved.name }, '[DATA:VIDEO] Character resolved');
-    } else {
-      log.warn({ slot: data.slot, choice: data.characterChoice }, '[DATA:VIDEO] Character not resolved');
+  // Normalise to an array (legacy single-choice fallback).
+  const choices = Array.isArray(data.characterChoices) && data.characterChoices.length > 0
+    ? data.characterChoices
+    : (data.characterChoice ? [data.characterChoice] : []);
+
+  if (choices.length > 0) {
+    const resolvedIds: string[] = [];
+    const resolvedNames: string[] = [];
+    const unresolved: string[] = [];
+
+    for (const choice of choices) {
+      if (resolvedIds.length >= MAX_CHARACTERS_PER_SLOT) break;
+      const resolved = resolveCharacter(choice, characters);
+      if (resolved && !resolvedIds.includes(resolved.id)) {
+        resolvedIds.push(resolved.id);
+        resolvedNames.push(resolved.name);
+      } else if (!resolved) {
+        unresolved.push(choice);
+      }
+    }
+
+    if (resolvedIds.length > 0) {
+      const prevIds = readCharacterIds(slot);
+      const changed = prevIds.length !== resolvedIds.length || prevIds.some((id, i) => id !== resolvedIds[i]);
+      slot.characterIds = resolvedIds;
+      slot.characterNames = resolvedNames;
+      // Drop legacy single-character fields once the array is populated.
+      delete slot.characterId;
+      delete slot.characterName;
+      // Invalidate any cached composite frame when the cast changes.
+      if (changed) {
+        delete slot.frameKey;
+        delete slot.frameS3Key;
+      }
+      log.info(
+        { slot: data.slot, choices, resolved: resolvedNames, changed },
+        '[DATA:VIDEO] Characters resolved',
+      );
+    }
+    if (unresolved.length > 0) {
+      log.warn({ slot: data.slot, unresolved }, '[DATA:VIDEO] Some character choices not resolved');
     }
   }
+
   if (typeof data.customMessage === 'string' && data.customMessage.trim()) {
     slot.customMessage = data.customMessage.trim();
     delete slot.autoMessage;
@@ -597,8 +676,17 @@ function applyVideoSlot(
   }
 }
 
+/** Read the character IDs for a slot, supporting both new and legacy shapes. */
+function readCharacterIds(slot: Record<string, unknown>): string[] {
+  if (Array.isArray(slot.characterIds)) {
+    return (slot.characterIds as unknown[]).filter((x): x is string => typeof x === 'string');
+  }
+  if (typeof slot.characterId === 'string') return [slot.characterId];
+  return [];
+}
+
 function isSlotComplete(slot: Record<string, unknown>): boolean {
-  if (!slot.characterId) return false;
+  if (readCharacterIds(slot).length === 0) return false;
   if (!slot.customMessage && slot.autoMessage !== true) return false;
   return true;
 }

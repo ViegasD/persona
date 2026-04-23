@@ -47,6 +47,7 @@ const envSchema = z.object({
   GOOGLE_API_KEY: z.string().optional(),
   GOOGLE_API_URL: z.string().url().default('https://generativelanguage.googleapis.com/v1beta'),
   VEO_MODEL: z.string().default('veo-3.1-generate-preview'),
+  NANO_BANANA_MODEL: z.string().default('gemini-2.5-flash-image'),
   VIDEO_DURATION: z.coerce.number().default(8),
   VIDEO_ASPECT_RATIO: z.enum(['16:9', '9:16']).default('9:16'),
   VIDEO_RESOLUTION: z.enum(['720p', '1080p']).default('720p'),

@@ -1,12 +1,18 @@
 ﻿import type { Job } from 'bullmq';
+import { createHash } from 'node:crypto';
 import type { VideoGenerationJobData } from '../../shared/queue/queues.js';
 import { prisma } from '../../shared/database/prisma.js';
-import { getPresignedUrl } from '../../shared/storage/s3.client.js';
+import { getPresignedUrl, uploadFile } from '../../shared/storage/s3.client.js';
 import { env } from '../../shared/config/env.js';
 import { getPackageById, PACKAGES, OCCASIONS } from '../funnel/packages.config.js';
 import { createChildLogger } from '../../shared/utils/logger.js';
 import { veo, VeoApiError } from './veo.client.js';
-import { buildVideoPromptVariations, type PerVideoPromptInput } from './video-prompt.engine.js';
+import { nanoBanana, NanoBananaApiError } from './nano-banana.client.js';
+import {
+  buildCompositePrompt,
+  buildVeoMotionPrompt,
+  type CompositeCharacter,
+} from './composite-frame.builder.js';
 import { processGeneratedVideos } from './video-result.processor.js';
 import { queueTextMessage, logOutboundMessage } from '../whatsapp/whatsapp.service.js';
 import { trackEvent } from '../analytics/analytics.service.js';
@@ -20,8 +26,14 @@ const MAX_POLL_ATTEMPTS = 90; // ~15 min max
 
 /** Per-video preference shape (what the funnel collects per requested video). */
 interface VideoSpec {
-  characterId: string;
+  /** All characters in the slot (1–3). The first one speaks the script. */
+  characterIds: string[];
   script: string;
+  /** Persisted cache key + S3 path of the composite starting frame, if any. */
+  cachedFrameKey?: string;
+  cachedFrameS3Key?: string;
+  /** Slot index (1-based) so we can write back updated cache info. */
+  slotIndex: number;
 }
 
 /**
@@ -69,69 +81,108 @@ export async function processVideoGeneration(
     const prefs = (session.preferences as Record<string, unknown>) ?? {};
     const pkg = getPackageById(prefs.packageId as string) ?? PACKAGES[PACKAGES.length - 1];
     const expectedCount = pkg.videos ?? 1;
+    const recipientName = (prefs.recipientName as string) ?? '';
+    const messageType = (prefs.messageType as string) ?? 'default';
+    const aspectRatio = env.VIDEO_ASPECT_RATIO;
 
     // Build the list of videos to generate.
     const specs = await resolveVideoSpecs(prefs, expectedCount);
     if (specs.length === 0) {
-      throw new Error('No video specs available â€” missing character or script in session preferences');
+      throw new Error('No video specs available — missing characters or script in session preferences');
     }
 
-    // Load characters for all specs (de-duped).
-    const characterIds = [...new Set(specs.map((s) => s.characterId))];
+    // Load all characters across all specs (de-duped).
+    const allCharIds = [...new Set(specs.flatMap((s) => s.characterIds))];
     const characters = await prisma.character.findMany({
-      where: { id: { in: characterIds } },
+      where: { id: { in: allCharIds } },
     });
     const charById = new Map(characters.map((c) => [c.id, c]));
 
-    // Build prompt + reference image for each video.
-    const promptInputs: PerVideoPromptInput[] = [];
-    const imageBuffers: Array<{ base64: string; mimeType: string } | null> = [];
+    // For each slot: ensure a starting frame (composite via Nano Banana, cached in S3).
+    const startingFrames: Array<{ base64: string; mimeType: string } | null> = [];
+    const promptsForVeo: string[] = [];
+    const updatedSlots: Array<{ index: number; frameKey: string; frameS3Key: string } | null> = [];
 
     for (const spec of specs) {
-      const character = charById.get(spec.characterId);
-      if (!character) throw new Error(`Character ${spec.characterId} not found`);
-
-      promptInputs.push({
-        characterName: character.name,
-        characterPersonality: character.personality ?? undefined,
-        script: spec.script,
+      const slotChars: CompositeCharacter[] = spec.characterIds.map((id) => {
+        const c = charById.get(id);
+        if (!c) throw new Error(`Character ${id} not found`);
+        return { name: c.name, description: c.description ?? undefined };
       });
 
-      // Use the first reference image as image-to-video starting frame.
-      const refKeys = (character.referenceImageS3Keys as string[]) ?? [];
-      if (refKeys.length === 0) {
-        log.warn({ characterId: character.id }, 'Character has no reference images â€” generating text-to-video');
-        imageBuffers.push(null);
-      } else {
-        const url = await getPresignedUrl(refKeys[0], 600);
-        const res = await fetch(url);
-        if (!res.ok) {
-          log.warn({ characterId: character.id, refKey: refKeys[0], status: res.status }, 'Failed to download reference image');
-          imageBuffers.push(null);
-        } else {
-          const buf = Buffer.from(await res.arrayBuffer());
-          imageBuffers.push({
-            base64: buf.toString('base64'),
-            mimeType: res.headers.get('content-type') ?? 'image/jpeg',
-          });
+      const frameKey = computeFrameKey({
+        characterIds: spec.characterIds,
+        recipientName,
+        messageType,
+        aspectRatio,
+      });
+
+      let frame: { base64: string; mimeType: string } | null = null;
+
+      // Cache hit?
+      if (spec.cachedFrameKey === frameKey && spec.cachedFrameS3Key) {
+        try {
+          const url = await getPresignedUrl(spec.cachedFrameS3Key, 600);
+          const res = await fetch(url);
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            frame = { base64: buf.toString('base64'), mimeType: res.headers.get('content-type') ?? 'image/png' };
+            log.info({ slot: spec.slotIndex, frameKey }, '[COMPOSITE] cache hit');
+          }
+        } catch (err) {
+          log.warn({ err, frameKey }, '[COMPOSITE] cache lookup failed — will regenerate');
         }
       }
+
+      // Generate composite frame if no cache hit.
+      if (!frame) {
+        try {
+          frame = await generateCompositeFrame({
+            characters: slotChars,
+            characterIds: spec.characterIds,
+            charById,
+            recipientName,
+            messageType,
+            aspectRatio,
+          });
+          // Persist to S3 and remember in the slot for next time.
+          const s3Key = `composite-frames/${frameKey}.png`;
+          await uploadFile(s3Key, Buffer.from(frame.base64, 'base64'), frame.mimeType);
+          updatedSlots.push({ index: spec.slotIndex, frameKey, frameS3Key: s3Key });
+          log.info({ slot: spec.slotIndex, frameKey, s3Key }, '[COMPOSITE] generated + cached');
+        } catch (err) {
+          log.error({ err, slot: spec.slotIndex }, '[COMPOSITE] generation failed — falling back to first character ref');
+          frame = await loadFirstCharacterReference(spec.characterIds[0], charById);
+          updatedSlots.push(null);
+        }
+      } else {
+        updatedSlots.push(null);
+      }
+
+      startingFrames.push(frame);
+      promptsForVeo.push(buildVeoMotionPrompt({
+        characters: slotChars,
+        speakerIndex: 0,
+        occasion: messageType,
+        script: spec.script,
+      }));
     }
 
-    const prompts = buildVideoPromptVariations(promptInputs);
+    // Persist any new cache info back into session.preferences.videos[].
+    await persistFrameCacheUpdates(leadSessionId, updatedSlots);
 
     await prisma.generationJob.update({
       where: { id: generationJobId },
-      data: { prompt: prompts[0] },
+      data: { prompt: promptsForVeo[0] },
     });
 
     // Submit all videos to Veo in parallel.
     const submissions = await Promise.all(
-      prompts.map((prompt, i) =>
+      promptsForVeo.map((prompt, i) =>
         veo.submitGeneration({
           prompt,
-          imageBase64: imageBuffers[i]?.base64,
-          imageMimeType: imageBuffers[i]?.mimeType,
+          imageBase64: startingFrames[i]?.base64,
+          imageMimeType: startingFrames[i]?.mimeType,
         }).catch((err) => {
           log.error({ err, index: i }, 'Veo submit failed for video');
           return null;
@@ -246,8 +297,9 @@ export async function processVideoGeneration(
 
 /**
  * Resolve the per-video specs from session preferences. Supports:
- *   - prefs.videos: [{ characterId, customMessage?, autoMessage? }, ...]   (current format)
- *   - prefs.characterId + prefs.customMessage                              (legacy fallback)
+ *   - prefs.videos: [{ characterIds: string[], customMessage?, autoMessage?, frameKey?, frameS3Key? }, ...]   (current)
+ *   - prefs.videos: [{ characterId, ... }, ...]                                                                (legacy single-char per slot)
+ *   - prefs.characterId + prefs.customMessage                                                                  (legacy top-level)
  *
  * For slots with autoMessage:true (no customMessage), generate a script
  * via OpenAI using the recipient + occasion context.
@@ -262,16 +314,30 @@ async function resolveVideoSpecs(
 
   // Pull raw slot data
   const rawVideos = Array.isArray(prefs.videos) ? (prefs.videos as Array<Record<string, unknown>>) : [];
-  const fromSlots: Array<{ characterId: string; script?: string; autoMessage: boolean }> = [];
+  interface Candidate {
+    characterIds: string[];
+    script?: string;
+    autoMessage: boolean;
+    cachedFrameKey?: string;
+    cachedFrameS3Key?: string;
+    slotIndex: number; // 1-based
+  }
+  const fromSlots: Candidate[] = [];
 
-  for (const v of rawVideos) {
-    if (!v || typeof v.characterId !== 'string') continue;
+  for (let i = 0; i < rawVideos.length; i++) {
+    const v = rawVideos[i];
+    if (!v) continue;
+    const characterIds = readCharacterIds(v);
+    if (characterIds.length === 0) continue;
     const customMessage = typeof v.customMessage === 'string' ? v.customMessage.trim() : '';
     const autoMessage = v.autoMessage === true || customMessage.length === 0;
     fromSlots.push({
-      characterId: v.characterId,
+      characterIds,
       script: customMessage || undefined,
       autoMessage,
+      cachedFrameKey: typeof v.frameKey === 'string' ? v.frameKey : undefined,
+      cachedFrameS3Key: typeof v.frameS3Key === 'string' ? v.frameS3Key : undefined,
+      slotIndex: i + 1,
     });
   }
 
@@ -282,10 +348,11 @@ async function resolveVideoSpecs(
     const characterId = typeof prefs.characterId === 'string' ? prefs.characterId : null;
     const customMessage = typeof prefs.customMessage === 'string' ? prefs.customMessage.trim() : '';
     if (characterId) {
-      candidates = Array.from({ length: expectedCount }, () => ({
-        characterId,
+      candidates = Array.from({ length: expectedCount }, (_, i) => ({
+        characterIds: [characterId],
         script: customMessage || undefined,
         autoMessage: customMessage.length === 0,
+        slotIndex: i + 1,
       }));
     }
   }
@@ -293,8 +360,8 @@ async function resolveVideoSpecs(
   if (candidates.length === 0) return [];
 
   // Generate scripts for any slot that needs one
-  const characterIds = [...new Set(candidates.map((c) => c.characterId))];
-  const characters = await prisma.character.findMany({ where: { id: { in: characterIds } } });
+  const allCharIds = [...new Set(candidates.flatMap((c) => c.characterIds))];
+  const characters = await prisma.character.findMany({ where: { id: { in: allCharIds } } });
   const charById = new Map(characters.map((c) => [c.id, c]));
 
   const specs: VideoSpec[] = [];
@@ -302,10 +369,10 @@ async function resolveVideoSpecs(
     const c = candidates[i];
     let script = c.script;
     if (!script && c.autoMessage) {
-      const character = charById.get(c.characterId);
+      const speaker = charById.get(c.characterIds[0]);
       script = await generateAutoScript({
-        characterName: character?.name ?? 'Character',
-        characterPersonality: character?.personality ?? null,
+        characterName: speaker?.name ?? 'Character',
+        characterPersonality: speaker?.personality ?? null,
         recipientName,
         recipientAge,
         messageType,
@@ -314,13 +381,160 @@ async function resolveVideoSpecs(
       });
     }
     if (script && script.trim().length > 0) {
-      specs.push({ characterId: c.characterId, script: script.trim() });
+      specs.push({
+        characterIds: c.characterIds,
+        script: script.trim(),
+        cachedFrameKey: c.cachedFrameKey,
+        cachedFrameS3Key: c.cachedFrameS3Key,
+        slotIndex: c.slotIndex,
+      });
     } else {
-      log.warn({ slot: i + 1 }, 'Slot has no script and auto-script generation failed');
+      log.warn({ slot: c.slotIndex }, 'Slot has no script and auto-script generation failed');
     }
   }
 
   return specs;
+}
+
+/** Read character IDs from a slot, supporting both new (characterIds[]) and legacy (characterId) shapes. */
+function readCharacterIds(slot: Record<string, unknown>): string[] {
+  if (Array.isArray(slot.characterIds)) {
+    return (slot.characterIds as unknown[]).filter((x): x is string => typeof x === 'string');
+  }
+  if (typeof slot.characterId === 'string') return [slot.characterId];
+  return [];
+}
+
+/**
+ * Stable hash for cache lookup of composite starting frames. Identical inputs
+ * across leads share the same S3 object — so popular character/occasion/name
+ * combos pay the Nano Banana cost only once.
+ */
+function computeFrameKey(input: {
+  characterIds: string[];
+  recipientName: string;
+  messageType: string;
+  aspectRatio: string;
+}): string {
+  const sortedIds = [...input.characterIds].sort();
+  const payload = JSON.stringify({
+    c: sortedIds,
+    n: input.recipientName.trim().toLowerCase(),
+    m: input.messageType,
+    a: input.aspectRatio,
+  });
+  return createHash('sha256').update(payload).digest('hex').slice(0, 32);
+}
+
+/**
+ * Generate a composite starting frame via Nano Banana using each character's
+ * reference images as anchors plus an occasion-specific scene prompt.
+ */
+async function generateCompositeFrame(input: {
+  characters: CompositeCharacter[];
+  characterIds: string[];
+  charById: Map<string, { id: string; name: string; referenceImageS3Keys: unknown }>;
+  recipientName: string;
+  messageType: string;
+  aspectRatio: '16:9' | '9:16';
+}): Promise<{ base64: string; mimeType: string }> {
+  // Load one reference image per character (the first available).
+  const referenceImages: Array<{ base64: string; mimeType: string }> = [];
+  for (const id of input.characterIds) {
+    const char = input.charById.get(id);
+    if (!char) continue;
+    const refKeys = Array.isArray(char.referenceImageS3Keys)
+      ? (char.referenceImageS3Keys as string[])
+      : [];
+    if (refKeys.length === 0) {
+      log.warn({ characterId: id }, '[COMPOSITE] character has no reference image — skipping ref');
+      continue;
+    }
+    try {
+      const url = await getPresignedUrl(refKeys[0], 600);
+      const res = await fetch(url);
+      if (!res.ok) {
+        log.warn({ characterId: id, status: res.status }, '[COMPOSITE] failed to download character ref');
+        continue;
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      referenceImages.push({
+        base64: buf.toString('base64'),
+        mimeType: res.headers.get('content-type') ?? 'image/jpeg',
+      });
+    } catch (err) {
+      log.warn({ err, characterId: id }, '[COMPOSITE] reference image fetch failed');
+    }
+  }
+
+  const prompt = buildCompositePrompt({
+    characters: input.characters,
+    recipientName: input.recipientName,
+    occasion: input.messageType,
+    aspectRatio: input.aspectRatio,
+  });
+
+  const result = await nanoBanana.generateComposite({
+    prompt,
+    referenceImages,
+    aspectRatio: input.aspectRatio,
+  });
+
+  return { base64: result.imageBase64, mimeType: result.mimeType };
+}
+
+/** Fallback when the composite step fails — use the first character's raw reference image. */
+async function loadFirstCharacterReference(
+  characterId: string,
+  charById: Map<string, { id: string; name: string; referenceImageS3Keys: unknown }>,
+): Promise<{ base64: string; mimeType: string } | null> {
+  const char = charById.get(characterId);
+  if (!char) return null;
+  const refKeys = Array.isArray(char.referenceImageS3Keys)
+    ? (char.referenceImageS3Keys as string[])
+    : [];
+  if (refKeys.length === 0) return null;
+  try {
+    const url = await getPresignedUrl(refKeys[0], 600);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return {
+      base64: buf.toString('base64'),
+      mimeType: res.headers.get('content-type') ?? 'image/jpeg',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist new frame cache info back into session.preferences.videos[]. We
+ * read-modify-write because the funnel may have updated other slots in
+ * the meantime; we only touch the slots we just generated frames for.
+ */
+async function persistFrameCacheUpdates(
+  leadSessionId: string,
+  updates: Array<{ index: number; frameKey: string; frameS3Key: string } | null>,
+): Promise<void> {
+  const real = updates.filter((u): u is { index: number; frameKey: string; frameS3Key: string } => u !== null);
+  if (real.length === 0) return;
+
+  const session = await prisma.leadSession.findUnique({ where: { id: leadSessionId } });
+  if (!session) return;
+  const prefs = (session.preferences as Record<string, unknown>) ?? {};
+  const videos = Array.isArray(prefs.videos) ? [...(prefs.videos as Array<Record<string, unknown>>)] : [];
+
+  for (const u of real) {
+    const idx = u.index - 1;
+    if (idx < 0 || idx >= videos.length) continue;
+    videos[idx] = { ...videos[idx], frameKey: u.frameKey, frameS3Key: u.frameS3Key };
+  }
+
+  await prisma.leadSession.update({
+    where: { id: leadSessionId },
+    data: { preferences: { ...prefs, videos } as any },
+  });
 }
 
 /**

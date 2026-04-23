@@ -6,6 +6,9 @@ import type { AgentConfig } from './base.js';
  */
 export interface VideoSlotExtraction {
   slot: number;
+  /** One or more character choices for this slot (composited into a single video). */
+  characterChoices?: string[];
+  /** LEGACY single-choice — accepted as fallback, treated as a one-element array. */
   characterChoice?: string;
   customMessage?: string;
   autoMessage?: boolean;
@@ -54,16 +57,18 @@ Retorne APENAS um objeto JSON com os campos que você consegue extrair com confi
 Nome do cliente. "Sou a Maria" → "Maria", "Me chamo João" → "João"
 
 ## packageId (string)
-Mapeie para: "pkg_1" | "pkg_3" | "pkg_6"
-"1 vídeo" / "quero testar" / "teste" / "plano teste" → "pkg_1"
-"3" / "3 vídeos" / "surpresa" / "plano surpresa" / "o mais escolhido" → "pkg_3"
-"6" / "6 vídeos" / "completo" / "plano completo" → "pkg_6"
-Se o usuário disser apenas um número (ex: "6", "3", "1"), interprete como quantidade de vídeos do pacote.
+Mapeie para: "pkg_1" | "pkg_3" | "pkg_5" | "pkg_aniv_1"
+"1 vídeo" / "aleatório" / "quero testar" / "teste" / "plano teste" / "19,90" → "pkg_1" (vídeo com personagem ESCOLHIDO ALEATORIAMENTE pelo sistema — cliente NÃO escolhe)
+"3" / "3 vídeos" / "surpresa" / "plano surpresa" / "o mais escolhido" / "29,90" → "pkg_3"
+"5" / "5 vídeos" / "completo" / "plano completo" / "49,90" → "pkg_5"
+"vídeo de aniversário" / "aniversário especial" / "plano aniversário" / "34,90 de aniversário" → "pkg_aniv_1" (este pacote já fixa messageType="aniversario")
+Se o usuário disser apenas um número (ex: "5", "3", "1"), interprete como quantidade de vídeos do pacote.
 "o mais popular" / "o do meio" → "pkg_3"
 
 ## characterChoice (string) — LEGACY single-video shortcut
-Use APENAS quando o pacote tem 1 vídeo (pkg_1) E o cliente acabou de escolher o personagem.
-Para pacotes com múltiplos vídeos (pkg_3, pkg_6), use o campo \`videos\` em vez deste.
+Use APENAS quando o pacote tem 1 vídeo (pkg_aniv_1) E o cliente acabou de escolher o personagem.
+NUNCA use para pkg_1 — esse pacote tem personagem aleatório, o cliente não escolhe.
+Para pacotes com múltiplos vídeos (pkg_3, pkg_5), use o campo \`videos\` em vez deste.
 Pode ser nome, número ou franquia. "quero o número 2" → "2", "a Princesa Luna" → "Princesa Luna"
 Se o cliente disser uma franquia com múltiplos personagens (ex: "quero patrulha canina"), NÃO extraia — deixe o conversation agent listar.
 
@@ -74,13 +79,17 @@ Extraia APENAS os slots que o usuário mencionou na sua última mensagem.
 
 Formato de cada item:
 \`\`\`
-{ "slot": 1, "characterChoice": "Mickey", "customMessage": "feliz aniversário do João" }
-{ "slot": 2, "characterChoice": "Elsa", "autoMessage": true }
+{ "slot": 1, "characterChoices": ["Mickey"], "customMessage": "feliz aniversário do João" }
+{ "slot": 1, "characterChoices": ["Mickey", "Minnie"], "customMessage": "parabéns João" }
+{ "slot": 2, "characterChoices": ["Elsa", "Anna"], "autoMessage": true }
 \`\`\`
 Regras:
 - \`slot\` é 1-based e DEVE corresponder ao \`idx\` mostrado no contexto \`<videos>\`
-- Não extraia campos vazios (omita \`customMessage\` se só escolheu personagem)
-- Se o usuário disser "o mesmo personagem em todos" → emita um item por slot pendente, todos com o mesmo \`characterChoice\`
+- \`characterChoices\` é SEMPRE um array, mesmo com um único personagem
+- Máximo de 3 personagens por vídeo. Se o cliente pedir mais, extraia só os 3 primeiros e o conversation agent confirma.
+- Cliente diz "Mickey e Minnie" / "Mickey com Minnie" / "os dois, Mickey e Minnie" → \`characterChoices: ["Mickey", "Minnie"]\`
+- Não extraia campos vazios (omita \`customMessage\` se só escolheu personagens)
+- Se o usuário disser "o mesmo personagem em todos" → emita um item por slot pendente, todos com o mesmo \`characterChoices\`
 - Se o usuário disser apenas uma mensagem/personagem sem dizer "vídeo X", e há apenas UM slot pendente, atribua ao slot pendente. Se há múltiplos slots pendentes e o usuário não especificou qual, NÃO extraia — deixe o conversation agent perguntar qual vídeo.
 
 ## customMessage (string) — LEGACY single-video shortcut
@@ -130,7 +139,8 @@ Só extraia se o assistente acabou de fazer uma oferta de upsell.
 Retorne JSON válido com APENAS os campos extraídos. Omita campos sem dados.
 Exemplos:
 - { "packageId": "pkg_3", "messageType": "aniversario", "recipientName": "João" }
-- { "videos": [{ "slot": 1, "characterChoice": "Mickey", "customMessage": "feliz aniversário do João" }] }
+- { "videos": [{ "slot": 1, "characterChoices": ["Mickey"], "customMessage": "feliz aniversário do João" }] }
+- { "videos": [{ "slot": 1, "characterChoices": ["Mickey", "Minnie"], "customMessage": "parabéns João" }] }
 - { "videos": [{ "slot": 2, "autoMessage": true }] }
 Se nada a extrair: {}
 `,

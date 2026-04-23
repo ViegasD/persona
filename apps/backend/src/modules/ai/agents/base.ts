@@ -173,17 +173,21 @@ export function buildLeadContext(lead: {
     let nextSlot = 0;
     for (let i = 0; i < total; i++) {
       const v = videos[i] ?? {};
-      const personagem = (v.characterName as string) ?? '';
+      // Support both new (characterNames[]) and legacy (characterName) shapes.
+      const names = Array.isArray(v.characterNames)
+        ? (v.characterNames as unknown[]).filter((n): n is string => typeof n === 'string' && n.length > 0)
+        : (typeof v.characterName === 'string' && v.characterName ? [v.characterName] : []);
+      const personagens = names.join(', ');
       const mensagem = (v.customMessage as string) ?? '';
       const auto = v.autoMessage === true;
-      const complete = !!personagem && (!!mensagem || auto);
+      const complete = personagens.length > 0 && (!!mensagem || auto);
       if (!complete) {
         pending++;
         if (!nextSlot) nextSlot = i + 1;
       }
       const attrs = [
         `idx="${i + 1}"`,
-        `personagem="${personagem}"`,
+        `personagens="${personagens}"`,
         `mensagem="${auto ? '[gerada pela equipe]' : mensagem}"`,
         `completo="${complete ? 'sim' : 'nao'}"`,
       ];
