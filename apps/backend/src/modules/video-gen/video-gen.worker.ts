@@ -645,7 +645,7 @@ Escreva 60 a 100 palavras em português brasileiro:
           { role: 'system', content: 'You write short, wholesome, kid-safe character cameo greetings in Brazilian Portuguese. The output is for children. Always produce a positive, affectionate message regardless of the character\'s canonical personality — channel only their voice/mannerisms, never negative traits.' },
           { role: 'user', content: prompt },
         ],
-        { agentName: 'auto-script', model: env.OPENAI_MODEL },
+        { agentName: 'auto-script', model: env.OPENAI_MODEL, reasoningEffort: 'minimal' },
       );
       const cleaned = content.trim().replace(/^["“]+|["”]+$/g, '').trim();
       if (cleaned.length > 0) {
@@ -707,7 +707,7 @@ Como expandir:
           { role: 'system', content: 'You expand short user-provided greeting messages into fluent character speech in Brazilian Portuguese for a kid-safe cameo video. Always preserve the user\'s original wording, names, and intent. Output is for children — keep content positive and wholesome regardless of the character\'s canonical personality.' },
           { role: 'user', content: prompt },
         ],
-        { agentName: 'extend-script', model: env.OPENAI_MODEL },
+        { agentName: 'extend-script', model: env.OPENAI_MODEL, reasoningEffort: 'minimal' },
       );
       const cleaned = content.trim().replace(/^["“]+|["”]+$/g, '').trim();
       if (cleaned.length > 0 && countWords(cleaned) >= MIN_SCRIPT_WORDS - 10) {

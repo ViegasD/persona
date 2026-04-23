@@ -32,25 +32,25 @@ export interface LlmResponse {
 /**
  * Calls the LLM with the given messages and returns both the text response and token usage.
  */
+
+/**
+ * Calls the LLM with the given messages and returns both the text response and token usage.
+ *
+ * By default, does NOT set reasoning_effort. To force 'minimal', pass { reasoningEffort: 'minimal' } in options.
+ */
 export async function callLlm(
   messages: LlmMessage[],
-  options?: { leadId?: string; agentName?: string; model?: string; maxTokens?: number },
+  options?: { leadId?: string; agentName?: string; model?: string; maxTokens?: number; reasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' },
 ): Promise<LlmResponse> {
   const startMs = Date.now();
   const model = options?.model ?? env.OPENAI_MODEL;
-  // Default is generous because reasoning models (o-series, gpt-5) burn
-  // hidden reasoning tokens against this same cap and would otherwise
-  // return finish_reason='length' with empty content.
   const maxTokens = options?.maxTokens ?? 2000;
 
   const completion = await getClient().chat.completions.create({
     model,
     messages,
     max_completion_tokens: maxTokens,
-    // Reasoning models (gpt-5, o-series) burn hidden reasoning tokens against
-    // max_completion_tokens. For short scriptwriting we don't need reasoning;
-    // 'minimal' effectively disables it so all output budget goes to content.
-    ...(isReasoningModel(model) ? { reasoning_effort: 'minimal' as const } : {}),
+    ...(options?.reasoningEffort ? { reasoning_effort: options.reasoningEffort } : {}),
   });
 
   const choice = completion.choices[0];
@@ -120,7 +120,7 @@ export async function callLlmJson<T>(
         messages,
         max_completion_tokens: 10000,
         response_format: { type: 'json_object' },
-        ...(isReasoningModel(model) ? { reasoning_effort: 'minimal' as const } : {}),
+        // Do NOT set reasoning_effort here — dialog agents need full reasoning.
       });
     } catch (apiErr) {
       const durationMs = Date.now() - startMs;
