@@ -371,7 +371,7 @@ async function resolveVideoSpecs(
     if (!script && c.autoMessage) {
       const speaker = charById.get(c.characterIds[0]);
       script = await generateAutoScript({
-        characterName: speaker?.name ?? 'Character',
+        characterDescription: speaker?.description ?? null,
         characterPersonality: speaker?.personality ?? null,
         recipientName,
         recipientAge,
@@ -540,9 +540,14 @@ async function persistFrameCacheUpdates(
 /**
  * Use the LLM to write a 60-100 word Portuguese script for the character
  * to speak. Returned as plain text (no quotes, no stage directions).
+ *
+ * The prompt describes the character by ARCHETYPE (description field) and
+ * personality — NOT by the trademarked name — to avoid content-policy blocks
+ * on IP-heavy names (e.g. "Capíтão Gancho", "Mickey"). Retries up to 3 times
+ * on empty/failed LLM output before falling back to a generic template.
  */
 async function generateAutoScript(params: {
-  characterName: string;
+  characterDescription: string | null;
   characterPersonality: string | null;
   recipientName: string;
   recipientAge: string;
@@ -553,37 +558,44 @@ async function generateAutoScript(params: {
   const occasionLabel = OCCASIONS[params.messageType]?.label ?? params.messageType;
   const ageHint = params.recipientAge ? ` (${params.recipientAge} anos)` : '';
   const variationHint = params.totalVideos > 1
-    ? ` Este é o vídeo ${params.videoIndex} de ${params.totalVideos} — faça uma versão única e diferente dos outros.`
-    : '';
-  const personalityHint = params.characterPersonality
-    ? `\nPersonalidade do personagem: ${params.characterPersonality}.`
+    ? `\n\nObservação: este é o vídeo ${params.videoIndex} de ${params.totalVideos} — crie uma versão única e diferente das demais.`
     : '';
 
-  const prompt = `Escreva uma fala curta (60-100 palavras) em português brasileiro para o personagem "${params.characterName}" falar diretamente para ${params.recipientName}${ageHint}.
-Ocasião: ${occasionLabel}.${personalityHint}${variationHint}
+  // Use the character's *archetype description* as the subject of the prompt,
+  // not the character name. This avoids both IP trouble and content-filter blocks.
+  const archetype = params.characterDescription?.trim() || 'um personagem infantil carismático';
+  const personalityBlock = params.characterPersonality?.trim()
+    ? `\n\nPersonalidade:\n${params.characterPersonality.trim()}`
+    : '';
 
-A fala deve ser:
-- Calorosa, natural e direcionada à pessoa pelo nome
-- No estilo do personagem (vocabulário, jeito de falar)
-- Sem indicações de cena ou narração, apenas o que o personagem diz
-- Sem aspas no início ou fim
+  const contextBlock = `Contexto:\nMensagem de ${occasionLabel.toLowerCase()} — deve soar calorosa e direcionada, no estilo do personagem, com tom apropriado à ocasião.`;
 
-Responda APENAS com a fala, nada mais.`;
+  const prompt = `Escreva uma fala curta (60–100 palavras) em português brasileiro para ${archetype} falar diretamente para ${params.recipientName}${ageHint}.${personalityBlock}\n\nEstilo de fala:\nVocabulário e tom coerentes com o arquétipo acima. Frases naturais, envolventes e com personalidade.\n\n${contextBlock}${variationHint}\n\nRegras:\n- Fala direta para ${params.recipientName}\n- Natural e envolvente\n- Sem narração ou indicações de cena\n- Sem aspas\n- Apenas o texto da fala`;
 
-  try {
-    const { content } = await callLlm(
-      [
-        { role: 'system', content: 'You are a screenwriter for short character video greetings.' },
-        { role: 'user', content: prompt },
-      ],
-      { agentName: 'auto-script', model: env.OPENAI_MODEL },
-    );
-    return content.trim().replace(/^"|"$/g, '');
-  } catch (err) {
-    log.error({ err, character: params.characterName }, 'Failed to generate auto script');
-    // Minimal fallback so we still produce something
-    return `Oi ${params.recipientName}! Aqui é ${params.characterName}, e eu vim mandar um recadinho muito especial pra você! Te desejo tudo de bom hoje e sempre. Um beijão!`;
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { content } = await callLlm(
+        [
+          { role: 'system', content: 'You are a screenwriter for short character video greetings in Brazilian Portuguese.' },
+          { role: 'user', content: prompt },
+        ],
+        { agentName: 'auto-script', model: env.OPENAI_MODEL },
+      );
+      const cleaned = content.trim().replace(/^["“]+|["”]+$/g, '').trim();
+      if (cleaned.length > 0) {
+        if (attempt > 1) log.info({ attempt }, '[AUTO_SCRIPT] succeeded on retry');
+        return cleaned;
+      }
+      log.warn({ attempt }, '[AUTO_SCRIPT] LLM returned empty content — retrying');
+    } catch (err) {
+      log.warn({ err, attempt }, '[AUTO_SCRIPT] LLM call failed — retrying');
+    }
   }
+
+  log.error({ archetype }, '[AUTO_SCRIPT] All attempts failed — using fallback template');
+  // Minimal fallback so we still produce something coherent.
+  return `Oi ${params.recipientName}! Vim mandar um recadinho muito especial pra você hoje. Saiba que você é incrível e merece tudo de bom. Te desejo muita alegria, saúde e momentos felizes. Um beijão enorme!`;
 }
 
 async function pollVideoOperations(
