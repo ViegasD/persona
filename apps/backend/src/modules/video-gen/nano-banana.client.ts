@@ -80,9 +80,15 @@ export class NanoBananaClient {
     this.baseUrl = env.GOOGLE_API_URL;
     this.apiKey = env.GOOGLE_API_KEY ?? '';
     this.model = env.NANO_BANANA_MODEL;
+    if (!this.apiKey) {
+      log.error('GOOGLE_API_KEY is not set — Nano Banana / Veo calls will fail with 403');
+    }
   }
 
   private headers(): Record<string, string> {
+    if (!this.apiKey) {
+      throw new NanoBananaApiError('NO_API_KEY', 'GOOGLE_API_KEY env var is missing — set it in the deploy environment');
+    }
     return {
       'x-goog-api-key': this.apiKey,
       'Content-Type': 'application/json',

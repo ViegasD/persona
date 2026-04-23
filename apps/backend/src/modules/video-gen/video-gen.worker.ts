@@ -86,7 +86,7 @@ export async function processVideoGeneration(
     const aspectRatio = env.VIDEO_ASPECT_RATIO;
 
     // Build the list of videos to generate.
-    const specs = await resolveVideoSpecs(prefs, expectedCount);
+    const specs = await resolveVideoSpecs(prefs, expectedCount, session.id);
     if (specs.length === 0) {
       throw new Error('No video specs available — missing characters or script in session preferences');
     }
@@ -307,6 +307,7 @@ export async function processVideoGeneration(
 async function resolveVideoSpecs(
   prefs: Record<string, unknown>,
   expectedCount: number,
+  sessionId?: string,
 ): Promise<VideoSpec[]> {
   const recipientName = (prefs.recipientName as string) ?? '';
   const recipientAge = (prefs.recipientAge as string) ?? '';
@@ -365,9 +366,13 @@ async function resolveVideoSpecs(
   const charById = new Map(characters.map((c) => [c.id, c]));
 
   const specs: VideoSpec[] = [];
+  // Track scripts that were generated/extended this run so we can persist
+  // them back to the session and avoid re-running the LLM on job retries.
+  const resolvedScripts: Array<{ slotIndex: number; script: string }> = [];
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     let script = c.script;
+    let scriptChanged = false;
     const speaker = charById.get(c.characterIds[0]);
     if (!script && c.autoMessage) {
       script = await generateAutoScript({
@@ -378,28 +383,59 @@ async function resolveVideoSpecs(
         videoIndex: i + 1,
         totalVideos: candidates.length,
       });
+      scriptChanged = !!script;
     } else if (script && countWords(script) < MIN_SCRIPT_WORDS) {
       // Custom message is too short to fill the ~8s clip — extend it while
       // preserving the user's exact wording. Veo quality drops dramatically
       // when the spoken line is too short (awkward silence, lip-flap drift).
-      script = await extendCustomScript({
+      const extended = await extendCustomScript({
         userMessage: script,
         characterDescription: speaker?.description ?? null,
         recipientName,
         recipientAge,
         messageType,
       });
+      if (extended && extended.trim().length > 0) {
+        script = extended;
+        scriptChanged = true;
+      }
     }
     if (script && script.trim().length > 0) {
+      const finalScript = script.trim();
+      if (scriptChanged) {
+        resolvedScripts.push({ slotIndex: c.slotIndex, script: finalScript });
+      }
       specs.push({
         characterIds: c.characterIds,
-        script: script.trim(),
+        script: finalScript,
         cachedFrameKey: c.cachedFrameKey,
         cachedFrameS3Key: c.cachedFrameS3Key,
         slotIndex: c.slotIndex,
       });
     } else {
       log.warn({ slot: c.slotIndex }, 'Slot has no script and auto-script generation failed');
+    }
+  }
+
+  // Persist resolved scripts back to the session so subsequent job retries
+  // (e.g. after a Veo 403 or a Nano Banana glitch) reuse them instead of
+  // burning more LLM tokens regenerating the same dialog.
+  if (sessionId && resolvedScripts.length > 0) {
+    try {
+      const videos = Array.isArray(prefs.videos) ? [...(prefs.videos as Array<Record<string, unknown>>)] : [];
+      for (const r of resolvedScripts) {
+        const idx = r.slotIndex - 1;
+        if (idx >= 0 && idx < videos.length) {
+          videos[idx] = { ...videos[idx], customMessage: r.script, autoMessage: false };
+        }
+      }
+      await prisma.leadSession.update({
+        where: { id: sessionId },
+        data: { preferences: { ...prefs, videos } as any },
+      });
+      log.info({ count: resolvedScripts.length }, '[SCRIPT] Cached resolved scripts to session');
+    } catch (err) {
+      log.warn({ err }, '[SCRIPT] Failed to cache resolved scripts (non-fatal)');
     }
   }
 

@@ -74,9 +74,15 @@ export class VeoClient {
     this.baseUrl = env.GOOGLE_API_URL;
     this.apiKey = env.GOOGLE_API_KEY ?? '';
     this.model = env.VEO_MODEL;
+    if (!this.apiKey) {
+      log.error('GOOGLE_API_KEY is not set — Veo calls will fail with 403');
+    }
   }
 
   private headers(): Record<string, string> {
+    if (!this.apiKey) {
+      throw new VeoApiError('NO_API_KEY', 'GOOGLE_API_KEY env var is missing — set it in the deploy environment');
+    }
     return {
       'x-goog-api-key': this.apiKey,
       'Content-Type': 'application/json',
