@@ -13,21 +13,24 @@ export const MESSAGES = {
     `2️⃣ A gente cria um vídeo com uma mensagem especial\n` +
     `3️⃣ Você recebe pronto pra enviar 💛\n\n` +
     `📦 *Planos:*\n\n` +
-    `✨ *Plano Teste — R$ 14,90*\n` +
-    `• 1 vídeo personalizado\n` +
-    `• 1 personagem (entre 5 opções aleatórias)\n` +
+    `✨ *Plano Teste — R$ 19,90*\n` +
+    `• 1 vídeo com personagem surpresa (sorteado pra você!)\n` +
     `• Alta qualidade + sem marca d'água\n` +
     `_Só pra sentir a magia antes de se apaixonar 💜_\n\n` +
-    `⭐ *Plano Surpresa — R$ 24,90 (mais escolhido)*\n` +
-    `• 3 vídeos diferentes\n` +
+    `⭐ *Plano Surpresa — R$ 29,90 (mais escolhido)*\n` +
+    `• 3 vídeos — você escolhe o personagem de cada um\n` +
     `• Todos os personagens liberados (K-pop, Disney, heróis e mais!)\n` +
     `• Novos personagens todo dia\n` +
     `• Suporte prioritário via WhatsApp\n\n` +
-    `🎁 *Plano Completo — R$ 34,90*\n` +
-    `• 6 vídeos diferentes\n` +
+    `🎁 *Plano Completo — R$ 49,90*\n` +
+    `• 5 vídeos — você escolhe o personagem de cada um\n` +
     `• Todos os personagens liberados\n` +
     `• Novos personagens todo dia\n` +
     `• Suporte prioritário via WhatsApp\n\n` +
+    `🎂 *Vídeo de Aniversário — R$ 34,90*\n` +
+    `• 1 vídeo especial de aniversário\n` +
+    `• Cenário festivo com o nome da criança no bolo 🎂\n` +
+    `• Você escolhe o personagem\n\n` +
     `🎭 *Temas disponíveis:*\n\n` +
     `👑 Princesas & Contos mágicos\n` +
     `(Cinderela, Elsa, Anna, Ariel, Rapunzel, Bela…)\n\n` +
