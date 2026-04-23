@@ -42,6 +42,13 @@ export async function callLlm(
 
   const choice = completion.choices[0];
   const content = choice?.message?.content ?? '';
+  const finishReason = choice?.finish_reason;
+  if (!content || finishReason === 'content_filter' || finishReason === 'length') {
+    log.warn(
+      { model, finishReason, agent: options?.agentName, hasContent: !!content },
+      'LLM returned empty or non-stop completion',
+    );
+  }
   const usage = {
     promptTokens: completion.usage?.prompt_tokens ?? 0,
     completionTokens: completion.usage?.completion_tokens ?? 0,

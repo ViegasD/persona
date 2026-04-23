@@ -372,7 +372,6 @@ async function resolveVideoSpecs(
     if (!script && c.autoMessage) {
       script = await generateAutoScript({
         characterDescription: speaker?.description ?? null,
-        characterPersonality: speaker?.personality ?? null,
         recipientName,
         recipientAge,
         messageType,
@@ -386,7 +385,6 @@ async function resolveVideoSpecs(
       script = await extendCustomScript({
         userMessage: script,
         characterDescription: speaker?.description ?? null,
-        characterPersonality: speaker?.personality ?? null,
         recipientName,
         recipientAge,
         messageType,
@@ -572,36 +570,43 @@ function countWords(text: string): number {
  */
 async function generateAutoScript(params: {
   characterDescription: string | null;
-  characterPersonality: string | null;
   recipientName: string;
   recipientAge: string;
   messageType: string;
   videoIndex: number;
   totalVideos: number;
 }): Promise<string> {
-  const occasionLabel = OCCASIONS[params.messageType]?.label ?? params.messageType;
+  const occasion = OCCASIONS[params.messageType]?.label?.toLowerCase() ?? 'carinhosa geral';
   const ageHint = params.recipientAge ? ` (${params.recipientAge} anos)` : '';
   const variationHint = params.totalVideos > 1
-    ? `\n\nObservação: este é o vídeo ${params.videoIndex} de ${params.totalVideos} — crie uma versão única e diferente das demais.`
+    ? `\n- Este é o vídeo ${params.videoIndex} de ${params.totalVideos} — faça uma versão única, diferente das demais.`
     : '';
 
   // Use the character's *archetype description* as the subject of the prompt,
   // not the character name. This avoids both IP trouble and content-filter blocks.
   const archetype = params.characterDescription?.trim() || 'um personagem infantil carismático';
-  const personalityBlock = params.characterPersonality?.trim()
-    ? `\n\nPersonalidade:\n${params.characterPersonality.trim()}`
-    : '';
 
-  const contextBlock = `Contexto:\nMensagem de ${occasionLabel.toLowerCase()} — deve soar calorosa e direcionada, no estilo do personagem, com tom apropriado à ocasião.`;
+  const prompt = `Você está escrevendo a fala de um personagem fictício para um vídeo cameo infantil de presente. A criança ${params.recipientName}${ageHint} vai assistir a esse vídeo. A fala precisa ser 100% positiva, carinhosa, segura e adequada para criança.
 
-  const prompt = `Escreva uma fala curta (60–100 palavras) em português brasileiro para ${archetype} falar diretamente para ${params.recipientName}${ageHint}.${personalityBlock}\n\nEstilo de fala:\nVocabulário e tom coerentes com o arquétipo acima. Frases naturais, envolventes e com personalidade.\n\n${contextBlock}${variationHint}\n\nRegras:\n- Fala direta para ${params.recipientName}\n- Natural e envolvente\n- Sem narração ou indicações de cena\n- Sem aspas\n- Apenas o texto da fala`;
+Personagem: ${archetype}
+
+Ocasião: ${occasion}
+
+Escreva 60 a 100 palavras em português brasileiro:
+- Fala direta para ${params.recipientName}, em tom alegre e acolhedor
+- Use o JEITO DE FALAR e maneirismos do personagem (vocabulário, bordões, ritmo), mas o conteúdo deve ser carinhoso e apropriado para criança
+- Comece com uma saudação chamando ${params.recipientName} pelo nome
+- Inclua algo coerente com a ocasião (${occasion})
+- Termine com uma despedida calorosa
+- Sem narração, sem indicações de cena, sem aspas
+- Apenas o texto que o personagem fala${variationHint}`;
 
   const MAX_ATTEMPTS = 3;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const { content } = await callLlm(
         [
-          { role: 'system', content: 'You are a screenwriter for short character video greetings in Brazilian Portuguese.' },
+          { role: 'system', content: 'You write short, wholesome, kid-safe character cameo greetings in Brazilian Portuguese. The output is for children. Always produce a positive, affectionate message regardless of the character\'s canonical personality — channel only their voice/mannerisms, never negative traits.' },
           { role: 'user', content: prompt },
         ],
         { agentName: 'auto-script', model: env.OPENAI_MODEL },
@@ -611,7 +616,7 @@ async function generateAutoScript(params: {
         if (attempt > 1) log.info({ attempt }, '[AUTO_SCRIPT] succeeded on retry');
         return cleaned;
       }
-      log.warn({ attempt }, '[AUTO_SCRIPT] LLM returned empty content — retrying');
+      log.warn({ attempt, archetype, recipientName: params.recipientName }, '[AUTO_SCRIPT] LLM returned empty content — retrying');
     } catch (err) {
       log.warn({ err, attempt }, '[AUTO_SCRIPT] LLM call failed — retrying');
     }
@@ -632,19 +637,15 @@ async function generateAutoScript(params: {
 async function extendCustomScript(params: {
   userMessage: string;
   characterDescription: string | null;
-  characterPersonality: string | null;
   recipientName: string;
   recipientAge: string;
   messageType: string;
 }): Promise<string> {
-  const occasionLabel = OCCASIONS[params.messageType]?.label ?? params.messageType;
+  const occasion = OCCASIONS[params.messageType]?.label?.toLowerCase() ?? 'carinhosa geral';
   const ageHint = params.recipientAge ? ` (${params.recipientAge} anos)` : '';
   const archetype = params.characterDescription?.trim() || 'um personagem infantil carismático';
-  const personalityBlock = params.characterPersonality?.trim()
-    ? `\n\nPersonalidade:\n${params.characterPersonality.trim()}`
-    : '';
 
-  const prompt = `Você é roteirista de uma fala curta (60–100 palavras) em português brasileiro para ${archetype} falar diretamente para ${params.recipientName}${ageHint} num vídeo de ${occasionLabel.toLowerCase()}.${personalityBlock}
+  const prompt = `Você é roteirista de uma fala curta (60–100 palavras) em português brasileiro para ${archetype} falar diretamente para a criança ${params.recipientName}${ageHint} num vídeo cameo de ${occasion}. A fala deve ser 100% positiva, carinhosa e apropriada para criança.
 
 O cliente já escreveu a mensagem que deseja transmitir. Sua tarefa é EXPANDIR essa mensagem para preencher o vídeo de ~8 segundos, MANTENDO INTACTAS as palavras-chave, nomes e intenção original do cliente.
 
@@ -667,7 +668,7 @@ Como expandir:
     try {
       const { content } = await callLlm(
         [
-          { role: 'system', content: 'You are a screenwriter for short character video greetings in Brazilian Portuguese. Always preserve the user\'s original wording.' },
+          { role: 'system', content: 'You expand short user-provided greeting messages into fluent character speech in Brazilian Portuguese for a kid-safe cameo video. Always preserve the user\'s original wording, names, and intent. Output is for children — keep content positive and wholesome regardless of the character\'s canonical personality.' },
           { role: 'user', content: prompt },
         ],
         { agentName: 'extend-script', model: env.OPENAI_MODEL },
