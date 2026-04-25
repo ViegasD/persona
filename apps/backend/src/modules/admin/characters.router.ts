@@ -21,7 +21,7 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
     const result = characters.map((c) => {
         const refKeys = (c.referenceImageS3Keys as string[]) ?? [];
         const previewUrl = refKeys.length > 0
-          ? `/api/images/${refKeys[0]}`
+          ? `/manager/api/images/${refKeys[0]}`
           : null;
         return {
           id: c.id,
