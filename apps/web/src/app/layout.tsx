@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-lg font-bold">🎬 Vídeo Personalizado — Admin</h1>
           <nav className="flex gap-4 text-sm">
             <Link href="/" className="hover:underline">Clientes</Link>
+            <Link href="/approvals" className="hover:underline">Aprovações</Link>
             <Link href="/characters" className="hover:underline">Personagens</Link>
             <Link href="/templates" className="hover:underline">Templates</Link>
             <Link href="/settings" className="hover:underline">Configurações</Link>
