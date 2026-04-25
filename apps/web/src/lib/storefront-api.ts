@@ -30,7 +30,13 @@ export async function fetchPendingApprovals(): Promise<PendingItem[]> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Storefront ${res.status}`);
-  return res.json();
+  const items: PendingItem[] = await res.json();
+  // Rewrite preview_url to go through the local Next.js proxy so the browser
+  // never has to reach the internal storefront URL or insecure MinIO directly.
+  return items.map((item) => ({
+    ...item,
+    preview_url: item.preview_url ? `/api/preview/${item.item_id}` : null,
+  }));
 }
 
 export async function approveStorefrontItem(itemId: number): Promise<{ item_id: number; status: string }> {
