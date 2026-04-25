@@ -25,7 +25,7 @@ export interface PendingItem {
 }
 
 export async function fetchPendingApprovals(): Promise<PendingItem[]> {
-  const res = await fetch(`${STOREFRONT_BASE}/admin/items/pending-approval?limit=100`, {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/items/pending-approval?limit=100`, {
     headers: headers(),
     cache: 'no-store',
   });
@@ -34,7 +34,7 @@ export async function fetchPendingApprovals(): Promise<PendingItem[]> {
 }
 
 export async function approveStorefrontItem(itemId: number): Promise<{ item_id: number; status: string }> {
-  const res = await fetch(`${STOREFRONT_BASE}/admin/items/${itemId}/approve`, {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/items/${itemId}/approve`, {
     method: 'POST',
     headers: headers(),
   });
@@ -46,7 +46,7 @@ export async function approveStorefrontItem(itemId: number): Promise<{ item_id: 
 }
 
 export async function rejectStorefrontItem(itemId: number): Promise<{ item_id: number; status: string }> {
-  const res = await fetch(`${STOREFRONT_BASE}/admin/items/${itemId}/reject`, {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/items/${itemId}/reject`, {
     method: 'POST',
     headers: headers(),
   });
@@ -58,7 +58,7 @@ export async function rejectStorefrontItem(itemId: number): Promise<{ item_id: n
 }
 
 export async function retryStorefrontItem(itemId: number): Promise<{ item_id: number; status: string }> {
-  const res = await fetch(`${STOREFRONT_BASE}/admin/items/${itemId}/retry`, {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/items/${itemId}/retry`, {
     method: 'POST',
     headers: headers(),
   });
