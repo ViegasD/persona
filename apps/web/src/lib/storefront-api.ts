@@ -33,9 +33,10 @@ export async function fetchPendingApprovals(): Promise<PendingItem[]> {
   const items: PendingItem[] = await res.json();
   // Rewrite preview_url to go through the local Next.js proxy so the browser
   // never has to reach the internal storefront URL or insecure MinIO directly.
+  // basePath is /manager so the API route is at /manager/api/preview/:id
   return items.map((item) => ({
     ...item,
-    preview_url: item.preview_url ? `/api/preview/${item.item_id}` : null,
+    preview_url: item.preview_url ? `/manager/api/preview/${item.item_id}` : null,
   }));
 }
 
