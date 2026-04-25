@@ -26,7 +26,9 @@ export async function verifyAdminAuth(
   _reply: FastifyReply,
 ): Promise<void> {
   const apiKey = request.headers['x-api-key'];
-  if (!apiKey || apiKey !== env.EVOLUTION_API_KEY) {
+  // Use dedicated ADMIN_API_KEY if set, otherwise fall back to EVOLUTION_API_KEY
+  const expectedKey = env.ADMIN_API_KEY ?? env.EVOLUTION_API_KEY;
+  if (!apiKey || apiKey !== expectedKey) {
     throw createAppError(401, 'Não autorizado', 'UNAUTHORIZED');
   }
 }

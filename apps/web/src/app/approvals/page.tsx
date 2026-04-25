@@ -1,6 +1,5 @@
 import { fetchPendingApprovals } from '@/lib/storefront-api';
 import { ApprovalCard } from '@/components/approval-card';
-import { AutoRefresh } from '@/components/auto-refresh';
 
 export default async function ApprovalsPage() {
   let items;
@@ -28,7 +27,6 @@ export default async function ApprovalsPage() {
               : `${items.length} ${items.length === 1 ? 'item aguardando' : 'itens aguardando'} aprovação.`}
           </p>
         </div>
-        <AutoRefresh interval={15_000} />
       </div>
 
       {items.length === 0 ? (

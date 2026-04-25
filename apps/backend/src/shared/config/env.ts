@@ -80,6 +80,10 @@ const envSchema = z.object({
   // Whitelist (set WHITELIST=true to restrict to WHITELIST_NUMBERS only)
   WHITELIST: z.string().default('false').transform((v) => v === 'true' || v === '1'),
   WHITELIST_NUMBERS: z.string().default(''),
+
+  // Admin panel API key (used by the Next.js web panel to authenticate against this backend)
+  // Defaults to EVOLUTION_API_KEY for backwards compatibility.
+  ADMIN_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

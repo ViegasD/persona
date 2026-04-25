@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PendingItem } from '@/lib/storefront-api';
-import { approveItemAction, rejectItemAction } from '@/lib/storefront-actions';
+import { approveItemAction, rejectItemAction, retryItemAction } from '@/lib/storefront-actions';
 
 export function ApprovalCard({ item }: { item: PendingItem }) {
   const [isPending, startTransition] = useTransition();
@@ -19,6 +19,13 @@ export function ApprovalCard({ item }: { item: PendingItem }) {
   function handleReject() {
     startTransition(async () => {
       await rejectItemAction(item.item_id);
+      router.refresh();
+    });
+  }
+
+  function handleRetry() {
+    startTransition(async () => {
+      await retryItemAction(item.item_id);
       router.refresh();
     });
   }
@@ -90,6 +97,16 @@ export function ApprovalCard({ item }: { item: PendingItem }) {
           style={{ background: 'var(--error)', color: 'var(--error-foreground, #fff)' }}
         >
           ✗ Rejeitar
+        </button>
+      </div>
+      <div className="px-3 pb-3">
+        <button
+          onClick={handleRetry}
+          disabled={isPending}
+          className="w-full py-1.5 rounded-lg text-sm font-medium transition-colors"
+          style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}
+        >
+          ↺ Regenerar vídeo
         </button>
       </div>
     </div>
