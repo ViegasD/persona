@@ -165,10 +165,14 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
 
     const currentKeys = (character.referenceImageS3Keys as string[]) ?? [];
     const updatedKeys = [...currentKeys, s3Key];
+    const isFirst = currentKeys.length === 0;
 
     await prisma.character.update({
       where: { id: character.id },
-      data: { referenceImageS3Keys: updatedKeys },
+      data: {
+        referenceImageS3Keys: updatedKeys,
+        ...(isFirst ? { thumbnailS3Key: s3Key } : {}),
+      },
     });
 
     const url = await getPresignedUrl(s3Key, 3600);
@@ -195,9 +199,12 @@ export async function charactersRouter(app: FastifyInstance): Promise<void> {
     await deleteFile(s3Key);
 
     const updatedKeys = currentKeys.filter((k) => k !== s3Key);
+    const currentThumb = character.thumbnailS3Key as string | null;
+    const newThumb = currentThumb === s3Key ? (updatedKeys[0] ?? null) : currentThumb;
+
     await prisma.character.update({
       where: { id: character.id },
-      data: { referenceImageS3Keys: updatedKeys },
+      data: { referenceImageS3Keys: updatedKeys, thumbnailS3Key: newThumb },
     });
 
     log.info({ characterId: character.id, s3Key }, 'Reference image deleted');
