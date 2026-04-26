@@ -1,10 +1,8 @@
-import path from 'path';
+import type { NextConfig } from 'next';
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   output: 'standalone',
   basePath: '/manager',
-  outputFileTracingRoot: path.join(import.meta.dirname, '../../'),
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',
