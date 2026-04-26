@@ -71,3 +71,81 @@ export async function retryStorefrontItem(itemId: number): Promise<{ item_id: nu
   }
   return res.json();
 }
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  revenue_cents: { total: number; today: number; week: number; month: number };
+  order_counts: Record<string, number>;
+  conversion: { total_orders: number; paid_orders: number; rate_pct: number };
+  api_cost_micro_usd: {
+    total: Record<string, number>;
+    today: Record<string, number>;
+    week: Record<string, number>;
+    month: Record<string, number>;
+  };
+}
+
+export interface DashboardOrder {
+  id: number;
+  status: string;
+  plan: string | null;
+  plan_slug: string | null;
+  guest_phone: string | null;
+  guest_email: string | null;
+  recipient_name: string | null;
+  total_cents: number;
+  quality: string;
+  video_count: number;
+  created_at: string;
+  paid_at: string | null;
+  delivered_at: string | null;
+  error: string | null;
+}
+
+export interface DashboardOrdersResponse {
+  total: number;
+  items: DashboardOrder[];
+}
+
+export interface ApiCostRow {
+  day: string;
+  provider: string;
+  cost_micro_usd: number;
+  calls: number;
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/dashboard/summary`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDashboardOrders(
+  opts: { status?: string; limit?: number; offset?: number } = {}
+): Promise<DashboardOrdersResponse> {
+  const params = new URLSearchParams();
+  if (opts.status) params.set('status', opts.status);
+  if (opts.limit != null) params.set('limit', String(opts.limit));
+  if (opts.offset != null) params.set('offset', String(opts.offset));
+  const qs = params.toString();
+  const res = await fetch(
+    `${STOREFRONT_BASE}/api/v1/admin/dashboard/orders${qs ? `?${qs}` : ''}`,
+    { headers: headers(), cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
+export async function fetchApiCosts(days = 30): Promise<ApiCostRow[]> {
+  const res = await fetch(
+    `${STOREFRONT_BASE}/api/v1/admin/dashboard/api-costs?days=${days}`,
+    { headers: headers(), cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
