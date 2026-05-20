@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Checkout | Recado Animado</title>
+<link rel="icon" type="image/png" href="img/Recado-animado-LOGO.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0a0e1a;--bg2:#111827;--bg3:#1a2035;--border:rgba(255,255,255,.08);--text:#f0f0f5;--text2:#8a8f9e;--text3:#555a6e;--green:#30d158;--green-dim:rgba(48,209,88,.1);--accent:#4a9ef5;--purple:#BF5AF2;--purple-dim:rgba(191,90,242,.15);--gold:#FFD700;--red:#ff453a;--t:.4s cubic-bezier(.25,.1,.25,1)}
@@ -18,7 +19,8 @@ a{color:var(--accent);text-decoration:none}
 .header-back svg{width:18px;height:18px}
 .header-title{font-size:.95rem;font-weight:600}
 
-.hero-banner{width:100%;object-fit:contain;display:block}
+.hero-banner{width:100%;height:auto;display:block}
+@media(min-width:769px){.hero-banner{max-width:900px;margin:0 auto;display:block}}
 
 .stepper{display:flex;align-items:center;justify-content:center;gap:0;padding:20px 16px 24px;max-width:600px;margin:0 auto}
 .stepper-step{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;flex:1}
@@ -54,6 +56,7 @@ a{color:var(--accent);text-decoration:none}
 .pkg-price .cur{font-size:.8rem;vertical-align:super}
 .pkg-promo{display:inline-block;padding:2px 8px;border-radius:980px;background:rgba(255,69,58,.12);color:var(--red);font-size:.6rem;font-weight:700;margin-bottom:8px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(255,69,58,0)}50%{box-shadow:0 0 12px rgba(255,69,58,.2)}}
+@keyframes fieldHighlight{0%{border-color:var(--border);box-shadow:none}30%{border-color:var(--purple);box-shadow:0 0 0 3px rgba(191,90,242,.25)}70%{border-color:var(--purple);box-shadow:0 0 0 3px rgba(191,90,242,.25)}100%{border-color:var(--border);box-shadow:none}}
 .pkg-save{display:inline-block;padding:2px 8px;border-radius:980px;background:rgba(48,209,88,.1);color:var(--green);font-size:.6rem;font-weight:700;margin-bottom:8px}
 .pkg-feats{text-align:left;display:flex;flex-direction:column;gap:6px}
 .pkg-feat{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--text2)}
@@ -150,15 +153,77 @@ a{color:var(--accent);text-decoration:none}
 .btn-pay:hover{background:#28b94d;transform:scale(1.02)}
 .btn-pay:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-.secure-badge{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:14px;font-size:.72rem;color:var(--text3)}
-.secure-badge svg{width:13px;height:13px}
+.trust-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 16px;margin-top:16px;padding:14px 12px;background:rgba(48,209,88,.04);border:1px solid rgba(48,209,88,.12);border-radius:12px}
+.trust-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);white-space:nowrap}
+.trust-item svg{width:13px;height:13px;stroke:var(--green);flex-shrink:0}
+.payment-flags{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.payment-flags img{height:22px;width:auto;object-fit:contain;opacity:.85}
+.payment-flags .pf-svg{height:22px;width:auto;display:inline-block;opacity:.85}
 
 .msg-example{background:rgba(191,90,242,.05);border:1px solid rgba(191,90,242,.15);border-radius:10px;padding:12px 14px;margin-top:6px}
 .msg-example-t{font-size:.7rem;font-weight:700;color:var(--purple);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
 .msg-example p{font-size:.78rem;color:var(--text2);font-style:italic;line-height:1.5}
 
 .timer-bar{background:linear-gradient(90deg,#ff453a,#ff6b35);color:#fff;text-align:center;padding:8px;font-size:.8rem;font-weight:700}
+
+/* QUALITY STEP */
+.quality-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:500px;margin:0 auto 24px}
+.quality-card{border-radius:18px;padding:26px 20px;text-align:center;background:var(--bg3);border:2px solid var(--border);cursor:pointer;transition:all var(--t);position:relative}
+.quality-card:hover{border-color:rgba(191,90,242,.3);transform:translateY(-2px)}
+.quality-card.selected{border-color:var(--purple);box-shadow:0 0 30px rgba(191,90,242,.15)}
+.quality-card .qc-icon{font-size:2.2rem;margin-bottom:8px}
+.quality-card .qc-name{font-size:1.1rem;font-weight:800;margin-bottom:4px}
+.quality-card .qc-res{font-size:.75rem;color:var(--text3);margin-bottom:8px}
+.quality-card .qc-price{font-size:.9rem;font-weight:700;color:var(--green)}
+.quality-card .qc-price.extra{color:#FFD700}
+.quality-card .check-ind{position:absolute;top:10px;right:10px}
+
+/* VIDEO SLOT STEP */
+.video-slot-header{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.video-slot-title{font-size:.92rem;font-weight:700;color:var(--purple)}
+.video-slot-count{font-size:.8rem;color:var(--text2)}
+.extra-price-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:980px;background:rgba(255,215,0,.12);color:#FFD700;font-size:.65rem;font-weight:700;margin-top:3px}
+
+/* PAYMENT METHOD TABS */
+.pay-tabs{display:flex;gap:0;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px}
+.pay-tab{flex:1;padding:10px;border:none;border-radius:9px;background:transparent;color:var(--text2);font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all var(--t);display:flex;align-items:center;justify-content:center;gap:6px}
+.pay-tab.active{background:var(--purple);color:#fff;box-shadow:0 0 16px rgba(191,90,242,.25)}
+.pay-tab-content{display:none}
+.pay-tab-content.active{display:block}
+/* CREDIT/DEBIT TOGGLE */
+.card-type-row{display:flex;gap:6px;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:5px}
+.ctt-btn{flex:1;padding:8px;border:none;border-radius:7px;background:transparent;color:var(--text2);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all var(--t)}
+.ctt-btn.active{background:var(--accent);color:#fff}
+/* CARD FORM */
+.mp-field-wrap{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.mp-field-wrap .fl{font-size:.78rem;font-weight:600;color:var(--text2)}
+.mp-field{height:44px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);transition:border-color var(--t);overflow:hidden}
+.card-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 </style>
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<!-- Meta Pixel -->
+<script>
+if (!['localhost','127.0.0.1'].includes(location.hostname)) {
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1493963685734167');
+fbq('track', 'PageView');
+fbq('track', 'Lead', {
+  content_name: 'checkout_page',
+  content_category: 'checkout',
+  page_url: location.href,
+});
+}
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1493963685734167&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
 </head>
 <body>
 
@@ -168,91 +233,193 @@ Oferta expira em <span id="ckTimer">14:59</span> — Garanta seu preço!
 </div>
 
 <div class="header">
-<a href="./" class="header-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</a>
+<a href="javascript:void(0)" class="header-back" id="headerBackBtn" onclick="headerGoBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</a>
 <div class="header-title">Encomendar vídeo mágico</div>
 <div style="width:56px;"></div>
 </div>
 
-<img src="img/recado-animado-capa.jpeg" alt="Recado Animado" class="hero-banner">
+<img src="img/recado-animado-capa.png" alt="Recado Animado" class="hero-banner">
 
-<div class="stepper">
-<div class="stepper-step active" data-step="1"><div class="stepper-icon">1</div><div class="stepper-label">Pacote</div><div class="stepper-line"></div></div>
-<div class="stepper-step" data-step="2"><div class="stepper-icon">2</div><div class="stepper-label">Personagens</div><div class="stepper-line"></div></div>
-<div class="stepper-step" data-step="3"><div class="stepper-icon">3</div><div class="stepper-label">Personalizar</div></div>
+<div class="stepper" id="stepperEl">
+<!-- rendered dynamically by JS -->
 </div>
 
 <div class="wizard">
 
-<!-- STEP 1 -->
+<!-- STEP 1: Package -->
 <div class="wizard-step active" id="step1">
 <h2 class="wizard-title">Escolha o seu pacote</h2>
 <p class="wizard-subtitle">Quanto mais vídeos, maior a magia!</p>
 <div class="packages-grid" id="pkgGrid"></div>
-<div class="wiz-actions"><div></div><button class="btn btn-next" id="btnS1" disabled>Escolher personagens <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+<div class="wiz-actions"><div></div><button class="btn btn-next" id="btnS1" disabled>Próximo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+<div style="text-align:center;margin-top:14px">
+  <a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pedido%20no%20Recado%20Animado." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3);text-decoration:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.849L0 24l6.335-1.508A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.37l-.36-.214-3.727.977.994-3.634-.234-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+    Precisa de ajuda? Fale com o suporte
+  </a>
+</div>
 </div>
 
-<!-- STEP 2 -->
+<!-- STEP 2: Quality -->
 <div class="wizard-step" id="step2">
-<h2 class="wizard-title">Selecione os personagens</h2>
-<p class="wizard-subtitle">Escolha <span id="charLim">1</span> personagem(ns) para enviar mensagens</p>
-<div class="chars-info"><span class="chars-counter"><span id="charCnt">0</span> / <span id="charMax">1</span></span></div>
-<div class="top-next-btn" id="topNextBtn"><button class="btn btn-next" id="btnS2Top" disabled>Personalizar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
-<div class="chars-grid2" id="charsG"></div>
-<div class="sel-panel" id="selPanel" style="display:none">
-<div class="sel-title">Selecionados <span id="selCnt" class="chars-counter" style="font-size:.72rem;padding:3px 9px;">0/1</span></div>
-<div class="sel-list" id="selList"></div>
-</div>
+<h2 class="wizard-title">Qualidade do vídeo</h2>
+<p class="wizard-subtitle">Escolha a resolução dos seus vídeos mágicos</p>
+<div class="quality-grid" id="qualityGrid"></div>
 <div class="wiz-actions">
 <button class="btn btn-back" id="btnB2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</button>
-<button class="btn btn-next" id="btnS2" disabled>Personalizar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+<button class="btn btn-next" id="btnS2">Próximo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+</div>
+<div style="text-align:center;margin-top:14px">
+  <a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pedido%20no%20Recado%20Animado." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3);text-decoration:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.849L0 24l6.335-1.508A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.37l-.36-.214-3.727.977.994-3.634-.234-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+    Precisa de ajuda? Fale com o suporte
+  </a>
 </div>
 </div>
 
-<!-- STEP 3 -->
+<!-- STEP 3: Personagens + dados da criança -->
 <div class="wizard-step" id="step3">
+<h2 class="wizard-title">Personagens e crianças</h2>
+<p class="wizard-subtitle" id="csSubtitle">Escolha os personagens e preencha os dados</p>
+<!-- unified char grid -->
+<div id="csCharSection"></div>
+<!-- per-video info sections -->
+<div id="csSlots"></div>
+<div class="wiz-actions">
+  <button class="btn btn-back" id="csBtnBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</button>
+  <button class="btn btn-next" id="csBtnNext" disabled>Próximo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+</div>
+<div style="text-align:center;margin-top:14px">
+  <a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pedido%20no%20Recado%20Animado." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3);text-decoration:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.849L0 24l6.335-1.508A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.37l-.36-.214-3.727.977.994-3.634-.234-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+    Precisa de ajuda? Fale com o suporte
+  </a>
+</div>
+</div>
+
+<!-- STEP N+3: Form -->
+<div class="wizard-step" id="stepForm">
 <h2 class="wizard-title">Personalizar e pagar</h2>
 <p class="wizard-subtitle">Diga-nos como quer a mensagem personalizada</p>
 <div class="form-grid">
+<div class="fg"><label class="fl">Seu nome completo <span class="req">*</span></label><input type="text" class="fi" id="fBuyerName" placeholder="Ex: Maria Santos" autocomplete="name"></div>
 <div class="form-row">
-<div class="fg"><label class="fl">Nome da criança <span class="req">*</span></label><input type="text" class="fi" id="fName" placeholder="Ex: João" required></div>
-<div class="fg"><label class="fl">Idade <span class="req">*</span></label><input type="number" class="fi" id="fAge" placeholder="Ex: 5" min="1" max="15" required></div>
-</div>
-<div class="fg"><label class="fl">Ocasião <span class="req">*</span></label>
-<select class="fs" id="fOcc" required>
-<option value="" disabled selected>Selecione</option>
-<option value="aniversario">Aniversário</option>
-<option value="comportamento">Bom comportamento</option>
-<option value="motivacao">Motivação escolar</option>
-<option value="natal">Natal</option>
-<option value="pascoa">Páscoa</option>
-<option value="medos">Superar medos</option>
-<option value="surpresa">Surpresa especial</option>
-<option value="outro">Outro</option>
-</select></div>
-<div class="fg"><label class="fl">Mensagem do personagem</label>
-<div class="ai-wrap"><label class="ai-label"><input type="checkbox" id="aiTog" checked><span class="ai-sw"></span>Gerar texto com IA</label><div class="ai-desc" id="aiDesc">✨ <strong>Ativado</strong>. Usamos IA para criar a mensagem perfeita.</div></div>
-<textarea class="ft" id="fMsg" placeholder="Ex: Olá João! Aqui é o seu personagem favorito..."></textarea>
-<span class="fh">Se não escrever, geramos automaticamente com base no nome, idade e ocasião.</span>
-<div class="msg-example"><div class="msg-example-t">Exemplo</div><p>"Olá [nome]! Aqui é o [personagem]. Sei que tens [idade] aninhos e estás de parabéns! Continua a portar-te bem!"</p></div>
-</div>
-<div class="form-row">
-<div class="fg"><label class="fl">WhatsApp para entrega <span class="req">*</span></label><input type="tel" class="fi" id="fWa" placeholder="(62) 99111-8737" required><span class="fh">Número onde receberá o vídeo</span></div>
+<div class="fg"><label class="fl">WhatsApp <span class="req">*</span></label><input type="tel" class="fi" id="fWa" placeholder="(62) 99111-8737" required><span class="fh">Número de contato</span></div>
 <div class="fg"><label class="fl">Email <span class="req">*</span></label><input type="email" class="fi" id="fEmail" placeholder="seu@email.com" required><span class="fh">Para confirmação</span></div>
 </div>
 <div class="order-sum">
 <div class="order-sum-title">Resumo do pedido</div>
 <div class="osr"><span class="lbl">Pacote</span><span class="val" id="sumPkg">—</span></div>
-<div class="osr"><span class="lbl">Personagens</span><span class="val" id="sumChars">—</span></div>
-<div class="osr"><span class="lbl">Criança</span><span class="val" id="sumChild">—</span></div>
-<div class="osr"><span class="lbl">Ocasião</span><span class="val" id="sumOcc">—</span></div>
+<div class="osr"><span class="lbl">Qualidade</span><span class="val" id="sumQuality">—</span></div>
+<div class="osr" id="sumHdRow" style="display:none"><span class="lbl">Ultra (+20%)</span><span class="val" id="sumHd">—</span></div>
+<div class="osr"><span class="lbl">Comprador</span><span class="val" id="sumBuyer">—</span></div>
 <div class="osr total"><span class="lbl">Total</span><span class="val" id="sumTotal">R$ 0,00</span></div>
+</div>
+
+<!-- PAYMENT METHOD SELECTOR -->
+<div class="order-sum" style="margin-top:14px">
+<div class="order-sum-title">Forma de pagamento</div>
+<div class="pay-tabs" style="margin-top:10px">
+  <button class="pay-tab active" id="tabPix" onclick="selectPayTab('pix')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.9 4.5L4.5 11.9a.5.5 0 0 0 0 .7l7.4 7.4a.5.5 0 0 0 .7 0l7.4-7.4a.5.5 0 0 0 0-.7l-7.4-7.4a.5.5 0 0 0-.7 0z"/></svg>
+    PIX
+  </button>
+  <button class="pay-tab" id="tabCard" onclick="selectPayTab('card')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+    Cartão
+  </button>
+</div>
+
+<!-- PIX tab -->
+<div class="pay-tab-content active" id="payTabPix">
+  <p style="font-size:.82rem;color:var(--text2);line-height:1.6;padding:4px 0">
+    ✅ Ao clicar em <strong style="color:var(--text)">Pagar agora</strong>, você receberá o QR code Pix para efetuar o pagamento.
+  </p>
+</div>
+
+<!-- Card tab -->
+<div class="pay-tab-content" id="payTabCard">
+  <div class="card-type-row">
+    <button class="ctt-btn active" id="cttCredit" onclick="selectCardType('credit')">💳 Crédito</button>
+    <button class="ctt-btn" id="cttDebit" onclick="selectCardType('debit')">🏧 Débito</button>
+  </div>
+  <form id="form-checkout" onsubmit="return false">
+    <div class="mp-field-wrap">
+      <label class="fl">Número do cartão</label>
+      <div id="form-checkout__cardNumber" class="mp-field"></div>
+    </div>
+    <div class="card-form-row">
+      <div class="mp-field-wrap">
+        <label class="fl">Validade (MM/AA)</label>
+        <div id="form-checkout__expirationDate" class="mp-field"></div>
+      </div>
+      <div class="mp-field-wrap">
+        <label class="fl">CVV</label>
+        <div id="form-checkout__securityCode" class="mp-field"></div>
+      </div>
+    </div>
+    <div class="mp-field-wrap">
+      <label class="fl">Nome no cartão</label>
+      <input id="form-checkout__cardholderName" class="fi" placeholder="Como escrito no cartão" autocomplete="cc-name">
+    </div>
+    <div class="mp-field-wrap">
+      <label class="fl">CPF do titular</label>
+      <input id="form-checkout__identificationNumber" class="fi" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
+    </div>
+    <div class="mp-field-wrap" id="installmentsWrap" style="display:none">
+      <label class="fl">Parcelas</label>
+      <select id="form-checkout__installments" class="fs"><option value="1">1x sem juros</option></select>
+    </div>
+    <!-- Hidden fields required by MP -->
+    <select id="form-checkout__issuer" style="display:none"></select>
+    <select id="form-checkout__identificationType" style="display:none">
+      <option value="CPF" selected>CPF</option>
+    </select>
+  </form>
+  <p id="cardError" style="color:var(--red);font-size:.78rem;margin-top:4px;display:none"></p>
+</div>
+<div class="trust-bar">
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <span>Dados protegidos</span>
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span>7 dias de garantia</span>
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span>Compra 100% segura</span>
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Aprovação imediata, sem taxa extra</span>
+  </div>
+</div>
+<div class="payment-flags">
+  <!-- PIX -->
+  <img src="https://logospng.org/download/pix/logo-pix-icone-512.png" alt="PIX" title="PIX">
+  <!-- Visa -->
+  <svg class="pf-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 26" title="Visa"><rect width="80" height="26" rx="4" fill="#1a1f71"/><text x="40" y="20" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="white" text-anchor="middle" letter-spacing="1">VISA</text></svg>
+  <!-- Mastercard -->
+  <svg class="pf-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 28" title="Mastercard"><circle cx="16" cy="14" r="12" fill="#EB001B"/><circle cx="28" cy="14" r="12" fill="#F79E1B"/><path d="M22 5.4a12 12 0 0 1 0 17.2A12 12 0 0 1 22 5.4" fill="#FF5F00"/></svg>
+  <!-- Elo -->
+  <svg class="pf-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 26" title="Elo"><rect width="60" height="26" rx="4" fill="#FFCB05"/><text x="30" y="20" font-family="Arial,sans-serif" font-size="16" font-weight="900" fill="#000" text-anchor="middle" letter-spacing="2">elo</text></svg>
+  <!-- Hipercard -->
+  <img src="https://logospng.org/download/hipercard/logo-hipercard-256.png" alt="Hipercard" title="Hipercard" style="height:32px">
+</div>
 </div>
 </div>
 <div class="wiz-actions">
-<button class="btn btn-back" id="btnB3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</button>
+<button class="btn btn-back" id="btnBForm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar</button>
 <button class="btn btn-pay" id="btnPay" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>Pagar agora</button>
 </div>
-<div class="secure-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Pagamento seguro · Dados criptografados</div>
+<div style="text-align:center;margin-top:14px">
+  <a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pedido%20no%20Recado%20Animado." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3);text-decoration:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.849L0 24l6.335-1.508A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.37l-.36-.214-3.727.977.994-3.634-.234-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+    Precisa de ajuda? Fale com o suporte
+  </a>
+</div>
 </div>
 
 </div>
@@ -268,7 +435,7 @@ Oferta expira em <span id="ckTimer">14:59</span> — Garanta seu preço!
     <button id="btnCopyPix" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit">Copiar código</button>
   </div>
   <p style="margin-top:16px;font-size:.8rem;color:var(--text2)">Total: <strong id="pixTotal" style="color:var(--green)">R$ 0,00</strong></p>
-  <a id="pixTicketLink" href="#" target="_blank" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--accent)">Abrir página de pagamento ↗</a>
+  <button onclick="cancelOrder()" style="margin-top:14px;background:transparent;border:1px solid var(--border);color:var(--text3);padding:8px 18px;border-radius:980px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer">Cancelar e fazer novo pedido</button>
 </div>
 <div style="background:rgba(74,158,245,.07);border:1px solid rgba(74,158,245,.15);border-radius:12px;padding:14px 16px;font-size:.8rem;color:var(--text2);line-height:1.6">
   <strong style="color:var(--text)">Como pagar:</strong><br>
@@ -281,6 +448,12 @@ Oferta expira em <span id="ckTimer">14:59</span> — Garanta seu preço!
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
   Pagamento processado pelo Mercado Pago · Dados criptografados
 </div>
+<div style="text-align:center;margin-top:20px">
+  <a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20meu%20pagamento%20no%20Recado%20Animado." target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text3);text-decoration:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.849L0 24l6.335-1.508A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.001-1.37l-.36-.214-3.727.977.994-3.634-.234-.373A9.818 9.818 0 1 1 12 21.818z"/></svg>
+    Precisa de ajuda? Fale com o suporte
+  </a>
+</div>
 </div>
 
 <!-- SUCCESS SCREEN -->
@@ -291,7 +464,7 @@ Oferta expira em <span id="ckTimer">14:59</span> — Garanta seu preço!
 <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:20px;font-size:.88rem;color:var(--text2);line-height:1.8;margin-bottom:24px">
   ✅ Pedido recebido e confirmado<br>
   ⏳ Nossa equipe está gerando o vídeo personalizado<br>
-  📱 Você receberá no WhatsApp em breve<br>
+  🎬 Acesse <strong><a href="meus-videos.html" style="color:var(--green);text-decoration:underline">Meus Vídeos</a></strong> para baixar seus vídeos quando ficarem prontos<br>
   🕐 Prazo: geralmente poucos minutos, até 24h
 </div>
 <a href="./" style="display:inline-block;padding:13px 28px;border-radius:980px;background:var(--purple);color:#fff;font-weight:600;font-size:.92rem">Voltar ao início</a>
@@ -300,23 +473,62 @@ Oferta expira em <span id="ckTimer">14:59</span> — Garanta seu preço!
 <script>
 'use strict';
 
+// ─── Meta Pixel helpers ─────────────────────────────────────────────────────
+// Deduplication: track which events have already fired this session
+const _pixelFired = new Set();
+function _pixelEventId(key) {
+  // Stable event_id: session_id + key (for step events)
+  const sid = sessionStorage.getItem('_px_sid') || (() => {
+    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('_px_sid', id);
+    return id;
+  })();
+  return sid + '_' + key;
+}
+function pixelTrack(eventName, params, dedupKey) {
+  if (!window.fbq) return;
+  if (dedupKey) {
+    if (_pixelFired.has(dedupKey)) return; // already fired
+    _pixelFired.add(dedupKey);
+  }
+  const eventId = dedupKey ? _pixelEventId(dedupKey) : _pixelEventId(eventName + '_' + Date.now());
+  fbq('track', eventName, params, { eventID: eventId });
+}
+function pixelTrackOnce(eventName, params, key) {
+  // Fires at most once per session regardless of refreshes
+  const ssKey = '_px_once_' + key;
+  if (sessionStorage.getItem(ssKey)) return;
+  sessionStorage.setItem(ssKey, '1');
+  pixelTrack(eventName, params, key);
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const API_BASE = 'https://hermes-persona-website.5tpiot.easypanel.host/api/v1';
+
+
+
 const fmt = c => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+const fmtShort = c => {
+  const v = (c / 100).toFixed(2).replace('.', ',');
+  return '+R$\u00a0' + v;
+};
+
+// Affiliate ref capture: persist ?ref=CODE to localStorage
+(function() {
+  try {
+    var ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) localStorage.setItem('affiliate_ref', ref.trim().slice(0, 32));
+  } catch (_) {}
+})();
+
 
 async function apiFetch(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
-  // Include the guest token (returned by POST /orders) as a header so
-  // ownership is verified without relying on third-party cookies.
   const gt = sessionStorage.getItem('persona_guest_token');
   if (gt) headers['X-Guest-Token'] = gt;
   const { headers: _ignored, ...restOpts } = opts;
-  const res = await fetch(API_BASE + path, {
-    credentials: 'include',
-    ...restOpts,
-    headers,
-  });
+  const res = await fetch(API_BASE + path, { credentials: 'include', ...restOpts, headers });
   if (!res.ok) {
     let msg = `Erro ${res.status}`;
     try { const d = await res.json(); msg = d.detail || d.message || msg; } catch (_) {}
@@ -339,11 +551,11 @@ function showError(msg) {
   toast._t = setTimeout(() => { toast.style.display = 'none'; }, 4000);
 }
 
-// ─── Data ───────────────────────────────────────────────────────────────────
+// ─── Static Data ────────────────────────────────────────────────────────────
 const PACKAGES = [
-  { id: 'teste',    name: 'Teste',    chars: 1, price: 1990, old: 2990, icon: '⭐', feats: ['1 vídeo personalizado', 'Até 1 minuto', 'Entrega em 24h'] },
-  { id: 'surpresa', name: 'Surpresa', chars: 3, price: 2990, old: 3990, icon: '🌟', popular: true, promo: true, feats: ['3 vídeos personalizados', 'Até 1 min cada', 'Entrega em 24h'] },
-  { id: 'completo', name: 'Completo', chars: 5, price: 4990, old: 6990, icon: '💎', save: 'Economize R$20', feats: ['5 vídeos personalizados', 'Até 1 min cada', 'Entrega prioritária 12h'] },
+  { id: 'teste',    name: 'Teste',    videos: 1, maxChars: 1, price: 1990, old: 2990, icon: '⭐', feats: ['1 vídeo personalizado', 'Até 1 minuto', 'Entrega em 24h'] },
+  { id: 'surpresa', name: 'Surpresa', videos: 3, maxChars: 3, price: 2990, old: 3990, icon: '🌟', popular: true, promo: true, feats: ['3 vídeos personalizados', 'Até 3 personagens por vídeo', 'Entrega em 24h'] },
+  { id: 'completo', name: 'Completo', videos: 5, maxChars: 3, price: 4990, old: 6990, icon: '💎', save: 'Economize R$20', feats: ['5 vídeos personalizados', 'Até 3 personagens por vídeo', 'Entrega prioritária 12h'] },
 ];
 
 const CHARS = [
@@ -373,6 +585,32 @@ const CHARS = [
   { id: 'shrek',         name: 'Shrek',                img: 'shrek.webp',              cat: 'Clássico'               },
   { id: 'minion',        name: 'Minion',               img: 'minions.webp',            cat: 'Clássico'               },
   { id: 'masha',         name: 'Masha',                img: 'masha.webp',              cat: 'Clássico'               },
+  { id: 'rocky',         name: 'Rocky',                img: 'rocky-patrulha.webp',     cat: 'Patrulha Canina'        },
+  { id: 'rubble',        name: 'Rubble',               img: 'rubble-patrulha.webp',    cat: 'Patrulha Canina'        },
+  { id: 'everest',       name: 'Everest',              img: 'everest-patrulha.webp',   cat: 'Patrulha Canina'        },
+  { id: 'ryder',         name: 'Ryder',                img: 'ryder-patrulha.webp',     cat: 'Patrulha Canina'        },
+  { id: 'zuma',          name: 'Zuma',                 img: 'zuma-patrulha.webp',      cat: 'Patrulha Canina'        },
+  { id: 'liberty',       name: 'Liberty',              img: 'liberty-patrulha.webp',   cat: 'Patrulha Canina'        },
+  { id: 'knuckles',      name: 'Knuckles',             img: 'knuckles.webp',           cat: 'Sonic'                  },
+  { id: 'shadow',        name: 'Shadow',               img: 'shadow.webp',             cat: 'Sonic'                  },
+  { id: 'amy-rose',      name: 'Amy Rose',             img: 'amy-rose.webp',           cat: 'Sonic'                  },
+  { id: 'maui',          name: 'Maui',                 img: 'maui.webp',               cat: 'Disney'                 },
+  { id: 'mate',          name: 'Mate',                 img: 'mate-cars.webp',          cat: 'Disney'                 },
+  { id: 'menino-gato',   name: 'Menino Gato',          img: 'menino-gato.webp',        cat: 'PJ Masks'               },
+  { id: 'corujita',      name: 'Corujita',             img: 'corujita-pjmasks.webp',   cat: 'PJ Masks'               },
+  { id: 'thomas',        name: 'Thomas',               img: 'thomas-trem.webp',        cat: 'Clássico'               },
+  { id: 'burro',         name: 'Burro',                img: 'burro-shrek.webp',        cat: 'Clássico'               },
+  { id: 'galinha',       name: 'Galinha Pintadinha',    img: 'galinha-pintadinha.webp', cat: 'Clássico BR',    pop: 1 },
+  { id: 'chico-bento',   name: 'Chico Bento',          img: 'chico-bento.webp',        cat: 'Clássico BR'            },
+  { id: 'tristeza',      name: 'Tristeza',             img: 'tristeza.webp',           cat: 'Divertidamente'         },
+  { id: 'nojinho',       name: 'Nojinho',              img: 'nojinho.webp',            cat: 'Divertidamente'         },
+  { id: 'ansiedade',     name: 'Ansiedade',            img: 'ansiedade.webp',          cat: 'Divertidamente'         },
+  { id: 'inveja',        name: 'Inveja',               img: 'inveja.webp',             cat: 'Divertidamente'         },
+  { id: 'tedio',         name: 'Tédio',                img: 'tedio.webp',              cat: 'Divertidamente'         },
+  { id: 'vergonha',      name: 'Vergonha',             img: 'vergonha.webp',           cat: 'Divertidamente'         },
+  { id: 'mira',          name: 'Mira',                 img: 'mira-kpop.png',           cat: 'K-Pop',          pop: 1 },
+  { id: 'zoey',          name: 'Zoey',                 img: 'zoey-kpop.jpg',           cat: 'K-Pop',          pop: 1 },
+  { id: 'rumi',          name: 'Rumi',                 img: 'rumi-kpop.jpg',           cat: 'K-Pop',          pop: 1 },
 ];
 
 const OCC_LABELS = {
@@ -382,16 +620,29 @@ const OCC_LABELS = {
 };
 
 const FIELD_RULES = {
-  fName:  { test: v => v.trim().length >= 2,                                              msg: 'Digite o nome da criança (mín. 2 letras)' },
-  fAge:   { test: v => { const n = parseInt(v); return !isNaN(n) && n >= 1 && n <= 15; }, msg: 'Idade deve ser entre 1 e 15 anos' },
-  fOcc:   { test: v => v !== '',                                                           msg: 'Selecione uma ocasião' },
-  fWa:    { test: v => /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(v.replace(/\s/g, '')),      msg: 'WhatsApp inválido. Ex: (47) 99999-9999' },
-  fEmail: { test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),                      msg: 'E-mail inválido' },
+  fBuyerName: { test: v => v.trim().length >= 2,                                         msg: 'Digite seu nome (mín. 2 letras)' },
+  fWa:        { test: v => /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/.test(v.replace(/\s/g, '')), msg: 'WhatsApp inválido. Ex: (47) 99999-9999' },
+  fEmail:     { test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),                 msg: 'E-mail inválido' },
 };
 
 // ─── State ──────────────────────────────────────────────────────────────────
-const state = { step: 1, pkg: null, maxChars: 0, price: 0, selectedChars: [] };
+const state = {
+  step: 1,
+  pkg: null,        // plan slug
+  maxVideos: 0,     // plan.video_count
+  basePrice: 0,     // plan.price_cents
+  quality: 'sd',
+  videos: [],       // Array<string[]>, one entry per video, each holds [charId]
+  childInfos: [],   // per-video child info: [{name, age, occasion}]
+};
 let pollTimer = null;
+
+// ─── Pricing ────────────────────────────────────────────────────────────────
+function calcTotal() {
+  const hdMult = state.quality === 'hd' ? 0.20 : 0;
+  return Math.round(state.basePrice * (1 + hdMult));
+}
+function hdPrice() { return Math.round(state.basePrice * 0.20); }
 
 // ─── Timer ──────────────────────────────────────────────────────────────────
 function startTimer() {
@@ -407,34 +658,64 @@ function startTimer() {
 // ─── Stepper ────────────────────────────────────────────────────────────────
 const CHK = (s = '14px') => `<svg viewBox="0 0 20 20" fill="currentColor" width="${s}" height="${s}"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`;
 
+function buildStepperLabels() {
+  return ['Pacote', 'Qualidade', 'Personagens', 'Pagar'];
+}
+
+function renderStepper() {
+  const labels = buildStepperLabels();
+  const totalSteps = labels.length;
+  const el = $('stepperEl');
+  el.innerHTML = labels.map((lbl, idx) => {
+    const sn = idx + 1;
+    const isActive = sn === state.step;
+    const isDone = sn < state.step;
+    const cls = `stepper-step${isActive ? ' active' : ''}${isDone ? ' done' : ''}`;
+    const iconContent = isDone ? CHK('16px') : sn;
+    const lineHtml = sn < totalSteps ? '<div class="stepper-line"></div>' : '';
+    return `<div class="${cls}" data-step="${sn}"><div class="stepper-icon">${iconContent}</div><div class="stepper-label">${lbl}</div>${lineHtml}</div>`;
+  }).join('');
+}
+
+function stepIdForN(n) {
+  if (n === 1) return 'step1';
+  if (n === 2) return 'step2';
+  if (n === 3) return 'step3';
+  return 'stepForm';
+}
+
 function goStep(n) {
   state.step = n;
   document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
-  $('step' + n).classList.add('active');
-  document.querySelectorAll('.stepper-step').forEach(s => {
-    const sn = +s.dataset.step;
-    s.classList.remove('active', 'done');
-    if (sn < n) s.classList.add('done');
-    if (sn === n) s.classList.add('active');
-  });
-  document.querySelectorAll('.stepper-step.done .stepper-icon').forEach(i => i.innerHTML = CHK('16px'));
-  document.querySelectorAll('.stepper-step:not(.done) .stepper-icon').forEach(i => {
-    if (!i.closest('.stepper-step').classList.contains('done'))
-      i.textContent = i.closest('.stepper-step').dataset.step;
-  });
+  const id = stepIdForN(n);
+  const el = $(id);
+  if (el) el.classList.add('active');
+  renderStepper();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (n === 3) updateSummary();
+  if (n === 4) {
+    updateSummary();
+    // InitiateCheckout — user arrived at PAGAR step
+    pixelTrack('InitiateCheckout', {
+      content_name: 'payment_step_started',
+      content_category: 'payment',
+      package_name: state.pkg || '',
+      video_quantity: state.maxVideos,
+      value: (calcTotal() / 100).toFixed(2),
+      currency: 'BRL',
+    }, 'initiate_checkout_' + (state.pkg || 'none'));
+  }
+  if (n === 3) buildCharSlots();
 }
 
 // ─── Step 1: Packages ───────────────────────────────────────────────────────
 function initPackages() {
   const grid = $('pkgGrid');
   grid.innerHTML = PACKAGES.map(p => `
-    <div class="package-card${p.popular ? ' popular-pkg' : ''}" data-pkg="${p.id}" data-price="${p.price}" data-chars="${p.chars}">
+    <div class="package-card${p.popular ? ' popular-pkg' : ''}" data-pkg="${p.id}" data-price="${p.price}" data-videos="${p.videos}" data-maxchars="${p.maxChars}">
       <div class="check-ind">${CHK('12px')}</div>
       <div class="pkg-icon">${p.icon}</div>
       <div class="pkg-name">${p.name}</div>
-      <div class="pkg-chars">${p.chars} ${p.chars === 1 ? 'vídeo' : 'vídeos'}</div>
+      <div class="pkg-chars">${p.videos} ${p.videos === 1 ? 'vídeo' : 'vídeos'}</div>
       ${p.old ? `<div class="pkg-old">${fmt(p.old)}</div>` : ''}
       <div class="pkg-price"><span class="cur">R$</span>${Math.floor(p.price / 100)}<span style="font-size:.9rem">,${String(p.price % 100).padStart(2, '0')}</span></div>
       ${p.promo ? '<div class="pkg-promo">🔥 Em promoção!</div>' : ''}
@@ -446,10 +727,13 @@ function initPackages() {
     card.addEventListener('click', () => {
       grid.querySelectorAll('.package-card').forEach(x => x.classList.remove('selected'));
       card.classList.add('selected');
+      const prevPkg = state.pkg;
       state.pkg = card.dataset.pkg;
-      state.maxChars = +card.dataset.chars;
-      state.price = +card.dataset.price;
-      state.selectedChars = [];
+      state.maxVideos = +card.dataset.videos;
+      state.basePrice = +card.dataset.price;
+      state.videos = Array.from({ length: state.maxVideos }, () => []);
+      state.messages = Array.from({ length: state.maxVideos }, () => ({ text: '', aiEnabled: true }));
+      state.childInfos = Array.from({ length: state.maxVideos }, () => ({ name: '', age: '', occasion: '' }));
       $('btnS1').disabled = false;
     });
     const pre = new URLSearchParams(location.search).get('plan') || new URLSearchParams(location.search).get('pacote');
@@ -457,61 +741,508 @@ function initPackages() {
   });
 
   const pre = new URLSearchParams(location.search).get('plan') || new URLSearchParams(location.search).get('pacote');
-  if (pre && state.pkg) setTimeout(() => { renderChars(); goStep(2); }, 100);
+  if (pre && state.pkg) setTimeout(() => goStep(2), 100);
 }
 
-// ─── Step 2: Characters ─────────────────────────────────────────────────────
-function renderChars() {
-  const g = $('charsG');
-  $('charLim').textContent = state.maxChars;
-  g.innerHTML = CHARS.map(c => `
-    <div class="char-opt${state.selectedChars.includes(c.id) ? ' selected' : ''}" data-id="${c.id}">
-      <div class="char-chk">${CHK('11px')}</div>
-      <img class="char-opt-img" src="img/${c.img}" alt="${c.name}" loading="lazy" onerror="this.style.display='none'">
-      <div class="cn">${c.name}</div>
-      <div class="cc">${c.cat}</div>
-      ${c.pop ? '<div style="margin-top:2px"><span style="font-size:.55rem;padding:1px 5px;border-radius:980px;background:rgba(191,90,242,.15);color:#BF5AF2;font-weight:700;">Popular</span></div>' : ''}
-    </div>`).join('');
-  g.querySelectorAll('.char-opt').forEach(o => o.addEventListener('click', () => toggleChar(o.dataset.id)));
-  updateCharUI();
-}
-
-function toggleChar(id) {
-  const i = state.selectedChars.indexOf(id);
-  if (i > -1) state.selectedChars.splice(i, 1);
-  else if (state.selectedChars.length < state.maxChars) state.selectedChars.push(id);
-  updateCharUI();
-}
-
-function updateCharUI() {
-  const cnt = state.selectedChars.length, max = state.maxChars;
-  $('charCnt').textContent = cnt;
-  $('charMax').textContent = max;
-  $('selCnt').textContent = cnt + '/' + max;
-  document.querySelectorAll('.char-opt').forEach(o => {
-    const sel = state.selectedChars.includes(o.dataset.id);
-    o.classList.toggle('selected', sel);
-    o.classList.toggle('disabled', !sel && cnt >= max);
+// ─── Step 2: Quality ────────────────────────────────────────────────────────
+function initQuality() {
+  const grid = $('qualityGrid');
+  const renderQuality = () => {
+    const hdExtra = hdPrice();
+    grid.innerHTML = [
+      { id: 'sd', icon: '📹', name: 'Qualidade Normal', res: 'Padrão', priceLabel: fmt(state.basePrice), extraLabel: null },
+      { id: 'hd', icon: '✨', name: 'Qualidade Ultra', res: 'Alta definição', priceLabel: null, extraLabel: fmtShort(hdExtra) },
+    ].map(q => `
+      <div class="quality-card${state.quality === q.id ? ' selected' : ''}" data-quality="${q.id}">
+        <div class="check-ind">${CHK('12px')}</div>
+        <div class="qc-icon">${q.icon}</div>
+        <div class="qc-name">${q.name}</div>
+        <div class="qc-res">${q.res}</div>
+        ${q.extraLabel ? `<div class="qc-price extra">${q.extraLabel}</div>` : `<div class="qc-price">Incluído</div>`}
+      </div>`).join('');
+    grid.querySelectorAll('.quality-card').forEach(card => {
+      card.addEventListener('click', () => {
+        grid.querySelectorAll('.quality-card').forEach(x => x.classList.remove('selected'));
+        card.classList.add('selected');
+        state.quality = card.dataset.quality;
+      });
+    });
+  };
+  renderQuality();
+  // Re-render when package changes (price changes)
+  $('btnB2').addEventListener('click', () => goStep(1));
+  $('btnS2').addEventListener('click', () => {
+    // Lead: quality selected
+    const pkgName = PACKAGES.find(p => p.id === state.pkg)?.name || state.pkg || '';
+    const qualityLabel = state.quality === 'hd' ? 'Qualidade Ultra' : 'Qualidade Normal';
+    const qKey = 'quality_selected_' + state.pkg + '_' + state.quality;
+    pixelTrack('Lead', {
+      content_name: 'quality_selected',
+      content_category: 'checkout_step',
+      quality: qualityLabel,
+      package_name: pkgName,
+      video_quantity: state.maxVideos,
+      value: (calcTotal() / 100).toFixed(2),
+      currency: 'BRL',
+    }, qKey);
+    goStep(3);
   });
-  const panel = $('selPanel'), list = $('selList');
-  if (cnt > 0) {
-    panel.style.display = 'block';
-    list.innerHTML = state.selectedChars.map(id => {
-      const c = CHARS.find(x => x.id === id);
-      return `<span class="sel-pill">${c.name}<button class="rm" onclick="toggleChar('${id}')">&times;</button></span>`;
-    }).join('');
-  } else {
-    panel.style.display = 'none';
-  }
-  $('btnS2').disabled = cnt < max;
-  const btnTop = $('btnS2Top'), topWrap = $('topNextBtn');
-  btnTop.disabled = cnt < max;
-  topWrap.classList.toggle('show', cnt >= max);
 }
 
-// ─── Step 3: Form ───────────────────────────────────────────────────────────
+// ─── Step 3: Unified character selection + per-video info ────────────────────
+function buildCharSlots() {
+  const isTeste = state.pkg === 'teste';
+
+  // ── Unified character section ──
+  const charSection = $('csCharSection');
+  if (isTeste) {
+    charSection.innerHTML = `<div style="background:rgba(191,90,242,.06);border:1px solid rgba(191,90,242,.18);border-radius:12px;padding:14px 16px;margin-bottom:24px;text-align:center"><div style="font-size:1.4rem;margin-bottom:6px">🎲</div><div style="font-size:.88rem;font-weight:700;color:var(--purple);margin-bottom:4px">Personagem aleatório</div><div style="font-size:.75rem;color:var(--text2)">Um personagem será escolhido aleatoriamente para o seu vídeo.</div></div>`;
+  } else {
+    const label = state.maxVideos === 1
+      ? 'Selecione 1 personagem'
+      : `Selecione ${state.maxVideos} personagens (um por vídeo, em ordem)`;
+    charSection.innerHTML = `
+      <p style="font-size:.82rem;color:var(--text2);margin-bottom:10px">${label}</p>
+      <div class="chars-info" style="margin-bottom:10px">
+        <span class="chars-counter" id="csCounterBadge">0 / ${state.maxVideos}</span>
+      </div>
+      <div class="chars-grid2" id="csCharGrid" style="margin-bottom:24px"></div>`;
+    renderUnifiedCharGrid();
+  }
+
+  // ── Per-video info sections ──
+  const container = $('csSlots');
+  let html = '';
+  for (let vi = 0; vi < state.maxVideos; vi++) {
+    const header = state.maxVideos > 1
+      ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:.92rem;font-weight:700;color:var(--purple)">🎬 Vídeo ${vi + 1}</span><span id="csSlotChar${vi}" style="font-size:.75rem;color:var(--text3)"></span></div>`
+      : '';
+    html += `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+        ${header}
+        <div class="form-row">
+          <div class="fg"><label class="fl">Nome da criança <span class="req">*</span></label><input type="text" class="fi" id="csName${vi}" placeholder="Ex: João" autocomplete="off"></div>
+          <div class="fg" id="csAgeWrap${vi}" style="display:none"><label class="fl">Idade</label><input type="number" class="fi" id="csAge${vi}" placeholder="Ex: 5" min="1" max="15"></div>
+        </div>
+        <div class="fg" style="margin-top:12px">
+          <label class="fl">Ocasião <span class="req">*</span></label>
+          <select class="fs" id="csOcc${vi}">
+            <option value="" disabled selected>Selecione</option>
+            <option value="aniversario">Aniversário</option>
+            <option value="comportamento">Bom comportamento</option>
+            <option value="motivacao">Motivação escolar</option>
+            <option value="natal">Natal</option>
+            <option value="pascoa">Páscoa</option>
+            <option value="medos">Superar medos</option>
+            <option value="surpresa">Surpresa especial</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-top:12px">
+          <label class="fl">Mensagem (opcional)</label>
+          <div class="ai-wrap"><label class="ai-label"><input type="checkbox" id="csAiTog${vi}" checked><span class="ai-sw"></span>Gerar com IA</label><div class="ai-desc" id="csAiDesc${vi}">✨ <strong>Ativado</strong>. A IA cria a mensagem perfeita.</div></div>
+          <textarea class="ft" id="csMsg${vi}" placeholder="Ex: Olá! Você é muito especial!" style="margin-top:8px"></textarea>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  // Attach per-video listeners
+  for (let vi = 0; vi < state.maxVideos; vi++) {
+    document.getElementById('csName' + vi)?.addEventListener('input', updateCharStepUI);
+    document.getElementById('csAge' + vi)?.addEventListener('input', updateCharStepUI);
+    document.getElementById('csOcc' + vi)?.addEventListener('change', function () {
+      const ageWrap = document.getElementById('csAgeWrap' + vi);
+      if (ageWrap) ageWrap.style.display = this.value === 'aniversario' ? '' : 'none';
+      updateCharStepUI();
+    });
+    document.getElementById('csAiTog' + vi)?.addEventListener('change', function () {
+      if (!state.messages[vi]) state.messages[vi] = { text: '', aiEnabled: true };
+      state.messages[vi].aiEnabled = this.checked;
+      const desc = document.getElementById('csAiDesc' + vi);
+      if (desc) desc.innerHTML = this.checked
+        ? '✨ <strong>Ativado</strong>. A IA cria a mensagem perfeita.'
+        : '📌 <strong>Desativado</strong>. Usamos exatamente o texto que escrever.';
+    });
+    document.getElementById('csMsg' + vi)?.addEventListener('input', function () {
+      if (!state.messages[vi]) state.messages[vi] = { text: '', aiEnabled: true };
+      state.messages[vi].text = this.value;
+    });
+  }
+  updateCharStepUI();
+}
+
+function renderUnifiedCharGrid() {
+  const grid = $('csCharGrid');
+  if (!grid) return;
+  const allSelected = state.videos.map(v => v?.[0] || null);
+  const totalSelected = allSelected.filter(Boolean).length;
+  const counterEl = $('csCounterBadge');
+  if (counterEl) counterEl.textContent = `${totalSelected} / ${state.maxVideos}`;
+
+  grid.innerHTML = CHARS.map(c => {
+    const slotIdx = allSelected.indexOf(c.id);
+    const sel = slotIdx !== -1;
+    const numBadge = sel && state.maxVideos > 1
+      ? `<div style="position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--purple);color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;z-index:2">${slotIdx + 1}</div>`
+      : '';
+    return `
+      <div class="char-opt${sel ? ' selected' : ''}${!sel && totalSelected >= state.maxVideos ? ' disabled' : ''}" data-id="${c.id}" style="position:relative">
+        ${numBadge}
+        <div class="char-chk">${CHK('11px')}</div>
+        <img class="char-opt-img" src="img/${c.img}" alt="${c.name}" loading="lazy" onerror="this.style.display='none'">
+        <div class="cn">${c.name}</div>
+        <div class="cc">${c.cat}</div>
+        ${c.pop && !sel ? '<div style="margin-top:2px"><span style="font-size:.55rem;padding:1px 5px;border-radius:980px;background:rgba(191,90,242,.15);color:#BF5AF2;font-weight:700;">Popular</span></div>' : ''}
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.char-opt:not(.disabled)').forEach(o => {
+    o.addEventListener('click', () => {
+      const id = o.dataset.id;
+      const allSel = state.videos.map(v => v?.[0] || null);
+      const existingSlot = allSel.indexOf(id);
+      if (existingSlot !== -1) {
+        // Deselect and compact remaining up
+        const remaining = allSel.filter((v, i) => i !== existingSlot && v !== null);
+        for (let i = 0; i < state.maxVideos; i++) state.videos[i] = remaining[i] ? [remaining[i]] : [];
+      } else {
+        const emptySlot = allSel.findIndex(v => !v);
+        if (emptySlot !== -1) state.videos[emptySlot] = [id];
+      }
+      renderUnifiedCharGrid();
+      updateSlotCharLabels();
+      updateCharStepUI();
+      // Scroll to first child name input when all slots filled
+      const allNowFilled = state.videos.filter(v => v?.[0]).length === state.maxVideos;
+      if (allNowFilled) {
+        const firstInput = document.getElementById('csName0');
+        if (firstInput) {
+          const y = firstInput.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          setTimeout(() => {
+            firstInput.style.animation = 'none';
+            firstInput.offsetHeight;
+            firstInput.style.animation = 'fieldHighlight 1.2s ease forwards';
+            firstInput.focus();
+          }, 500);
+        }
+      }
+    });
+  });
+  updateSlotCharLabels();
+}
+
+function updateSlotCharLabels() {
+  for (let vi = 0; vi < state.maxVideos; vi++) {
+    const el = document.getElementById('csSlotChar' + vi);
+    if (!el) continue;
+    const charId = state.videos[vi]?.[0];
+    if (charId) {
+      const c = CHARS.find(x => x.id === charId);
+      el.textContent = c ? `(${c.name})` : '';
+      el.style.color = 'var(--purple)';
+    } else {
+      el.textContent = '(nenhum selecionado)';
+      el.style.color = 'var(--text3)';
+    }
+  }
+}
+
+function updateCharStepUI() {
+  const isTeste = state.pkg === 'teste';
+  let allOk = true;
+  for (let vi = 0; vi < state.maxVideos; vi++) {
+    const name = document.getElementById('csName' + vi)?.value?.trim() || '';
+    const occ = document.getElementById('csOcc' + vi)?.value || '';
+    if (name.length < 2 || !occ) { allOk = false; break; }
+    if (!isTeste && (!state.videos[vi] || state.videos[vi].length === 0)) { allOk = false; break; }
+  }
+  const btn = $('csBtnNext');
+  if (btn) btn.disabled = !allOk;
+}
+
+function initCharStep() {
+  $('csBtnBack').addEventListener('click', () => goStep(2));
+  $('csBtnNext').addEventListener('click', () => {
+    for (let vi = 0; vi < state.maxVideos; vi++) {
+      if (!state.childInfos[vi]) state.childInfos[vi] = {};
+      state.childInfos[vi].name = document.getElementById('csName' + vi)?.value?.trim() || '';
+      state.childInfos[vi].age = document.getElementById('csAge' + vi)?.value?.trim() || '';
+      state.childInfos[vi].occasion = document.getElementById('csOcc' + vi)?.value || '';
+      if (!state.messages[vi]) state.messages[vi] = { text: '', aiEnabled: true };
+    }
+    const pkgName = PACKAGES.find(p => p.id === state.pkg)?.name || state.pkg || '';
+    pixelTrack('Lead', {
+      content_name: 'chars_step_completed',
+      content_category: 'checkout_step',
+      package_name: pkgName,
+      video_quantity: state.maxVideos,
+      value: (calcTotal() / 100).toFixed(2),
+      currency: 'BRL',
+    }, 'chars_step_' + state.pkg);
+    goStep(4);
+  });
+}
+
+function buildVideoStepHtml(vi) {
+  const stepN = vi + 3;
+  const isFirst = vi === 0;
+  const isLast = vi === state.maxVideos - 1;
+  const formStep = state.maxVideos + 3;
+  const isTeste = state.pkg === 'teste';
+  const showChildFields = isFirst; // only first video gets editable child fields
+
+  // Character selection section (hidden for Plano Teste)
+  const charSection = isTeste ? `
+    <div style="background:rgba(191,90,242,.06);border:1px solid rgba(191,90,242,.18);border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:1.4rem;margin-bottom:6px">🎲</div>
+      <div style="font-size:.88rem;font-weight:700;color:var(--purple);margin-bottom:4px">Personagem aleatório</div>
+      <div style="font-size:.75rem;color:var(--text2)">No Plano Teste, um personagem será escolhido aleatoriamente para o seu vídeo.</div>
+    </div>` : `
+    <div class="video-slot-header">
+      <span class="video-slot-title">🎬 Vídeo ${vi + 1}</span>
+      <span class="video-slot-count" id="vsCnt${vi}">0 / ${state.maxChars}</span>
+    </div>
+    <div class="top-next-btn" id="vsTopNext${vi}"><button class="btn btn-next" onclick="document.getElementById('vsBtnNext${vi}').click()">Prosseguir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button></div>
+    <div class="chars-grid2" id="vsGrid${vi}"></div>
+    <div class="sel-panel" id="vsPanel${vi}" style="display:none">
+      <div class="sel-title">Selecionados <span id="vsSelCnt${vi}" class="chars-counter" style="font-size:.72rem;padding:3px 9px;">0/${state.maxChars}</span></div>
+      <div class="sel-list" id="vsSelList${vi}"></div>
+    </div>`;
+
+  // Child info section
+  const childSection = showChildFields ? `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:20px">
+      <div style="font-size:.88rem;font-weight:700;color:var(--purple);margin-bottom:12px">👦 Sobre a criança</div>
+      <div class="form-grid" style="gap:12px">
+        <div class="form-row">
+          <div class="fg"><label class="fl">Nome da criança <span class="req">*</span></label><input type="text" class="fi" id="vsChildName${vi}" placeholder="Ex: João" autocomplete="off"></div>
+          <div class="fg" id="vsChildAgeWrap${vi}" style="display:none"><label class="fl">Idade</label><input type="number" class="fi" id="vsChildAge${vi}" placeholder="Ex: 5" min="1" max="15"></div>
+        </div>
+        <div class="fg"><label class="fl">Ocasião <span class="req">*</span></label>
+          <select class="fs" id="vsChildOcc${vi}">
+            <option value="" disabled selected>Selecione</option>
+            <option value="aniversario">Aniversário</option>
+            <option value="comportamento">Bom comportamento</option>
+            <option value="motivacao">Motivação escolar</option>
+            <option value="natal">Natal</option>
+            <option value="pascoa">Páscoa</option>
+            <option value="medos">Superar medos</option>
+            <option value="surpresa">Surpresa especial</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+    </div>` : `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-top:20px">
+      <div style="background:rgba(48,209,88,.06);border:1px solid rgba(48,209,88,.18);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:1rem">👦</span>
+        <div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--green)">Dados da criança mantidos do vídeo 1</div>
+          <div style="font-size:.7rem;color:var(--text2)" id="vsChildSummary${vi}">—</div>
+        </div>
+      </div>
+      <input type="hidden" id="vsChildName${vi}">
+      <input type="hidden" id="vsChildAge${vi}">
+      <div id="vsChildAgeWrap${vi}" style="display:none"></div>
+      <div class="fg"><label class="fl">Ocasião deste vídeo <span class="req">*</span></label>
+        <select class="fs" id="vsChildOcc${vi}">
+          <option value="" disabled selected>Selecione</option>
+          <option value="aniversario">Aniversário</option>
+          <option value="comportamento">Bom comportamento</option>
+          <option value="motivacao">Motivação escolar</option>
+          <option value="natal">Natal</option>
+          <option value="pascoa">Páscoa</option>
+          <option value="medos">Superar medos</option>
+          <option value="surpresa">Surpresa especial</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+    </div>`;
+
+  return `
+    <h2 class="wizard-title">${isTeste ? 'Personalizar vídeo' : `Vídeo ${vi + 1} de ${state.maxVideos}`}</h2>
+    <p class="wizard-subtitle">${isTeste ? 'Preencha os dados da criança e a mensagem' : `Escolha de 1 a ${state.maxChars} personagem(ns) para este vídeo`}</p>
+    ${charSection}
+    ${childSection}
+    <div class="fg" style="margin-top:20px">
+      <label class="fl">Mensagem deste vídeo</label>
+      <div class="ai-wrap"><label class="ai-label"><input type="checkbox" id="vsAiTog${vi}" checked><span class="ai-sw"></span>Gerar com IA</label><div class="ai-desc" id="vsAiDesc${vi}">✨ <strong>Ativado</strong>. A IA cria a mensagem perfeita para este vídeo.</div></div>
+      <textarea class="ft" id="vsMsg${vi}" placeholder="Ex: Olá! Sabia que você é muito especial?" style="margin-top:8px"></textarea>
+      <span class="fh">Opcional. Deixe em branco para a IA gerar com base no nome, idade e ocasião.</span>
+    </div>
+    <div class="wiz-actions">
+      <button class="btn btn-back" id="vsBtnBack${vi}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Voltar
+      </button>
+      <button class="btn btn-next" id="vsBtnNext${vi}" disabled>
+        ${isLast ? 'Finalizar e pagar' : 'Próximo vídeo'}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>`;
+}
+
+function attachVideoStepEvents(vi) {
+  const isFirst = vi === 0;
+  // Buttons are rendered in the DOM now
+  document.getElementById(`vsBtnBack${vi}`).addEventListener('click', () => goStep(vi + 2));
+  document.getElementById(`vsBtnNext${vi}`).addEventListener('click', () => {
+    const formStep = state.maxVideos + 3;
+    // Propagate child data from video 1 to all subsequent videos
+    if (isFirst && state.maxVideos > 1) {
+      const src = state.childInfos[0] || {};
+      for (let j = 1; j < state.maxVideos; j++) {
+        if (!state.childInfos[j]) state.childInfos[j] = { name: '', age: '', occasion: '' };
+        state.childInfos[j].name = src.name || '';
+        state.childInfos[j].age = src.age || '';
+        const nameEl = document.getElementById(`vsChildName${j}`);
+        const ageEl = document.getElementById(`vsChildAge${j}`);
+        if (nameEl) nameEl.value = src.name || '';
+        if (ageEl) ageEl.value = src.age || '';
+        const summaryEl = document.getElementById(`vsChildSummary${j}`);
+        if (summaryEl) {
+          summaryEl.textContent = `${src.name || '—'}${src.age ? ', ' + src.age + ' anos' : ''}`;
+        }
+      }
+    }
+    // Lead: video step completed
+    const pkgName = PACKAGES.find(p => p.id === state.pkg)?.name || state.pkg || '';
+    const vKey = 'video_step_' + state.pkg + '_v' + (vi + 1);
+    pixelTrack('Lead', {
+      content_name: 'video_step_completed',
+      content_category: 'video_creation_step',
+      package_name: pkgName,
+      video_quantity: state.maxVideos,
+      video_index: vi + 1,
+      value: (calcTotal() / 100).toFixed(2),
+      currency: 'BRL',
+    }, vKey);
+    goStep(vi === state.maxVideos - 1 ? formStep : vi + 4);
+  });
+  document.getElementById(`vsAiTog${vi}`).addEventListener('change', function () {
+    if (!state.messages[vi]) state.messages[vi] = { text: '', aiEnabled: true };
+    state.messages[vi].aiEnabled = this.checked;
+    document.getElementById(`vsAiDesc${vi}`).innerHTML = this.checked
+      ? '✨ <strong>Ativado</strong>. A IA cria a mensagem perfeita para este vídeo.'
+      : '📌 <strong>Desativado</strong>. Usamos exatamente o texto que escrever.';
+  });
+  document.getElementById(`vsMsg${vi}`).addEventListener('input', function () {
+    if (!state.messages[vi]) state.messages[vi] = { text: '', aiEnabled: true };
+    state.messages[vi].text = this.value;
+  });
+  // Child info listeners — only first video has all editable fields
+  if (isFirst) {
+    function syncChildInfo() {
+      if (!state.childInfos[vi]) state.childInfos[vi] = { name: '', age: '', occasion: '' };
+      state.childInfos[vi].name     = document.getElementById(`vsChildName${vi}`)?.value?.trim() || '';
+      state.childInfos[vi].age      = document.getElementById(`vsChildAge${vi}`)?.value?.trim()  || '';
+      state.childInfos[vi].occasion = document.getElementById(`vsChildOcc${vi}`)?.value          || '';
+      const ageWrap = document.getElementById(`vsChildAgeWrap${vi}`);
+      if (ageWrap) ageWrap.style.display = state.childInfos[vi].occasion === 'aniversario' ? '' : 'none';
+      updateVideoStepUI(vi);
+    }
+    document.getElementById(`vsChildName${vi}`).addEventListener('input',  syncChildInfo);
+    document.getElementById(`vsChildAge${vi}`).addEventListener('input',   syncChildInfo);
+    document.getElementById(`vsChildOcc${vi}`).addEventListener('change',  syncChildInfo);
+  } else {
+    // Non-first videos: occasion is editable
+    const occEl = document.getElementById(`vsChildOcc${vi}`);
+    if (occEl) {
+      occEl.addEventListener('change', function() {
+        if (!state.childInfos[vi]) state.childInfos[vi] = { name: '', age: '', occasion: '' };
+        state.childInfos[vi].occasion = this.value;
+        updateVideoStepUI(vi);
+      });
+    }
+  }
+}
+
+function renderVideoStepChars(vi) {
+  const grid = document.getElementById(`vsGrid${vi}`);
+  if (!grid) return;
+  const slot = state.videos[vi] || [];
+  const extraPriceLabel = fmtShort(extraCharPrice());
+  grid.innerHTML = CHARS.map(c => {
+    const sel = slot.includes(c.id);
+    const posInSlot = slot.indexOf(c.id);
+    const isExtra = posInSlot >= 1; // 2nd+ character is extra
+    return `
+      <div class="char-opt${sel ? ' selected' : ''}" data-id="${c.id}" data-vi="${vi}">
+        <div class="char-chk">${CHK('11px')}</div>
+        <img class="char-opt-img" src="img/${c.img}" alt="${c.name}" loading="lazy" onerror="this.style.display='none'">
+        <div class="cn">${c.name}</div>
+        <div class="cc">${c.cat}</div>
+        ${c.pop && !sel ? '<div style="margin-top:2px"><span style="font-size:.55rem;padding:1px 5px;border-radius:980px;background:rgba(191,90,242,.15);color:#BF5AF2;font-weight:700;">Popular</span></div>' : ''}
+        ${!sel && slot.length >= 1 && slot.length < state.maxChars ? `<div class="extra-price-tag">${extraPriceLabel}</div>` : ''}
+      </div>`;
+  }).join('');
+  grid.querySelectorAll('.char-opt').forEach(o => {
+    const slotSize = slot.length;
+    if (!slot.includes(o.dataset.id) && slotSize >= state.maxChars) {
+      o.classList.add('disabled');
+    }
+    o.addEventListener('click', () => toggleVideoChar(vi, o.dataset.id));
+  });
+  updateVideoStepUI(vi);
+}
+
+function toggleVideoChar(vi, id) {
+  const slot = state.videos[vi] || [];
+  const i = slot.indexOf(id);
+  if (i > -1) slot.splice(i, 1);
+  else if (slot.length < state.maxChars) slot.push(id);
+  state.videos[vi] = slot;
+  renderVideoStepChars(vi);
+}
+
+function updateVideoStepUI(vi) {
+  const slot = state.videos[vi] || [];
+  const cnt = slot.length;
+  const isTeste = state.pkg === 'teste';
+  const isFirst = vi === 0;
+  const cntEl = document.getElementById(`vsCnt${vi}`);
+  const selCntEl = document.getElementById(`vsSelCnt${vi}`);
+  const panelEl = document.getElementById(`vsPanel${vi}`);
+  const selListEl = document.getElementById(`vsSelList${vi}`);
+  const btnNext = document.getElementById(`vsBtnNext${vi}`);
+  if (cntEl) cntEl.textContent = `${cnt} / ${state.maxChars}`;
+  if (selCntEl) selCntEl.textContent = `${cnt}/${state.maxChars}`;
+  if (panelEl) {
+    if (cnt > 0) {
+      panelEl.style.display = 'block';
+      selListEl.innerHTML = slot.map(id => {
+        const c = CHARS.find(x => x.id === id);
+        return `<span class="sel-pill">${c.name}<button class="rm" onclick="toggleVideoChar(${vi},'${id}')">&times;</button></span>`;
+      }).join('');
+    } else {
+      panelEl.style.display = 'none';
+    }
+  }
+  if (btnNext) {
+    const childOcc = document.getElementById(`vsChildOcc${vi}`)?.value || '';
+    if (isFirst) {
+      // First video: require child name + occasion + (character unless teste)
+      const childName = document.getElementById(`vsChildName${vi}`)?.value?.trim() || '';
+      const charOk = isTeste || cnt >= 1;
+      btnNext.disabled = !charOk || childName.length < 2 || childOcc === '';
+    } else {
+      // Subsequent videos: child data inherited, require occasion + character (unless teste)
+      const charOk = isTeste || cnt >= 1;
+      btnNext.disabled = !charOk || childOcc === '';
+    }
+    // Show/hide top next button
+    const topNext = document.getElementById(`vsTopNext${vi}`);
+    if (topNext) topNext.classList.toggle('show', !btnNext.disabled && !isTeste);
+  }
+}
+
+// (deprecated wrapper — kept for safety)
+function goStepWithRender(n) { goStep(n); }
+
+// ─── Step Form ──────────────────────────────────────────────────────────────
 function initForm() {
-  const fields = ['fName', 'fAge', 'fOcc', 'fWa', 'fEmail'];
+  const fields = ['fBuyerName', 'fWa', 'fEmail'];
 
   function setFieldError(id, msg) {
     const el = $(id);
@@ -540,12 +1271,6 @@ function initForm() {
     updateSummary();
   }
 
-  $('aiTog').addEventListener('change', function () {
-    $('aiDesc').innerHTML = this.checked
-      ? '✨ <strong>Ativado</strong>. Usamos IA para criar a mensagem perfeita.'
-      : '📌 <strong>Desativado</strong>. Usamos exatamente o texto que escrever.';
-  });
-
   fields.forEach(id => {
     const el = $(id);
     el.addEventListener('blur',   () => { el.dataset.touched = '1'; validateField(id); validateForm(); });
@@ -553,29 +1278,40 @@ function initForm() {
     el.addEventListener('change', () => { el.dataset.touched = '1'; validateField(id); validateForm(); });
   });
 
-  // Phone mask
   $('fWa').addEventListener('input', function (e) {
     let v = e.target.value.replace(/\D/g, '').slice(0, 11);
     if      (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{1,4})/, '($1) $2-$3');
     else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,5})/,        '($1) $2');
     e.target.value = v;
   });
+
+  $('btnBForm').addEventListener('click', () => {
+    goStep(3);
+  });
 }
 
 // ─── Summary ────────────────────────────────────────────────────────────────
 function updateSummary() {
-  const pkgNames = { teste: 'Teste (1 vídeo)', surpresa: 'Surpresa (3 vídeos)', completo: 'Completo (5 vídeos)' };
-  $('sumPkg').textContent    = pkgNames[state.pkg] || '—';
-  $('sumChars').textContent  = state.selectedChars.map(id => CHARS.find(c => c.id === id)?.name).join(', ') || '—';
-  const n = $('fName').value.trim(), a = $('fAge').value.trim();
-  $('sumChild').textContent  = n && a ? `${n}, ${a} anos` : '—';
-  $('sumOcc').textContent    = OCC_LABELS[$('fOcc').value] || '—';
-  $('sumTotal').textContent  = fmt(state.price);
+  const pkgData = PACKAGES.find(p => p.id === state.pkg);
+  $('sumPkg').textContent = pkgData ? `${pkgData.name} (${pkgData.videos} vídeo${pkgData.videos > 1 ? 's' : ''})` : '—';
+  $('sumQuality').textContent = state.quality === 'hd' ? 'Qualidade Ultra' : 'Qualidade Normal';
+
+  const hdExtra = state.quality === 'hd' ? hdPrice() : 0;
+  if (hdExtra > 0) {
+    $('sumHdRow').style.display = 'flex';
+    $('sumHd').textContent = fmtShort(hdExtra);
+  } else {
+    $('sumHdRow').style.display = 'none';
+  }
+
+  const buyerName = $('fBuyerName')?.value?.trim();
+  if ($('sumBuyer')) $('sumBuyer').textContent = buyerName || '—';
+  $('sumTotal').textContent = fmt(calcTotal());
 }
 
 // ─── Checkout ───────────────────────────────────────────────────────────────
 async function submitCheckout() {
-  const fields = ['fName', 'fAge', 'fOcc', 'fWa', 'fEmail'];
+  const fields = ['fBuyerName', 'fWa', 'fEmail'];
   fields.forEach(id => { $(id).dataset.touched = '1'; });
   const allOk = fields.every(id => FIELD_RULES[id] ? FIELD_RULES[id].test($(id).value) : true);
   if (!allOk) return;
@@ -600,52 +1336,119 @@ async function submitCheckout() {
       method: 'POST',
       body: JSON.stringify({
         plan_id:        state.pkg,
-        recipient_name: $('fName').value.trim()  || null,
-        recipient_age:  $('fAge').value.trim()   || null,
-        occasion_slug:  $('fOcc').value          || null,
-        guest_email:    $('fEmail').value.trim()  || null,
-        guest_phone:    $('fWa').value.trim()     || null,
+        recipient_name: $('fBuyerName').value.trim() || null,
+        guest_email:    $('fEmail').value.trim()     || null,
+        guest_phone:    $('fWa').value.trim()        || null,
+        affiliate_code: localStorage.getItem('affiliate_ref') || null,
       }),
     });
-    // Store guest_token so subsequent requests can pass it as X-Guest-Token
-    // header, bypassing third-party cookie restrictions.
     if (order.guest_token) sessionStorage.setItem('persona_guest_token', order.guest_token);
 
-    // 2. Attach characters + message
-    const msgText = $('fMsg').value.trim();
-    const aiOn = $('aiTog').checked;
-    let customMsg = '[Gerar automaticamente com IA]';
-    if (msgText && aiOn)  customMsg = '[IA c/ base] ' + msgText;
-    if (msgText && !aiOn) customMsg = '[Texto exato] ' + msgText;
+    // 2. Fill with video slots, quality, per-video messages
+    const custom_messages = state.videos.map((_, vi) => {
+      const m = state.messages[vi] || { text: '', aiEnabled: true };
+      if (m.text && !m.aiEnabled) return '[Texto exato] ' + m.text;
+      if (m.text && m.aiEnabled)  return '[IA c/ base] ' + m.text;
+      return '[Gerar automaticamente com IA]';
+    });
+
+    // For packages that use random characters (no selection required),
+    // fill any empty slots with a randomly picked character before submitting.
+    const video_slots = state.videos.map(slot =>
+      (slot && slot.length > 0) ? slot : [CHARS[Math.floor(Math.random() * CHARS.length)].id]
+    );
 
     await apiFetch(`/orders/${order.id}/fill`, {
       method: 'POST',
-      body: JSON.stringify({ character_slugs: state.selectedChars, custom_message: customMsg }),
+      body: JSON.stringify({
+        video_slots,
+        quality: state.quality,
+        custom_messages,
+        recipient_names: state.childInfos.map(c => c?.name     || null),
+        recipient_ages:  state.childInfos.map(c => c?.age      || null),
+        occasion_slugs:  state.childInfos.map(c => c?.occasion || null),
+      }),
     });
 
-    // 3. Checkout — retry up to 3× (browser may suspend long requests if tab goes background)
-    setPayLabel('Gerando Pix… não feche esta aba');
-    let ckData = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // 3. Checkout
+    if (state.payMethod === 'card') {
+      // ── Card payment ────────────────────────────────────────────────────
+      setPayLabel('Tokenizando cartão…');
+      let cardData;
       try {
-        ckData = await apiFetch(`/orders/${order.id}/checkout`, { method: 'POST' });
-        break;
-      } catch (e) {
-        if (attempt === 2) throw e;
-        setPayLabel('Tentando novamente… não feche esta aba');
-        await new Promise(r => setTimeout(r, 2000));
+        cardData = await mpGetCardData();
+      } catch (cardErr) {
+        const el = $('cardError');
+        el.textContent = cardErr.message || 'Dados do cartão inválidos.';
+        el.style.display = 'block';
+        throw new Error('Verifique os dados do cartão e tente novamente.');
       }
+      setPayLabel('Processando pagamento…');
+      const ckData = await apiFetch(`/orders/${order.id}/checkout`, {
+        method: 'POST',
+        body: JSON.stringify(cardData),
+      });
+      if (ckData.card_status === 'rejected') {
+        throw new Error('Cartão recusado: ' + (ckData.card_status_detail || 'tente outro cartão'));
+      }
+      if (ckData.card_status === 'approved') {
+        showSuccess({ id: order.id, status: 'PAID' });
+      } else {
+        // in_process: poll for approval
+        pollTimer = setInterval(() => pollOrder(order.id), 3000);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.querySelector('.wizard').style.display = 'none';
+        document.querySelector('.stepper').style.display = 'none';
+        $('pixScreen').innerHTML = `
+          <div style="text-align:center;padding:60px 16px">
+            <div style="font-size:3rem;margin-bottom:16px">⏳</div>
+            <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:8px">Aguardando confirmação</h2>
+            <p style="color:var(--text2);font-size:.9rem">Seu pagamento está sendo processado. Isso pode levar alguns instantes.</p>
+          </div>`;
+        $('pixScreen').style.display = 'block';
+      }
+    } else {
+      // ── PIX payment ─────────────────────────────────────────────────────
+      setPayLabel('Gerando Pix… não feche esta aba');
+      let ckData = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          ckData = await apiFetch(`/orders/${order.id}/checkout`, { method: 'POST' });
+          break;
+        } catch (e) {
+          if (attempt === 2) throw e;
+          setPayLabel('Tentando novamente… não feche esta aba');
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+      showPixScreen(order.id, ckData);
     }
-
-    showPixScreen(order.id, ckData);
   } catch (err) {
     showError(err.message || 'Erro ao processar pedido. Tente novamente.');
     resetPayBtn();
   }
 }
 
+// ─── Cancel order ───────────────────────────────────────────────────────────
+function cancelOrder() {
+  clearInterval(pollTimer);
+  sessionStorage.removeItem('persona_pending_order');
+  sessionStorage.removeItem('persona_guest_token');
+  location.reload();
+}
+
 // ─── Pix screen ─────────────────────────────────────────────────────────────
 function showPixScreen(orderId, ck) {
+  // Persist so a page refresh can restore this screen
+  sessionStorage.setItem('persona_pending_order', JSON.stringify({
+    orderId,
+    qr_code_payload: ck.qr_code_payload || '',
+    qr_code_url: ck.qr_code_url || '',
+    qr_code_base64: ck.qr_code_base64 || '',
+    ticket_url: ck.ticket_url || '',
+    amount_cents: ck.amount_cents || 0,
+  }));
+
   document.querySelector('.wizard').style.display = 'none';
   document.querySelector('.stepper').style.display = 'none';
   const pix = $('pixScreen');
@@ -662,10 +1465,6 @@ function showPixScreen(orderId, ck) {
   $('pixCopy').value = ck.qr_code_payload || '';
   $('pixTotal').textContent = fmt(ck.amount_cents || 0);
 
-  const ticketLink = $('pixTicketLink');
-  if (ck.ticket_url) ticketLink.href = ck.ticket_url;
-  else ticketLink.style.display = 'none';
-
   pollTimer = setInterval(() => pollOrder(orderId), 3000);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -677,31 +1476,299 @@ async function pollOrder(orderId) {
       clearInterval(pollTimer);
       showSuccess(order);
     }
-  } catch (_) { /* silent — keep polling */ }
+  } catch (_) { /* silent */ }
 }
 
 function showSuccess(order) {
-  $('pixScreen').style.display = 'none';
-  const screen = $('successScreen');
-  screen.style.display = 'block';
-  const name = order.recipient_name || '';
-  $('successName').textContent = name
-    ? `O vídeo mágico para ${name} está sendo preparado!`
-    : 'Seu vídeo mágico está sendo preparado!';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  clearInterval(pollTimer);
+  sessionStorage.removeItem('persona_pending_order');
+
+  // Purchase: fired once per order ID after backend confirms payment
+  const purchaseKey = 'purchase_' + order.id;
+  if (!sessionStorage.getItem('_px_purchase_' + order.id)) {
+    sessionStorage.setItem('_px_purchase_' + order.id, '1');
+    const pkgName = PACKAGES.find(p => p.id === state.pkg)?.name || state.pkg || order.plan_id || '';
+    if (window.fbq) {
+      fbq('track', 'Purchase', {
+        content_name: 'purchase_confirmed',
+        package_name: pkgName,
+        video_quantity: state.maxVideos || (order.items ? order.items.length : 0),
+        value: ((order.total_cents || calcTotal()) / 100).toFixed(2),
+        currency: 'BRL',
+      }, { eventID: 'purchase_' + order.id });
+    }
+  }
+
+  const gt = sessionStorage.getItem('persona_guest_token') || '';
+  const hash = gt ? '#t=' + encodeURIComponent(gt) : '';
+  window.location.replace('aguardando.html?oid=' + order.id + hash);
+}
+
+state.cardType  = 'credit'; // 'credit' | 'debit'
+const totalCents = () => calcTotal();
+
+let _mp = null;
+let _mpCardForm = null;
+let _mpPublicKey = '';
+let _mpCardFormReady = false;
+let _mpCardFormResolve = null;
+let _mpCardFormReject = null;
+
+async function initMpCardForm() {
+  if (_mpCardFormReady) return;
+  if (!_mpPublicKey) {
+    try {
+      const cfg = await apiFetch('/config');
+      _mpPublicKey = cfg.mp_public_key || '';
+    } catch (_) {}
+  }
+  if (!_mpPublicKey) throw new Error('Chave MP não configurada.');
+  if (!window.MercadoPago) throw new Error('SDK MercadoPago não carregado.');
+
+  _mp = new window.MercadoPago(_mpPublicKey, { locale: 'pt-BR' });
+  const isDebit = state.cardType === 'debit';
+  const totalReais = String((totalCents() / 100).toFixed(2));
+
+  _mpCardForm = _mp.cardForm({
+    amount: totalReais,
+    iframe: true,
+    form: {
+      id: 'form-checkout',
+      cardNumber:           { id: 'form-checkout__cardNumber',         placeholder: '0000 0000 0000 0000' },
+      expirationDate:       { id: 'form-checkout__expirationDate',     placeholder: 'MM/AA' },
+      securityCode:         { id: 'form-checkout__securityCode',       placeholder: 'CVV' },
+      cardholderName:       { id: 'form-checkout__cardholderName',     placeholder: 'Nome no cartão' },
+      issuer:               { id: 'form-checkout__issuer' },
+      installments:         { id: 'form-checkout__installments' },
+      identificationType:   { id: 'form-checkout__identificationType' },
+      identificationNumber: { id: 'form-checkout__identificationNumber', placeholder: '000.000.000-00' },
+    },
+    callbacks: {
+      onFormMounted: err => {
+        if (err) console.warn('[MP] form mount error', err);
+        else _mpCardFormReady = true;
+      },
+      onInstallmentsReceived: (err, data) => {
+        const wrap = $('installmentsWrap');
+        if (err || !data || isDebit) { wrap.style.display = 'none'; return; }
+        const sel = $('form-checkout__installments');
+        sel.innerHTML = '';
+        (data.payer_costs || []).forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.installments;
+          o.textContent = c.recommended_message || `${c.installments}x`;
+          sel.appendChild(o);
+        });
+        if (sel.options.length > 1) wrap.style.display = 'block';
+        else { sel.value = '1'; wrap.style.display = 'none'; }
+      },
+      onSubmit: event => {
+        event.preventDefault();
+        const d = _mpCardForm.getCardFormData();
+        if (_mpCardFormResolve) {
+          _mpCardFormResolve(d);
+          _mpCardFormResolve = null; _mpCardFormReject = null;
+        }
+      },
+      onError: errors => {
+        if (_mpCardFormReject) {
+          _mpCardFormReject(new Error(errors.map(e => e.message || e.cause).join('; ')));
+          _mpCardFormResolve = null; _mpCardFormReject = null;
+        }
+      },
+    },
+  });
+}
+
+async function mpGetCardData() {
+  return new Promise((resolve, reject) => {
+    _mpCardFormResolve = resolve;
+    _mpCardFormReject = reject;
+    // Trigger MP tokenization by submitting the form
+    document.getElementById('form-checkout').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    // Fallback timeout
+    setTimeout(() => {
+      if (_mpCardFormReject) {
+        _mpCardFormReject(new Error('Tempo limite ao tokenizar cartão'));
+        _mpCardFormResolve = null; _mpCardFormReject = null;
+      }
+    }, 15000);
+  }).then(d => {
+    if (!d.token) throw new Error('Não foi possível tokenizar o cartão.');
+    return {
+      card_token: d.token,
+      payment_method_id: d.paymentMethodId,
+      installments: parseInt(d.installments || '1', 10),
+      payer_doc_type: d.identificationType || 'CPF',
+      payer_doc_number: (d.identificationNumber || '').replace(/\D/g, ''),
+    };
+  });
+}
+
+function selectPayTab(tab) {
+  state.payMethod = tab;
+  $('tabPix').classList.toggle('active', tab === 'pix');
+  $('tabCard').classList.toggle('active', tab === 'card');
+  $('payTabPix').classList.toggle('active', tab === 'pix');
+  $('payTabCard').classList.toggle('active', tab === 'card');
+  if (tab === 'card' && !_mpCardFormReady) {
+    initMpCardForm().catch(err => {
+      showError('Erro ao carregar formulário de cartão: ' + err.message);
+      selectPayTab('pix');
+    });
+  }
+}
+
+function selectCardType(type) {
+  state.cardType = type;
+  $('cttCredit').classList.toggle('active', type === 'credit');
+  $('cttDebit').classList.toggle('active', type === 'debit');
+  const wrap = $('installmentsWrap');
+  if (type === 'debit') wrap.style.display = 'none';
+  // Re-init form with new type if needed (MP doesn't have a simple mode switch, so we just hide installments)
+}
+// ─── Header Back: step-by-step navigation ───────────────────────────────────
+function headerGoBack() {
+  if (state.step <= 1) {
+    // Save cart state before leaving
+    saveCartState();
+    window.location.href = './';
+    return;
+  }
+  // Navigate back one step in the wizard
+  goStep(state.step - 1);
+}
+
+// ─── Cart persistence ────────────────────────────────────────────────────────
+function saveCartState() {
+  if (!state.pkg) return;
+  const cart = {
+    pkg: state.pkg,
+    step: state.step,
+    quality: state.quality,
+    videos: state.videos,
+    childInfos: state.childInfos,
+    messages: state.messages,
+    basePrice: state.basePrice,
+    maxVideos: state.maxVideos,
+    ts: Date.now(),
+  };
+  sessionStorage.setItem('persona_cart', JSON.stringify(cart));
+}
+
+function restoreCartState() {
+  const raw = sessionStorage.getItem('persona_cart');
+  if (!raw) return false;
+  let cart;
+  try { cart = JSON.parse(raw); } catch (_) { sessionStorage.removeItem('persona_cart'); return false; }
+  // Expire after 30 min
+  if (Date.now() - (cart.ts || 0) > 30 * 60 * 1000) { sessionStorage.removeItem('persona_cart'); return false; }
+  return cart;
+}
+
+function showCartResumeBanner() {
+  const cart = restoreCartState();
+  if (!cart) return;
+  const pkgData = PACKAGES.find(p => p.id === cart.pkg);
+  if (!pkgData) return;
+  const banner = document.createElement('div');
+  banner.id = 'cartResumeBanner';
+  banner.style.cssText = 'background:rgba(191,90,242,.08);border:1px solid rgba(191,90,242,.2);border-radius:14px;padding:16px;margin:12px 16px 0;max-width:900px;margin-left:auto;margin-right:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+  banner.innerHTML = `
+    <div style="flex:1;min-width:160px">
+      <div style="font-size:.88rem;font-weight:700;color:var(--purple);margin-bottom:2px">🛒 Você tem um pedido em andamento</div>
+      <div style="font-size:.75rem;color:var(--text2)">Pacote ${pkgData.name} — ${pkgData.videos} vídeo${pkgData.videos > 1 ? 's' : ''}</div>
+    </div>
+    <button onclick="applyCartRestore()" style="padding:8px 16px;border-radius:980px;background:var(--purple);color:#fff;border:none;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer">Continuar</button>
+    <button onclick="dismissCartBanner()" style="padding:8px 16px;border-radius:980px;background:transparent;color:var(--text3);border:1px solid var(--border);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer">Novo pedido</button>`;
+  const wizard = document.querySelector('.wizard');
+  wizard.parentNode.insertBefore(banner, wizard);
+}
+
+function applyCartRestore() {
+  const cart = restoreCartState();
+  if (!cart) return;
+  // Simulate package selection
+  const pkgCard = document.querySelector(`.package-card[data-pkg="${cart.pkg}"]`);
+  if (pkgCard) pkgCard.click();
+  // Restore state
+  state.quality = cart.quality || 'sd';
+  state.videos = cart.videos || [];
+  state.childInfos = cart.childInfos || [];
+  state.messages = cart.messages || [];
+  // Remove banner and go to saved step
+  const banner = $('cartResumeBanner');
+  if (banner) banner.remove();
+  sessionStorage.removeItem('persona_cart');
+  setTimeout(() => goStep(Math.min(cart.step, 4)), 200);
+}
+
+function dismissCartBanner() {
+  sessionStorage.removeItem('persona_cart');
+  const banner = $('cartResumeBanner');
+  if (banner) banner.remove();
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
+// ── Restore pending order after page refresh ──────────────────────────────
+(async () => {
+  const raw = sessionStorage.getItem('persona_pending_order');
+  if (!raw) return;
+  let saved;
+  try { saved = JSON.parse(raw); } catch (_) { sessionStorage.removeItem('persona_pending_order'); return; }
+  // Quick-check if order is already paid/ready before restoring
+  try {
+    const order = await apiFetch(`/orders/${saved.orderId}`);
+    if (['PAID', 'QUEUED', 'RENDERING', 'READY', 'DELIVERED'].includes(order.status)) {
+      sessionStorage.removeItem('persona_pending_order');
+      showSuccess(order);
+      return;
+    }
+  } catch (_) { /* network error — still restore the pix screen */ }
+  showPixScreen(saved.orderId, saved);
+})();
+
 startTimer();
 initPackages();
+initQuality();
+initCharStep();
 initForm();
+renderStepper();
+showCartResumeBanner();
 
-$('btnS1').addEventListener('click',    () => { if (state.pkg) { renderChars(); goStep(2); } });
-$('btnS2').addEventListener('click',    () => { if (state.selectedChars.length === state.maxChars) goStep(3); });
-$('btnS2Top').addEventListener('click', () => { if (state.selectedChars.length === state.maxChars) goStep(3); });
-$('btnB2').addEventListener('click',    () => goStep(1));
-$('btnB3').addEventListener('click',    () => goStep(2));
-$('btnPay').addEventListener('click',   () => submitCheckout());
+// AddToCart: user arrived at the package selection step
+pixelTrackOnce('AddToCart', {
+  content_name: 'package_selection_started',
+  content_category: 'checkout_package_step',
+  content_type: 'product',
+  currency: 'BRL',
+}, 'add_to_cart_package_step');
+
+$('btnS1').addEventListener('click', () => {
+  if (state.pkg) {
+    // Lead: package confirmed
+    const pkgName = PACKAGES.find(p => p.id === state.pkg)?.name || state.pkg;
+    pixelTrack('Lead', {
+      content_name: 'package_selected',
+      content_category: 'checkout_step',
+      package_name: pkgName,
+      video_quantity: state.maxVideos,
+      value: (state.basePrice / 100).toFixed(2),
+      currency: 'BRL',
+    }, 'pkg_selected_' + state.pkg);
+    // Re-render quality step prices in case package changed
+    const hdExtra = hdPrice();
+    const grid = $('qualityGrid');
+    if (grid) {
+      grid.querySelectorAll('.quality-card').forEach(card => {
+        const q = card.dataset.quality;
+        const priceEl = card.querySelector('.qc-price');
+        if (q === 'hd' && priceEl) priceEl.textContent = fmtShort(hdExtra);
+      });
+    }
+    goStep(2);
+  }
+});
 
 $('btnCopyPix').addEventListener('click', () => {
   navigator.clipboard.writeText($('pixCopy').value).then(() => {
@@ -710,6 +1777,8 @@ $('btnCopyPix').addEventListener('click', () => {
     setTimeout(() => btn.textContent = 'Copiar código', 2000);
   });
 });
+
+$('btnPay').addEventListener('click', () => submitCheckout());
 </script>
 </body>
 </html>

@@ -97,6 +97,8 @@ export interface DashboardOrder {
   total_cents: number;
   quality: string;
   video_count: number;
+  affiliate_id: number | null;
+  affiliate_code: string | null;
   created_at: string;
   paid_at: string | null;
   delivered_at: string | null;
@@ -146,6 +148,102 @@ export async function fetchApiCosts(days = 30): Promise<ApiCostRow[]> {
     { headers: headers(), cache: 'no-store' }
   );
   if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
+// ── Affiliates ─────────────────────────────────────────────────────────────
+
+export interface AffiliateOut {
+  id: number;
+  code: string;
+  name: string;
+  email: string | null;
+  commission_pct: number;
+  is_active: boolean;
+  created_at: string;
+  total_orders: number;
+  total_earnings_cents: number;
+  unpaid_earnings_cents: number;
+}
+
+export interface AffiliateOrderOut {
+  order_id: number;
+  recipient_name: string | null;
+  guest_phone: string | null;
+  guest_email: string | null;
+  plan_id: number;
+  total_cents: number;
+  commission_pct: number;
+  commission_cents: number;
+  commission_paid_out: boolean;
+  commission_paid_out_at: string | null;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export async function fetchAffiliates(): Promise<AffiliateOut[]> {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/affiliates`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
+export async function createAffiliate(data: {
+  name: string;
+  email?: string;
+  commission_pct: number;
+}): Promise<AffiliateOut> {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/affiliates`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Erro ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateAffiliate(
+  id: number,
+  data: { name?: string; email?: string; commission_pct?: number; is_active?: boolean }
+): Promise<AffiliateOut> {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/affiliates/${id}`, {
+    method: 'PATCH',
+    headers: headers(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Erro ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchAffiliateOrders(affiliateId: number): Promise<AffiliateOrderOut[]> {
+  const res = await fetch(
+    `${STOREFRONT_BASE}/api/v1/admin/affiliates/${affiliateId}/orders`,
+    { headers: headers(), cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Storefront ${res.status}`);
+  return res.json();
+}
+
+export async function markCommissionPaid(
+  affiliateId: number,
+  orderId: number
+): Promise<AffiliateOrderOut> {
+  const res = await fetch(
+    `${STOREFRONT_BASE}/api/v1/admin/affiliates/${affiliateId}/orders/${orderId}/mark-paid`,
+    { method: 'POST', headers: headers() }
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Erro ${res.status}`);
+  }
   return res.json();
 }
 

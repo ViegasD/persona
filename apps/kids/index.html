@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recado Animado | Vídeos Mágicos Personalizados para Crianças</title>
+    <link rel="icon" type="image/png" href="img/Recado-animado-LOGO.png">
     <meta name="description"
         content="Vídeos personalizados com os personagens favoritos do seu filho! Papai Noel, CR7, Patrulha Canina e mais falam diretamente com a sua criança. A partir de R$ 19,90.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,7 +56,7 @@
         "mainEntity": [
             { "@type": "Question", "name": "O vídeo é realmente personalizado?", "acceptedAnswer": { "@type": "Answer", "text": "Sim! O vídeo é totalmente personalizado: o personagem chama a criança pelo nome, menciona a idade, e fala sobre o contexto que você indicou." } },
             { "@type": "Question", "name": "Quanto tempo leva pra receber?", "acceptedAnswer": { "@type": "Answer", "text": "Nosso prazo padrão é de até 24 horas. Na maioria dos casos entregamos em poucas horas!" } },
-            { "@type": "Question", "name": "Como recebo o vídeo?", "acceptedAnswer": { "@type": "Answer", "text": "O vídeo é entregue diretamente no seu WhatsApp, em alta qualidade e sem marca d'água." } },
+            { "@type": "Question", "name": "Como recebo o vídeo?", "acceptedAnswer": { "@type": "Answer", "text": "Assim que o vídeo ficar pronto, ele aparece na aba Meus Vídeos no site. É só acessar, assistir e baixar com alta qualidade e sem marca d'água." } },
             { "@type": "Question", "name": "Posso escolher o que o personagem vai falar?", "acceptedAnswer": { "@type": "Answer", "text": "Sim! Você pode enviar exatamente o texto que quer, ou dar liberdade pra nossa equipe criar uma mensagem mágica." } },
             { "@type": "Question", "name": "É seguro pra crianças?", "acceptedAnswer": { "@type": "Answer", "text": "Totalmente! Todo conteúdo é pensado pra crianças, com linguagem adequada e mensagens positivas." } }
         ]
@@ -876,6 +877,49 @@
             font-weight: 600;
         }
 
+        /* ===== DEPOIMENTOS EM VÍDEO ===== */
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 40px;
+        }
+        @media (max-width: 768px) {
+            .reports-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .reports-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        }
+        .report-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 9/16;
+            cursor: pointer;
+        }
+        .report-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .report-play {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,.3);
+            border: none;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .report-play svg { width: 48px; height: 48px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+        .report-play.playing { background: rgba(0,0,0,0); }
+        .report-play.playing svg { opacity: 0; }
+        .report-card:hover .report-play { background: rgba(0,0,0,.15); }
+
         /* ===== HOW IT WORKS ===== */
         .steps-grid {
             display: grid;
@@ -949,6 +993,26 @@
         .chars-cta {
             text-align: center;
             margin-top: 40px;
+        }
+
+        .chars-show-more-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 28px auto 0;
+            padding: 12px 28px;
+            border-radius: 980px;
+            border: 2px solid var(--purple);
+            background: transparent;
+            color: var(--purple);
+            font-size: .92rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s, color .2s;
+        }
+        .chars-show-more-btn:hover {
+            background: var(--purple);
+            color: #fff;
         }
 
         .char-card {
@@ -1103,18 +1167,19 @@
         }
         .usecases-grid::-webkit-scrollbar { display: none; }
         .usecase-card {
-            padding: 24px 18px;
-            border-radius: 16px;
+            padding: 16px 12px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border);
             text-align: center;
-            min-width: 240px;
+            min-width: 160px;
+            max-width: 180px;
             flex-shrink: 0;
             scroll-snap-align: start;
         }
-        .usecase-icon { font-size: 2rem; margin-bottom: 10px; }
-        .usecase-card h3 { font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
-        .usecase-card p { font-size: 0.8rem; color: var(--text2); line-height: 1.4; }
+        .usecase-icon { font-size: 1.5rem; margin-bottom: 6px; }
+        .usecase-card h3 { font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 700; margin-bottom: 2px; }
+        .usecase-card p { font-size: 0.7rem; color: var(--text2); line-height: 1.35; }
 
         /* ===== PRICING ===== */
         .pricing-grid {
@@ -1457,35 +1522,36 @@
         /* ===== TOAST NOTIFICATION ===== */
         .toast-notif {
             position: fixed;
-            top: 80px;
-            left: 24px;
+            bottom: 24px;
+            left: 20px;
             background: var(--bg2);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 20px;
+            border-radius: 8px;
+            padding: 6px 10px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 6px;
             z-index: 9998;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
             transform: translateX(-120%);
             transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            max-width: 340px;
             backdrop-filter: blur(16px);
+            white-space: nowrap;
         }
         .toast-notif.show { transform: translateX(0); }
         .toast-notif-icon {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: rgba(37, 211, 102, 0.15);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; flex-shrink: 0;
+            font-size: 0.75rem; flex-shrink: 0; line-height: 1;
         }
-        .toast-notif-text { font-size: 0.8rem; color: var(--text2); line-height: 1.4; }
+        .toast-notif-text { font-size: 0.68rem; color: var(--text2); line-height: 1; }
         .toast-notif-text strong { color: var(--text); }
-        .toast-notif-time { font-size: 0.65rem; color: var(--text3); margin-top: 2px; }
+        .toast-notif-time { font-size: 0.55rem; color: var(--text3); margin-left: 4px; }
 
         @media (max-width: 768px) {
-            .toast-notif { left: 12px; right: 12px; max-width: none; top: 120px; }
+            .toast-notif { left: unset; right: 8px; bottom: 88px; transform: translateX(120%); padding: 5px 8px; gap: 5px; border-radius: 6px; }
+            .toast-notif.show { transform: translateX(0); }
+            .toast-notif-icon { font-size: 0.65rem; }
+            .toast-notif-text { font-size: 0.6rem; }
+            .toast-notif-time { font-size: 0.5rem; margin-left: 3px; }
         }
 
         /* ===== PROMO TIMER ===== */
@@ -2267,7 +2333,7 @@
             .bridge-btn { font-size: 0.92rem; padding: 14px 24px; }
         }
 
-        /* ===== SPIN WHEEL / ROULETTE ===== */
+        /* ===== SPIN WHEEL / ROULETTE ===== (commented out)
         .wheel-overlay {
             position: fixed;
             inset: 0;
@@ -2368,6 +2434,7 @@
             display: none;
         }
         .wheel-close-btn.visible { display: block; animation: proof-pop 0.5s ease; }
+        === end roulette === */
 
         /* ===== HERO CHAR RANKING PROMINENCE ===== */
         .hero-char:nth-child(1) {
@@ -2414,11 +2481,30 @@
         }
     </style>
 
+<!-- Meta Pixel -->
+<script>
+if (!['localhost','127.0.0.1'].includes(location.hostname)) {
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1493963685734167');
+fbq('track', 'PageView');
+}
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1493963685734167&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
+
 
 <body>
 
 
-    <!-- SPIN WHEEL OVERLAY -->
+    <!-- SPIN WHEEL OVERLAY (commented out)
     <div class="wheel-overlay" id="wheelOverlay">
         <div class="wheel-title" style="font-size:1.8rem;animation:char-jiggle 1s ease infinite;">Gire e ganhe um <span style="color:#ff9f0a;">presente!</span></div>
         <div class="wheel-subtitle">Toque na roleta ou no botão para girar!</div>
@@ -2438,6 +2524,7 @@
             <div id="couponCopied" style="display:none;color:var(--green);font-size:0.85rem;margin-top:8px;font-weight:600;">Cupom copiado!</div>
         </div>
     </div>
+    end roulette overlay -->
 
     <!-- URGENCY TOP BANNER -->
     <div class="urgency-banner" id="urgencyBanner">
@@ -2454,6 +2541,7 @@
                 <a href="#ocasioes">Ocasiões</a>
                 <a href="#precos">Preços</a>
                 <a href="#faq">FAQ</a>
+                <a href="meus-videos.html">Meus vídeos</a>
                 <a href="checkout.html" class="btn btn-whatsapp">Pedir agora</a>
             </nav>
             <button class="menu-toggle" onclick="toggleMobileNav()" aria-label="Menu">
@@ -2475,6 +2563,7 @@
         <a href="#ocasioes" onclick="toggleMobileNav()">Ocasiões</a>
         <a href="#precos" onclick="toggleMobileNav()">Preços</a>
         <a href="#faq" onclick="toggleMobileNav()">FAQ</a>
+        <a href="meus-videos.html" onclick="toggleMobileNav()">Meus vídeos</a>
         <a href="checkout.html" class="btn btn-whatsapp btn-large" onclick="toggleMobileNav()">Pedir agora</a>
     </div>
 
@@ -2528,27 +2617,95 @@
                     Canina e outros personagens chamam o seu filho pelo nome. Ideal pra aniversários, surpresas ou
                     simplesmente pra ver ele sorrir.</p>
 
-                <div class="hero-price reveal reveal-delay-2">
-                    <span class="from">A partir de</span>
-                    <span class="amount">R$ 19,90</span>
-                    <span style="font-size:0.9rem; color:var(--text2); font-weight:500;"> /vídeo</span>
-                </div>
-
                 <div class="hero-buttons reveal reveal-delay-3">
-                    <a href="checkout.html" class="btn btn-whatsapp btn-large">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-chars reveal reveal-delay-4">
+            <div class="hero-char" style="background-image:url('img/chase-paw-patrol.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">Chase</span></div>
+            <div class="hero-char" style="background-image:url('img/papai-natal.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#C0C0C0"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">Papai Noel</span></div>
+            <div class="hero-char" style="background-image:url('img/galinha-pintadinha.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#CD7F32"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">G. Pintadinha</span></div>
+            <div class="hero-char" style="background-image:url('img/cr7.webp');background-size:cover;background-position:center;"><span class="hero-char-label">CR7</span></div>
+            <div class="hero-char" style="background-image:url('img/elsa-frozen.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Elsa</span></div>
+            <div class="hero-char" style="background-image:url('img/homem-aranha.webp');background-size:cover;background-position:center;"><span class="hero-char-label">H. Aranha</span></div>
+            <div class="hero-char" style="background-image:url('img/mira-kpop.png');background-size:cover;background-position:center;"><span class="hero-char-label">Mira</span></div>
+            <div class="hero-char" style="background-image:url('img/bluey.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Bluey</span></div>
+            <div class="hero-char" style="background-image:url('img/peppapig.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Peppa</span></div>
+            <div class="hero-char" style="background-image:url('img/zoey-kpop.jpg');background-size:cover;background-position:center;"><span class="hero-char-label">Zoey</span></div>
+        </div>
+    </section>
+
+    <section class="section" id="depoimentos">
+        <div class="container">
+            <p class="section-tag reveal">Quem já recebeu</p>
+            <h2 class="headline-big reveal">Veja a reação das crianças 🥹</h2>
+            <div class="reports-grid">
+                <div class="report-card reveal">
+                    <video src="img/reports/6.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+                <div class="report-card reveal">
+                    <video src="img/reports/2.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+                <div class="report-card reveal">
+                    <video src="img/reports/3.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+                <div class="report-card reveal">
+                    <video src="img/reports/4.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+                <div class="report-card reveal">
+                    <video src="img/reports/5.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+                <div class="report-card reveal">
+                    <video src="img/reports/1.mp4" playsinline muted loop preload="metadata"></video>
+                    <button class="report-play" aria-label="Reproduzir">
+                        <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="text-center reveal" style="margin-top:40px;padding:40px 20px;border-radius:20px;position:relative;overflow:hidden;background:radial-gradient(ellipse 80% 50% at 50% -20%, rgba(74,158,245,.15) 0%, transparent 60%),radial-gradient(ellipse 60% 40% at 20% 80%, rgba(255,153,64,.06) 0%, transparent 50%),radial-gradient(ellipse 60% 40% at 80% 60%, rgba(74,158,245,.05) 0%, transparent 50%),var(--bg2)">
+                <!-- Sparkles -->
+                <div class="sparkle" style="top:12%;left:6%;"><svg class="sparkle-star" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg></div>
+                <div class="sparkle" style="top:20%;right:8%;"><div class="sparkle-dot" style="animation-delay:1.2s;background:var(--gold)"></div></div>
+                <div class="sparkle" style="bottom:15%;left:10%;"><svg class="sparkle-star" width="12" height="12" viewBox="0 0 24 24" style="animation-delay:.6s"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg></div>
+                <div class="sparkle" style="top:50%;right:5%;"><div class="sparkle-dot" style="animation-delay:2s"></div></div>
+                <div class="sparkle" style="bottom:20%;right:15%;"><svg class="sparkle-star" width="10" height="10" viewBox="0 0 24 24" style="animation-delay:.9s"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4l-6.4 4.8L8 14 2 9.2h7.6z"/></svg></div>
+                <div class="sparkle" style="top:35%;left:3%;"><div class="sparkle-dot" style="animation-delay:2.5s"></div></div>
+                <p style="font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:8px">O seu filho pode ser o próximo!</p>
+                <p style="font-size:.9rem;color:var(--text2);margin-bottom:20px">Crie agora o vídeo mágico com o personagem favorito dele</p>
+                <div class="hero-buttons reveal" style="justify-content:center">
+                    <a href="#precos" class="btn btn-whatsapp btn-large">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                         Criar vídeo mágico
                     </a>
                     <a href="#personagens" class="btn btn-ghost">Ver personagens</a>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="hero-video-wrap reveal reveal-delay-3">
+    <section class="section" style="background: var(--bg2);">
+        <div class="container" style="display:flex;justify-content:center">
+            <div class="hero-video-wrap reveal" style="max-width:480px;width:100%">
                 <div class="hero-video-placeholder">
                     <video id="heroVideo" autoplay muted loop playsinline>
                         <source src="img/video-inicio.mp4" type="video/mp4">
                     </video>
-                    <!-- KID-FOCUSED: Pulsing play button overlay -->
                     <div class="hero-video-play-overlay" id="heroPlayOverlay">
                         <div class="hero-play-circle">
                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -2569,19 +2726,6 @@
                     </button>
                 </div>
             </div>
-        </div>
-
-        <div class="hero-chars reveal reveal-delay-4">
-            <div class="hero-char" style="background-image:url('img/chase-paw-patrol.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">Chase</span></div>
-            <div class="hero-char" style="background-image:url('img/papai-natal.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#C0C0C0"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">Papai Noel</span></div>
-            <div class="hero-char" style="background-image:url('img/galinha-pintadinha.webp');background-size:cover;background-position:center;"><span class="hero-char-crown"><svg width="14" height="14" viewBox="0 0 24 24" fill="#CD7F32"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></span><span class="hero-char-label">G. Pintadinha</span></div>
-            <div class="hero-char" style="background-image:url('img/cr7.webp');background-size:cover;background-position:center;"><span class="hero-char-label">CR7</span></div>
-            <div class="hero-char" style="background-image:url('img/elsa-frozen.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Elsa</span></div>
-            <div class="hero-char" style="background-image:url('img/homem-aranha.webp');background-size:cover;background-position:center;"><span class="hero-char-label">H. Aranha</span></div>
-            <div class="hero-char" style="background-image:url('img/mira-kpop.png');background-size:cover;background-position:center;"><span class="hero-char-label">Mira</span></div>
-            <div class="hero-char" style="background-image:url('img/bluey.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Bluey</span></div>
-            <div class="hero-char" style="background-image:url('img/peppapig.webp');background-size:cover;background-position:center;"><span class="hero-char-label">Peppa</span></div>
-            <div class="hero-char" style="background-image:url('img/zoey-kpop.jpg');background-size:cover;background-position:center;"><span class="hero-char-label">Zoey</span></div>
         </div>
     </section>
 
@@ -2640,6 +2784,7 @@
         <div class="ticker-track" id="tickerTrack"></div>
     </section>
 
+    <!-- DEPOIMENTOS EM VÍDEO -->
     <!-- COMO FUNCIONA -->
     <section class="section" id="como-funciona">
         <div class="container">
@@ -2658,8 +2803,8 @@
                 </div>
                 <div class="step reveal reveal-delay-2">
                     <div class="step-num">3</div>
-                    <h3>Receba o vídeo</h3>
-                    <p>Em até 24h você recebe o vídeo mágico no WhatsApp, pronto pra surpreender.</p>
+                    <h3>Acesse seus vídeos</h3>
+                    <p>Em até 24h seu vídeo mágico fica disponível na aba <a href="meus-videos.html" style="color:var(--purple);text-decoration:none;font-weight:600">Meus Vídeos</a>, pronto pra surpreender.</p>
                 </div>
             </div>
         </div>
@@ -2677,7 +2822,7 @@
                 </video>
             </div>
             <p class="body-large reveal" style="margin-top:24px;">Cada vídeo tem até 1 minuto, com o nome da criança,
-                mensagem personalizada e entregue pelo WhatsApp.</p>
+                mensagem personalizada e disponível na aba <a href="meus-videos.html" style="color:var(--purple);text-decoration:none;font-weight:600">Meus Vídeos</a>.</p>
         </div>
     </section>
 
@@ -2754,15 +2899,6 @@
         </div>
     </section>
 
-    <!-- TOAST NOTIFICATION -->
-    <div class="toast-notif" id="toastNotif">
-        <div class="toast-notif-icon">✅</div>
-        <div>
-            <div class="toast-notif-text" id="toastText"><strong>João</strong> acabou de adquirir o Plano Surpresa!</div>
-            <div class="toast-notif-time" id="toastTime">agora mesmo</div>
-        </div>
-    </div>
-
     <!-- PREÇOS -->
     <section class="section pricing" id="precos">
         <div class="container">
@@ -2776,23 +2912,30 @@
             </div>
 
             <div class="pricing-grid">
+                <!-- easy message -->
+                <div style="grid-column:1/-1;background:rgba(191,90,242,.07);border:1px solid rgba(191,90,242,.18);border-radius:14px;padding:16px 20px;text-align:center;margin-bottom:4px">
+                  <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px">✨ É muito fácil: escolha o personagem, escreva a mensagem e pronto!</div>
+                  <div style="font-size:.85rem;color:var(--text2)">O sistema cria o vídeo mágico automaticamente para você.</div>
+                </div>
                 <!-- TESTE -->
                 <div class="price-card reveal">
+                    <img src="img/garantia.png" alt="Garantia 7 dias" style="position:absolute;top:-18px;left:-18px;width:76px;height:76px;object-fit:contain;z-index:2;pointer-events:none">
                     <div class="price-card-name">✨ Plano Teste</div>
                     <div class="price-card-desc">Só pra sentir a magia 💜</div>
                     <div class="price-card-amount"><span class="currency">R$</span> 19<span style="font-size:1.6rem;">,90</span></div>
                     <div class="price-card-per">personagem aleatório • pagamento único</div>
                     <div class="price-card-features">
                         <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>1 vídeo personalizado</div>
-                        <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>1 personagem (entre 5 opções)</div>
+                        <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>1 Personagem Aleatório</div>
                         <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Alta qualidade + sem marca d'água</div>
-                        <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Entrega via WhatsApp</div>
+                        <div class="price-feature"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Disponível em Meus Vídeos</div>
                     </div>
                     <a href="checkout.html?plan=teste" class="btn btn-ghost">Escolher Teste</a>
                 </div>
 
                 <!-- SURPRESA (mais escolhido) -->
                 <div class="price-card popular reveal reveal-delay-1">
+                    <img src="img/garantia.png" alt="Garantia 7 dias" style="position:absolute;top:-18px;left:-18px;width:76px;height:76px;object-fit:contain;z-index:2;pointer-events:none">
                     <div class="price-card-name">⭐ Plano Surpresa</div>
                     <div class="price-card-desc">O mais escolhido pelas mamães!</div>
                     <div class="price-old">De R$ 39,90 <span class="price-discount-badge">-25% OFF</span></div>
@@ -2809,6 +2952,7 @@
 
                 <!-- COMPLETO -->
                 <div class="price-card reveal reveal-delay-2">
+                    <img src="img/garantia.png" alt="Garantia 7 dias" style="position:absolute;top:-18px;left:-18px;width:76px;height:76px;object-fit:contain;z-index:2;pointer-events:none">
                     <div class="price-card-name">🎁 Plano Completo</div>
                     <div class="price-card-desc">A experiência completa</div>
                     <div class="price-card-amount"><span class="currency">R$</span> 49<span style="font-size:1.6rem;">,90</span></div>
@@ -2893,8 +3037,7 @@
                             <path d="M12 5v14M5 12h14" />
                         </svg></button>
                     <div class="faq-a">
-                        <div class="faq-a-inner">O vídeo é entregue diretamente no seu WhatsApp, em alta qualidade e sem
-                            marca d'água. Você pode baixar e compartilhar quantas vezes quiser!</div>
+                        <div class="faq-a-inner">Assim que o vídeo ficar pronto, ele aparecerá na aba <a href="meus-videos.html" style="color:var(--purple);font-weight:600">Meus Vídeos</a> aqui no site. É só acessar, assistir e baixar em alta qualidade e sem marca d'água, quantas vezes quiser!</div>
                     </div>
                 </div>
                 <div class="faq-item reveal"><button class="faq-q">Posso escolher o que o personagem vai falar?<svg
@@ -2925,7 +3068,7 @@
                         </svg></button>
                     <div class="faq-a">
                         <div class="faq-a-inner">É super simples! Clique em "Pedir agora", escolha seu
-                            plano, selecione os personagens, preencha os dados da criança e finalize o pagamento. A gente cuida do resto e envia o vídeo no seu WhatsApp! 💜
+                            plano, selecione os personagens, preencha os dados da criança e finalize o pagamento. A gente cuida do resto e deixa o vídeo pronto na aba <a href="meus-videos.html" style="color:var(--purple);font-weight:600">Meus Vídeos</a>! 💜
                         </div>
                     </div>
                 </div>
@@ -2992,14 +3135,9 @@
                     <a href="#faq">FAQ</a>
                 </div>
                 <div class="footer-col">
-                    <h4>Contato</h4>
-                    <a href="https://wa.me/5562991118737" target="_blank" id="footerWhatsapp">WhatsApp</a>
-                    <a href="#" target="_blank">Instagram</a>
-                </div>
-                <div class="footer-col">
                     <h4>Social</h4>
                     <div class="footer-social">
-                        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <a href="https://www.instagram.com/recadoanimado" target="_blank" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="2" width="20" height="20" rx="5" />
                                 <circle cx="12" cy="12" r="5" />
@@ -3018,6 +3156,14 @@
     </footer>
 
     <script>
+        // Affiliate ref capture: persist ?ref=CODE to localStorage
+        (function() {
+          try {
+            var ref = new URLSearchParams(window.location.search).get('ref');
+            if (ref) localStorage.setItem('affiliate_ref', ref.trim().slice(0, 32));
+          } catch (_) {}
+        })();
+
         /* ===== CHARACTERS DATABASE ===== */
         const CHARACTERS = [
             { name: 'Papai Noel', img: 'papai-natal.webp', cat: 'Clássico', rating: '5.00', reviews: 412 },
@@ -3088,8 +3234,11 @@
         ).join('');
 
         function renderGrid(filter) {
-            const filtered = filter === 'Todos' ? CHARACTERS : CHARACTERS.filter(c => c.cat === filter);
-            grid.innerHTML = filtered.map(c => `
+            const filtered = filter === 'Todos' ? [...CHARACTERS].sort((a, b) => b.reviews - a.reviews) : CHARACTERS.filter(c => c.cat === filter);
+            const INITIAL = 4;
+            const visible = filtered.slice(0, INITIAL);
+            const hidden  = filtered.slice(INITIAL);
+            const cardHtml = chars => chars.map(c => `
                 <a class="char-card" href="${CK_URL}">
                     <div class="char-card-overflow">${c.popular ? '<span class="char-popular-badge">Popular \uD83D\uDD25</span>' : ''}<img class="char-card-img" src="img/${c.img}" alt="${c.name}" loading="lazy" width="400" height="400"></div>
                     <div class="char-card-body">
@@ -3101,6 +3250,23 @@
                     <div class="char-card-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
                 </a>
             `).join('');
+            grid.innerHTML = cardHtml(visible) +
+                (hidden.length ? `<div id="charsHidden" style="display:contents">${cardHtml(hidden)}</div>` : '');
+
+            const existingBtn = document.getElementById('charsShowMoreBtn');
+            if (existingBtn) existingBtn.remove();
+            if (hidden.length) {
+                document.getElementById('charsHidden').style.display = 'none';
+                const btn = document.createElement('button');
+                btn.id = 'charsShowMoreBtn';
+                btn.className = 'chars-show-more-btn';
+                btn.innerHTML = `Ver todos os ${filtered.length} personagens <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>`;
+                btn.addEventListener('click', () => {
+                    document.getElementById('charsHidden').style.display = 'contents';
+                    btn.remove();
+                });
+                grid.insertAdjacentElement('afterend', btn);
+            }
         }
         renderGrid('Todos');
 
@@ -3143,6 +3309,36 @@
 
         const obs = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }); }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
         document.querySelectorAll('.reveal:not(.visible)').forEach(el => obs.observe(el));
+
+        /* Fix black first frame on demo video (seek past the blank keyframe) */
+        document.querySelectorAll('video:not(#heroVideo)').forEach(function(v) {
+            function seekPastBlack() { if (v.currentTime === 0) v.currentTime = 0.1; }
+            if (v.readyState >= 1) { seekPastBlack(); }
+            else { v.addEventListener('loadedmetadata', seekPastBlack, { once: true }); }
+        });
+
+        /* ===== META PIXEL: ViewContent when #precos enters viewport ===== */
+        (function () {
+            var _vcFired = false;
+            var precosEl = document.getElementById('precos');
+            if (precosEl && window.fbq) {
+                var vcObs = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting && !_vcFired) {
+                            _vcFired = true;
+                            fbq('track', 'ViewContent', {
+                                content_name: 'Planos',
+                                content_category: 'offer',
+                                content_type: 'product',
+                                currency: 'BRL',
+                            });
+                            vcObs.disconnect();
+                        }
+                    });
+                }, { threshold: 0.15 });
+                vcObs.observe(precosEl);
+            }
+        })();
 
         /* Hero video sound toggle + visibility-based audio */
         const heroVideo = document.getElementById('heroVideo');
@@ -3197,8 +3393,8 @@
             const plan = toastPlans[Math.floor(Math.random() * toastPlans.length)];
             const time = toastTimes[Math.floor(Math.random() * toastTimes.length)];
             const city = toastCities[Math.floor(Math.random() * toastCities.length)];
-            textEl.innerHTML = `<strong>${name}</strong> de ${city} adquiriu o ${plan}!`;
-            timeEl.textContent = time;
+            textEl.innerHTML = `<strong>${name}</strong> adquiriu o ${plan}`;
+            timeEl.textContent = '· ' + time;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 5000);
         }
@@ -3289,6 +3485,26 @@
         })();
     </script>
 
+    <!-- CART RESUME BANNER -->
+    <script>
+    (function() {
+        const raw = sessionStorage.getItem('persona_cart');
+        if (!raw) return;
+        let cart;
+        try { cart = JSON.parse(raw); } catch(_) { return; }
+        if (Date.now() - (cart.ts || 0) > 30 * 60 * 1000) { sessionStorage.removeItem('persona_cart'); return; }
+        const plans = { teste: 'Teste', surpresa: 'Surpresa', completo: 'Completo' };
+        const name = plans[cart.pkg] || cart.pkg || '';
+        const banner = document.createElement('div');
+        banner.id = 'cartResumeBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,rgba(191,90,242,.95),rgba(74,158,245,.9));padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;backdrop-filter:blur(10px);box-shadow:0 2px 16px rgba(0,0,0,.3);';
+        banner.innerHTML = '<div style="font-size:.82rem;font-weight:600;color:#fff">🛒 Você tem um pedido em andamento — <strong>Pacote ' + name + '</strong></div>' +
+            '<a href="checkout.html" style="padding:6px 16px;border-radius:980px;background:#fff;color:#7c3aed;font-size:.78rem;font-weight:700;text-decoration:none;white-space:nowrap">Continuar pedido →</a>' +
+            '<button onclick="sessionStorage.removeItem(\'persona_cart\');this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1rem;cursor:pointer;padding:4px">✕</button>';
+        document.body.prepend(banner);
+    })();
+    </script>
+
     <!-- WHATSAPP CHATBOT BIA -->
     <div class="wa-chat-widget" id="waChatWidget">
         <div class="wa-chat-popup" id="waChatPopup">
@@ -3334,6 +3550,14 @@
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 
+            function renderMd(text) {
+                // Bold: **text** → <strong>text</strong>
+                return text
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br>');
+            }
+
             function addMsg(text, type, delay) {
                 return new Promise(resolve => {
                     if (type === 'in') {
@@ -3347,7 +3571,7 @@
                             typingEl.remove();
                             const msg = document.createElement('div');
                             msg.className = 'wa-msg wa-msg-in';
-                            msg.innerHTML = text + '<div class="wa-msg-time">' + timeStr + '</div>';
+                            msg.innerHTML = renderMd(text) + '<div class="wa-msg-time">' + timeStr + '</div>';
                             chatBody.appendChild(msg);
                             chatBody.scrollTop = chatBody.scrollHeight;
                             resolve();
@@ -3355,7 +3579,7 @@
                     } else {
                         const msg = document.createElement('div');
                         msg.className = 'wa-msg wa-msg-out';
-                        msg.innerHTML = text + '<div class="wa-msg-time">' + timeStr + ' <span class="wa-check">✓✓</span></div>';
+                        msg.innerHTML = renderMd(text) + '<div class="wa-msg-time">' + timeStr + ' <span class="wa-check">✓✓</span></div>';
                         chatBody.appendChild(msg);
                         chatBody.scrollTop = chatBody.scrollHeight;
                         resolve();
@@ -3422,6 +3646,29 @@
                         }
                         if (data.payment) {
                             addPixCard(data.payment);
+                        }
+                        // Detect plan/pricing mentions → checkout button
+                        const _planRe = /plano|teste|surpresa|completo|anivers|preco|preço|valor|quanto custa|r\$|comprar|pedido|encomendar|checkout|escolher/i;
+                        if (_planRe.test(data.messages.join(' '))) {
+                            await addMsg(
+                                '👉 Escolha seu plano e monte o vídeo agora:<br><br>' +
+                                '<a href="#precos" onclick="document.getElementById(\'waChatPopup\').classList.remove(\'open\');" ' +
+                                'style="display:inline-block;background:var(--purple);color:#fff;padding:8px 18px;border-radius:20px;text-decoration:none;font-weight:700;font-size:.85rem;margin-top:4px">' +
+                                '✨ Ver planos e preços</a>',
+                                'in', 800
+                            );
+                        }
+                        const _supportRe = /humano|atendente|suporte|falar com algu|pessoa real|contato|reclamaç|cancelar|reembolso|devoluç|não funciona|nao funciona|deu erro|problema|tive um|tenho um|preciso de ajuda|ajuda|help|nao recebi|não recebi|cadê|cadê o|nao chegou|não chegou|errou|bugou|travou|quebrou|parou|falhou|erro|falha/i;
+                        const _botReply = data.messages.join(' ');
+                        if (_supportRe.test(text) || _supportRe.test(_botReply)) {
+                            await addMsg(
+                                'Você também pode falar direto com nossa equipe 😊<br><br>' +
+                                '<a href="https://wa.me/5562991118737?text=Ol%C3%A1%2C%20preciso%20de%20ajuda." ' +
+                                'target="_blank" rel="noopener" ' +
+                                'style="display:inline-block;background:#25D366;color:#fff;padding:8px 18px;border-radius:20px;text-decoration:none;font-weight:700;font-size:.85rem;margin-top:6px">' +
+                                '💬 Falar com atendente</a>',
+                                'in', 1000
+                            );
                         }
                     } else {
                         throw new Error();
@@ -3590,7 +3837,33 @@
             obs.observe(fb);
         })();
 
-        /* ===== SPIN WHEEL ===== */
+        /* ===== REPORT VIDEOS ===== */
+        (function() {
+            document.querySelectorAll('.report-card').forEach(function(card) {
+                var video = card.querySelector('video');
+                var btn = card.querySelector('.report-play');
+                // Force first frame to render on all devices
+                video.addEventListener('loadedmetadata', function() {
+                    video.currentTime = 0.1;
+                });
+                btn.addEventListener('click', function() {
+                    if (video.paused) {
+                        document.querySelectorAll('.report-card video').forEach(function(v) {
+                            if (v !== video) { v.pause(); v.closest('.report-card').querySelector('.report-play').classList.remove('playing'); }
+                        });
+                        video.muted = false;
+                        video.play();
+                        btn.classList.add('playing');
+                    } else {
+                        video.pause();
+                        btn.classList.remove('playing');
+                    }
+                });
+                video.addEventListener('ended', function() { btn.classList.remove('playing'); });
+            });
+        })();
+
+        /* ===== SPIN WHEEL ===== (commented out)
         (function() {
             if (sessionStorage.getItem('wheelSpun')) {
                 const wo = document.getElementById('wheelOverlay');
@@ -3662,7 +3935,7 @@
                    The canvas rotates clockwise. After rotation by angle R,
                    the segment under the pointer is at angle (-PI/2 - R) mod 2PI.
                    So we need: (-PI/2 - R) mod 2PI = 1*segAngle + segAngle/2
-                   R = -PI/2 - (1*segAngle + segAngle/2) + N*2PI */
+                   R = -PI/2 - (1*segAngle + segAngle/2) + N*2PI 
                 const targetCenter = 1 * segAngle + segAngle / 2;
                 const baseR = -Math.PI / 2 - targetCenter;
                 const spins = 6 + Math.floor(Math.random() * 3);
@@ -3691,8 +3964,9 @@
             if (copyBtn) copyBtn.addEventListener('click', copyCoupon);
             if (useBtn) useBtn.addEventListener('click', copyCoupon);
         })();
+        === end spin wheel === */
 
-        function activatePromo() {
+        /* function activatePromo() {
             document.querySelectorAll('.plan-card').forEach(card => {
                 const priceEl = card.querySelector('.plan-price');
                 if (!priceEl || priceEl.querySelector('.price-promo-badge')) return;
@@ -3701,7 +3975,7 @@
                 badge.textContent = 'PROMO ESPECIAL';
                 priceEl.parentNode.insertBefore(badge, priceEl);
             });
-        }
+        } */
 
         /* ===== VIDEOS PROGRESS ↔ COUNT ===== */
         (function() {

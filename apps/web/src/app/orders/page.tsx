@@ -91,6 +91,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
               <th className="text-left px-4 py-3 font-medium">Destinatário</th>
               <th className="text-left px-4 py-3 font-medium">Contato</th>
               <th className="text-right px-4 py-3 font-medium">Valor</th>
+              <th className="text-left px-4 py-3 font-medium">Afiliado</th>
               <th className="text-left px-4 py-3 font-medium">Qualidade</th>
               <th className="text-left px-4 py-3 font-medium">Criado em</th>
               <th className="text-left px-4 py-3 font-medium">Pago em</th>
@@ -99,7 +100,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
           <tbody className="divide-y divide-[var(--border)]">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-[var(--muted-foreground)]">
+                <td colSpan={10} className="text-center py-12 text-[var(--muted-foreground)]">
                   Nenhum pedido encontrado.
                 </td>
               </tr>
@@ -121,6 +122,11 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                     {o.guest_phone ?? o.guest_email ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-medium">{fmt(o.total_cents)}</td>
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {o.affiliate_code
+                      ? <span className="px-1.5 py-0.5 rounded bg-[var(--bg2)] border border-[var(--border)]">{o.affiliate_code}</span>
+                      : <span className="text-[var(--muted-foreground)]">—</span>}
+                  </td>
                   <td className="px-4 py-3 uppercase text-xs">{o.quality}</td>
                   <td className="px-4 py-3 text-[var(--muted-foreground)]">{fmtDate(o.created_at)}</td>
                   <td className="px-4 py-3 text-[var(--muted-foreground)]">{fmtDate(o.paid_at)}</td>
