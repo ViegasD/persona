@@ -10,7 +10,7 @@ function fmt(cents: number) {
   return `R$ ${(cents / 100).toFixed(2).replace('.', ',')}`;
 }
 
-const STOREFRONT = 'https://recadoanimado.com.br'; // landing page base URL
+const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? 'https://recadoanimado.com';
 
 export function AffiliatesClient({ affiliates: initial }: { affiliates: AffiliateOut[] }) {
   const router = useRouter();
@@ -22,6 +22,7 @@ export function AffiliatesClient({ affiliates: initial }: { affiliates: Affiliat
 
   // Per-row edit state
   const [editId, setEditId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', commission_pct: '', is_active: true });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -243,8 +244,21 @@ export function AffiliatesClient({ affiliates: initial }: { affiliates: Affiliat
                   <>
                     <td className="px-4 py-3">
                       <div className="font-mono text-xs font-semibold">{aff.code}</div>
-                      <div className="text-[10px] text-[var(--muted-foreground)] mt-0.5 truncate max-w-[160px]">
-                        {STOREFRONT}/?ref={aff.code}
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] text-[var(--muted-foreground)] truncate max-w-[140px]">
+                          {STOREFRONT}/?ref={aff.code}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${STOREFRONT}/?ref=${aff.code}`);
+                            setCopiedId(aff.id);
+                            setTimeout(() => setCopiedId(null), 2000);
+                          }}
+                          className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-[var(--border)] hover:bg-[var(--bg2)] text-[var(--muted-foreground)]"
+                          title="Copiar link"
+                        >
+                          {copiedId === aff.id ? '✓' : '📋'}
+                        </button>
                       </div>
                     </td>
                     <td className="px-4 py-3 font-medium">{aff.name}</td>

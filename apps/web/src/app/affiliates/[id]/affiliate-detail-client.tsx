@@ -14,7 +14,7 @@ function fmtDate(iso: string | null) {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const STOREFRONT = 'https://recadoanimado.com.br';
+const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? 'https://recadoanimado.com';
 
 export function AffiliateDetailClient({
   affiliate: initial,
